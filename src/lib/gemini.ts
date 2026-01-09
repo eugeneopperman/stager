@@ -39,19 +39,32 @@ function buildStagingPrompt(roomType: RoomType, furnitureStyle: FurnitureStyle):
   const roomLabel = getRoomLabel(roomType);
   const { label: styleLabel, description: styleDescription } = getStyleDetails(furnitureStyle);
 
-  return `Edit this image to virtually stage this empty ${roomLabel} with ${styleLabel} style furniture and decor.
+  return `You are a virtual staging assistant. Add furniture and decor to this empty ${roomLabel} photo.
 
-Style: ${styleLabel} - ${styleDescription}
+CRITICAL RULES - DO NOT CHANGE:
+- DO NOT change the camera angle or perspective
+- DO NOT change the walls, wall color, or wall texture
+- DO NOT change the flooring, carpet, or floor material
+- DO NOT change the ceiling or ceiling color
+- DO NOT change the windows, doors, or architectural features
+- DO NOT change the lighting conditions or light sources
+- DO NOT crop or resize the image
 
-Instructions:
-- Keep the original room architecture, walls, windows, and flooring exactly as they are
-- Add realistic ${styleLabel} furniture appropriate for a ${roomLabel}
-- Include decor items like artwork, plants, rugs, and lighting
-- Ensure furniture is properly scaled and naturally positioned
-- Maintain the original lighting and add realistic shadows
-- Make it look like a real professionally staged home photo
+ONLY ADD these items in ${styleLabel} style (${styleDescription}):
+- Furniture appropriate for a ${roomLabel}
+- Area rugs (placed ON the existing floor, not replacing it)
+- Wall art and mirrors (hung on existing walls)
+- Plants and decorative accessories
+- Lamps and light fixtures
+- Curtains or blinds on existing windows
 
-Generate a photorealistic staged version of this room.`;
+The output image must:
+- Have the EXACT same camera angle as the input
+- Show the EXACT same walls, floor, and ceiling as the input
+- Only differ by having furniture and decor added
+- Look like a real photograph, not a 3D render
+
+Add ${styleLabel} furniture to this ${roomLabel} while keeping everything else identical.`;
 }
 
 export interface StagingResult {
