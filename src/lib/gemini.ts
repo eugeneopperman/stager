@@ -3,24 +3,17 @@ import { ROOM_TYPES, FURNITURE_STYLES, type RoomType, type FurnitureStyle } from
 
 const genAI = new GoogleGenerativeAI(process.env.GOOGLE_GEMINI_API_KEY || "");
 
-// Use Gemini 1.5 Flash - stable and available on free tier
-const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+// Use Gemini 2.5 Flash for image generation
+const model = genAI.getGenerativeModel({
+  model: "gemini-2.5-flash-preview-05-20",
+  generationConfig: {
+    // @ts-expect-error - responseModalities is valid for image generation
+    responseModalities: ["image", "text"],
+  },
+});
 
-// For image generation, try gemini-2.0-flash-exp first, fall back to 1.5
-// Note: Image generation requires billing enabled on Google Cloud
-const getImageModel = () => {
-  try {
-    return genAI.getGenerativeModel({
-      model: "gemini-2.0-flash-exp",
-      generationConfig: {
-        // @ts-expect-error - responseModalities is valid for image generation
-        responseModalities: ["image", "text"],
-      },
-    });
-  } catch {
-    return model;
-  }
-};
+// Alias for backward compatibility
+const getImageModel = () => model;
 
 function getRoomLabel(roomId: RoomType): string {
   const room = ROOM_TYPES.find((r) => r.id === roomId);
