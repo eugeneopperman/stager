@@ -2,7 +2,7 @@
 
 ## Development Phases
 
-### Phase 1: Foundation (Current)
+### Phase 1: Foundation ✅ COMPLETE
 Core infrastructure and basic functionality.
 
 #### Milestones
@@ -10,40 +10,43 @@ Core infrastructure and basic functionality.
 - [x] Configure Tailwind CSS v4
 - [x] Install and configure shadcn/ui components
 - [x] Create project documentation (claude.md, process-and-development.md)
-- [ ] Set up Supabase client configuration
-- [ ] Create database schema
-- [ ] Implement authentication flow (signup/login/logout)
-- [ ] Build basic dashboard layout
-- [ ] Create landing page
+- [x] Set up Supabase client configuration
+- [x] Create database schema
+- [x] Implement authentication flow (signup/login/logout)
+- [x] Build basic dashboard layout
+- [x] Create landing page
+- [x] Deploy to Vercel
 
 #### Deliverables
-- Working authentication system
-- Protected dashboard routes
-- Basic navigation structure
-- Clean, responsive UI foundation
+- ✅ Working authentication system
+- ✅ Protected dashboard routes
+- ✅ Basic navigation structure
+- ✅ Clean, responsive UI foundation
+- ✅ Production deployment on Vercel
 
 ---
 
-### Phase 2: Core Staging Feature
+### Phase 2: Core Staging Feature ✅ COMPLETE
 The main AI-powered staging functionality.
 
 #### Milestones
-- [ ] Implement image upload to Supabase Storage
-- [ ] Create Gemini API integration service
-- [ ] Build staging interface
-  - [ ] Image uploader component (drag & drop)
-  - [ ] Room type selector
-  - [ ] Furniture style picker
-  - [ ] Processing status indicator
-- [ ] Implement before/after comparison slider
-- [ ] Create staging job management
+- [x] Implement image upload to Supabase Storage
+- [x] Create Gemini API integration service (using Gemini 2.5 Flash)
+- [x] Build staging interface
+  - [x] Image uploader component (drag & drop)
+  - [x] Room type selector (9 room types)
+  - [x] Furniture style picker (9 styles)
+  - [x] Processing status indicator
+- [x] Implement before/after comparison slider
+- [x] Create staging job management
+- [x] Credit deduction on successful staging
 - [ ] Add staging history view
 
 #### Deliverables
-- Fully functional virtual staging
-- Intuitive staging workflow
-- Image comparison tool
-- Job history and status tracking
+- ✅ Fully functional virtual staging with AI
+- ✅ Intuitive staging workflow
+- ✅ Image comparison tool
+- ⏳ Job history and status tracking (pending)
 
 ---
 
@@ -69,10 +72,10 @@ Property organization and batch processing.
 Prepare for monetization with usage tracking.
 
 #### Milestones
-- [ ] Implement credit balance system
-- [ ] Add credit deduction on staging
+- [x] Implement credit balance system (basic)
+- [x] Add credit deduction on staging
 - [ ] Create usage history view
-- [ ] Build credit balance UI components
+- [x] Build credit balance UI components
 - [ ] Add low-credit warnings
 - [ ] Implement usage analytics dashboard
 
@@ -100,27 +103,81 @@ Full monetization with Stripe.
 
 ---
 
+## Current Tech Stack
+
+| Component | Technology |
+|-----------|------------|
+| Frontend | Next.js 16 (App Router) |
+| Styling | Tailwind CSS v4 + shadcn/ui |
+| Backend | Next.js API Routes |
+| Database | Supabase (PostgreSQL) |
+| Auth | Supabase Auth |
+| Storage | Supabase Storage |
+| AI Model | Google Gemini 2.5 Flash |
+| Deployment | Vercel |
+| Repository | GitHub |
+
+---
+
 ## Feature Roadmap
 
 ### MVP Features (Phases 1-2)
 | Feature | Priority | Status |
 |---------|----------|--------|
-| User authentication | High | Pending |
-| Dashboard layout | High | Pending |
-| Image upload | High | Pending |
-| AI staging | High | Pending |
-| Before/after comparison | High | Pending |
-| Staging history | Medium | Pending |
+| User authentication | High | ✅ Complete |
+| Dashboard layout | High | ✅ Complete |
+| Image upload | High | ✅ Complete |
+| AI staging | High | ✅ Complete |
+| Before/after comparison | High | ✅ Complete |
+| Staging history | Medium | ⏳ In Progress |
 
 ### Post-MVP Features (Phases 3-5)
 | Feature | Priority | Status |
 |---------|----------|--------|
 | Property management | Medium | Planned |
 | Batch processing | Medium | Planned |
-| Credits system | Medium | Planned |
+| Credits system | Medium | Partial |
 | Analytics dashboard | Low | Planned |
 | Payment integration | Low | Planned |
 | Team accounts | Low | Future |
+
+---
+
+## AI Staging Configuration
+
+### Model
+- **Gemini 2.5 Flash** (`gemini-2.5-flash`)
+- Image generation enabled via `responseModalities: ["image", "text"]`
+- Requires Google Cloud billing enabled
+
+### Room Types
+- Living Room
+- Master Bedroom
+- Guest Bedroom
+- Kids Bedroom
+- Dining Room
+- Kitchen
+- Home Office
+- Bathroom
+- Outdoor/Patio
+
+### Furniture Styles
+- Modern/Contemporary
+- Traditional/Classic
+- Minimalist
+- Mid-Century Modern
+- Scandinavian
+- Industrial
+- Coastal/Beach
+- Farmhouse/Rustic
+- Luxury/Glam
+
+### Prompt Engineering
+The staging prompt is designed to:
+- Preserve original room architecture (walls, floors, ceiling)
+- Maintain camera angle and perspective
+- Only add furniture and decor
+- Generate photorealistic results
 
 ---
 
@@ -138,15 +195,15 @@ Full monetization with Stripe.
 - E2E tests for critical user flows
 
 ### Test Checklist
-- [ ] Signup flow works correctly
-- [ ] Login/logout functions properly
-- [ ] Protected routes redirect unauthenticated users
-- [ ] Image upload accepts valid formats
-- [ ] Image upload rejects invalid formats
-- [ ] Staging process completes successfully
-- [ ] Staged images display correctly
+- [x] Signup flow works correctly
+- [x] Login/logout functions properly
+- [x] Protected routes redirect unauthenticated users
+- [x] Image upload accepts valid formats
+- [x] Image upload rejects invalid formats
+- [x] Staging process completes successfully
+- [x] Staged images display correctly
 - [ ] History view shows all past jobs
-- [ ] UI is responsive on all screen sizes
+- [x] UI is responsive on all screen sizes
 
 ---
 
@@ -158,34 +215,31 @@ npm run dev
 # Runs on http://localhost:3000
 ```
 
-### Staging Environment (Vercel Preview)
-- Every PR gets a preview deployment
-- Test new features before merging
-- Share preview links for review
-
 ### Production Environment
+- **URL**: https://stager-tau.vercel.app
 - Main branch auto-deploys to production
 - Environment variables configured in Vercel
 - Supabase connected to production project
 
-### Environment Setup
+### Environment Variables
+| Variable | Description |
+|----------|-------------|
+| `NEXT_PUBLIC_SUPABASE_URL` | Supabase project URL |
+| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Supabase anonymous key |
+| `GOOGLE_GEMINI_API_KEY` | Google AI API key |
+| `NEXT_PUBLIC_APP_URL` | Application URL |
 
-#### Local Development
-1. Clone repository
-2. Copy `.env.example` to `.env.local`
-3. Fill in environment variables
-4. Run `npm install`
-5. Run `npm run dev`
+### Deployment Commands
+```bash
+# Deploy to production
+vercel --prod
 
-#### Vercel Deployment
-1. Connect GitHub repository
-2. Configure environment variables:
-   - `NEXT_PUBLIC_SUPABASE_URL`
-   - `NEXT_PUBLIC_SUPABASE_ANON_KEY`
-   - `SUPABASE_SERVICE_ROLE_KEY`
-   - `GOOGLE_GEMINI_API_KEY`
-   - `NEXT_PUBLIC_APP_URL`
-3. Deploy
+# Check deployment status
+vercel ls
+
+# View logs
+vercel logs
+```
 
 ---
 
@@ -200,10 +254,8 @@ npm run dev
 | Endpoint | Method | Description |
 |----------|--------|-------------|
 | `/api/staging` | POST | Create new staging job |
-| `/api/staging/[id]` | GET | Get staging job status |
-| `/api/staging/[id]` | DELETE | Cancel staging job |
 
-### Properties
+### Properties (Planned)
 | Endpoint | Method | Description |
 |----------|--------|-------------|
 | `/api/properties` | GET | List user's properties |
@@ -212,99 +264,31 @@ npm run dev
 | `/api/properties/[id]` | PUT | Update property |
 | `/api/properties/[id]` | DELETE | Delete property |
 
-### Upload
-| Endpoint | Method | Description |
-|----------|--------|-------------|
-| `/api/upload` | POST | Upload image to storage |
-
 ---
 
-## Database Migrations
+## Database Schema
 
-### Initial Schema
-```sql
--- Enable UUID extension
-create extension if not exists "uuid-ossp";
+### Tables
+- **profiles** - User profiles with credits
+- **properties** - Real estate properties
+- **staging_jobs** - Staging job records
 
--- Profiles table (extends auth.users)
-create table profiles (
-  id uuid references auth.users on delete cascade primary key,
-  full_name text,
-  company_name text,
-  credits_remaining integer default 10,
-  created_at timestamp with time zone default timezone('utc'::text, now()) not null,
-  updated_at timestamp with time zone default timezone('utc'::text, now()) not null
-);
+### Key Fields
+```
+profiles:
+  - id (uuid, references auth.users)
+  - full_name (text)
+  - credits_remaining (integer, default: 10)
 
--- Properties table
-create table properties (
-  id uuid default uuid_generate_v4() primary key,
-  user_id uuid references profiles on delete cascade not null,
-  address text not null,
-  description text,
-  created_at timestamp with time zone default timezone('utc'::text, now()) not null,
-  updated_at timestamp with time zone default timezone('utc'::text, now()) not null
-);
-
--- Staging jobs table
-create table staging_jobs (
-  id uuid default uuid_generate_v4() primary key,
-  user_id uuid references profiles on delete cascade not null,
-  property_id uuid references properties on delete set null,
-  original_image_url text not null,
-  staged_image_url text,
-  room_type text not null,
-  style text not null,
-  status text default 'pending' check (status in ('pending', 'processing', 'completed', 'failed')),
-  error_message text,
-  credits_used integer default 1,
-  created_at timestamp with time zone default timezone('utc'::text, now()) not null,
-  completed_at timestamp with time zone
-);
-
--- Row Level Security (RLS)
-alter table profiles enable row level security;
-alter table properties enable row level security;
-alter table staging_jobs enable row level security;
-
--- Policies
-create policy "Users can view own profile"
-  on profiles for select using (auth.uid() = id);
-
-create policy "Users can update own profile"
-  on profiles for update using (auth.uid() = id);
-
-create policy "Users can view own properties"
-  on properties for select using (auth.uid() = user_id);
-
-create policy "Users can insert own properties"
-  on properties for insert with check (auth.uid() = user_id);
-
-create policy "Users can update own properties"
-  on properties for update using (auth.uid() = user_id);
-
-create policy "Users can delete own properties"
-  on properties for delete using (auth.uid() = user_id);
-
-create policy "Users can view own staging jobs"
-  on staging_jobs for select using (auth.uid() = user_id);
-
-create policy "Users can insert own staging jobs"
-  on staging_jobs for insert with check (auth.uid() = user_id);
-
--- Trigger to create profile on signup
-create or replace function public.handle_new_user()
-returns trigger as $$
-begin
-  insert into public.profiles (id, full_name)
-  values (new.id, new.raw_user_meta_data->>'full_name');
-  return new;
-end;
-$$ language plpgsql security definer;
-
-create trigger on_auth_user_created
-  after insert on auth.users
-  for each row execute procedure public.handle_new_user();
+staging_jobs:
+  - id (uuid)
+  - user_id (uuid)
+  - original_image_url (text)
+  - staged_image_url (text)
+  - room_type (text)
+  - style (text)
+  - status (pending/processing/completed/failed)
+  - credits_used (integer)
 ```
 
 ---
@@ -336,7 +320,8 @@ create trigger on_auth_user_created
 
 | Version | Date | Changes |
 |---------|------|---------|
-| 0.1.0 | TBD | Initial project setup |
-| 0.2.0 | TBD | Authentication complete |
-| 0.3.0 | TBD | Staging feature complete |
+| 0.1.0 | 2025-01-09 | Initial project setup, Next.js + Tailwind + shadcn/ui |
+| 0.2.0 | 2025-01-09 | Authentication complete, dashboard layout |
+| 0.3.0 | 2025-01-09 | Staging feature complete with Gemini 2.5 Flash |
+| 0.3.1 | 2025-01-09 | Improved staging prompt for better room preservation |
 | 1.0.0 | TBD | MVP release |
