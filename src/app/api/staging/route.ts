@@ -112,7 +112,7 @@ export async function POST(request: NextRequest) {
       : publicUrl.publicUrl;
 
     // Update job as completed
-    await supabase
+    const { error: updateError } = await supabase
       .from("staging_jobs")
       .update({
         status: "completed",
@@ -120,6 +120,10 @@ export async function POST(request: NextRequest) {
         completed_at: new Date().toISOString(),
       })
       .eq("id", job.id);
+
+    if (updateError) {
+      console.error("Failed to update job status:", updateError);
+    }
 
     // Deduct credits
     await supabase
