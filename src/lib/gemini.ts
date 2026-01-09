@@ -5,7 +5,7 @@ const genAI = new GoogleGenerativeAI(process.env.GOOGLE_GEMINI_API_KEY || "");
 
 // Use Gemini 2.5 Flash for image generation
 const model = genAI.getGenerativeModel({
-  model: "gemini-2.5-flash-preview-04-17",
+  model: "gemini-2.5-flash",
   generationConfig: {
     // @ts-expect-error - responseModalities is valid for image generation
     responseModalities: ["image", "text"],
