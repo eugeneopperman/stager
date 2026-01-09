@@ -3,8 +3,17 @@ import { ROOM_TYPES, FURNITURE_STYLES, type RoomType, type FurnitureStyle } from
 
 const genAI = new GoogleGenerativeAI(process.env.GOOGLE_GEMINI_API_KEY || "");
 
-// Use Gemini Flash 2.5 (Nano Banana)
-const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash-exp" });
+// Use Gemini 1.5 Flash for better rate limits and stability
+const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+
+// Use Gemini 2.0 Flash for image generation when available
+const imageModel = genAI.getGenerativeModel({
+  model: "gemini-2.0-flash-exp",
+  generationConfig: {
+    // @ts-expect-error - responseModalities is a valid config for image generation
+    responseModalities: ["image", "text"],
+  },
+});
 
 function getRoomLabel(roomId: RoomType): string {
   const room = ROOM_TYPES.find((r) => r.id === roomId);
@@ -23,23 +32,19 @@ function buildStagingPrompt(roomType: RoomType, furnitureStyle: FurnitureStyle):
   const roomLabel = getRoomLabel(roomType);
   const { label: styleLabel, description: styleDescription } = getStyleDetails(furnitureStyle);
 
-  return `You are an expert interior designer and virtual stager for real estate photography.
+  return `Edit this image to virtually stage this empty ${roomLabel} with ${styleLabel} style furniture and decor.
 
-Task: Virtually stage this empty ${roomLabel} with ${styleLabel} style furniture and decor.
+Style: ${styleLabel} - ${styleDescription}
 
-Style Guidelines for ${styleLabel}:
-${styleDescription}
+Instructions:
+- Keep the original room architecture, walls, windows, and flooring exactly as they are
+- Add realistic ${styleLabel} furniture appropriate for a ${roomLabel}
+- Include decor items like artwork, plants, rugs, and lighting
+- Ensure furniture is properly scaled and naturally positioned
+- Maintain the original lighting and add realistic shadows
+- Make it look like a real professionally staged home photo
 
-Requirements:
-1. Keep the original room architecture, walls, windows, and flooring intact
-2. Add appropriate furniture for a ${roomLabel} in ${styleLabel} style
-3. Include tasteful decor items (artwork, plants, rugs, lighting fixtures)
-4. Ensure furniture is properly scaled and positioned
-5. Maintain natural lighting and shadows
-6. Create a warm, inviting atmosphere that appeals to potential home buyers
-7. The staging should look photorealistic and professionally done
-
-Important: The result should look like a real photograph of a professionally staged home, not a rendering or 3D visualization.`;
+Generate a photorealistic staged version of this room.`;
 }
 
 export interface StagingResult {
@@ -49,59 +54,94 @@ export interface StagingResult {
   error?: string;
 }
 
+async function attemptStaging(
+  imageBase64: string,
+  mimeType: string,
+  prompt: string,
+  useImageModel: boolean = true
+): Promise<StagingResult> {
+  const selectedModel = useImageModel ? imageModel : model;
+
+  const result = await selectedModel.generateContent([
+    {
+      inlineData: {
+        mimeType,
+        data: imageBase64,
+      },
+    },
+    prompt,
+  ]);
+
+  const response = await result.response;
+
+  // Check if response contains generated image data
+  const candidates = response.candidates;
+  if (candidates && candidates.length > 0) {
+    const parts = candidates[0].content?.parts;
+    if (parts) {
+      for (const part of parts) {
+        if ("inlineData" in part && part.inlineData) {
+          return {
+            success: true,
+            imageData: part.inlineData.data,
+            mimeType: part.inlineData.mimeType,
+          };
+        }
+      }
+    }
+  }
+
+  // Get text response for error info
+  const text = response.text();
+  return {
+    success: false,
+    error: text || "No staged image was generated.",
+  };
+}
+
 export async function stageImage(
   imageBase64: string,
   mimeType: string,
   roomType: RoomType,
   furnitureStyle: FurnitureStyle
 ): Promise<StagingResult> {
+  const prompt = buildStagingPrompt(roomType, furnitureStyle);
+
+  // Try with image generation model first
   try {
-    const prompt = buildStagingPrompt(roomType, furnitureStyle);
-
-    const result = await model.generateContent([
-      {
-        inlineData: {
-          mimeType,
-          data: imageBase64,
-        },
-      },
-      prompt,
-    ]);
-
-    const response = await result.response;
-    const text = response.text();
-
-    // Note: Gemini 2.0 Flash has image generation capabilities
-    // The actual implementation may need adjustment based on the API response format
-    // For image-to-image transformation, we might need to use a specific configuration
-
-    // Check if response contains generated image data
-    const candidates = response.candidates;
-    if (candidates && candidates.length > 0) {
-      const parts = candidates[0].content?.parts;
-      if (parts) {
-        for (const part of parts) {
-          if ("inlineData" in part && part.inlineData) {
-            return {
-              success: true,
-              imageData: part.inlineData.data,
-              mimeType: part.inlineData.mimeType,
-            };
-          }
-        }
-      }
+    const result = await attemptStaging(imageBase64, mimeType, prompt, true);
+    if (result.success) {
+      return result;
     }
+  } catch (error) {
+    console.error("Image model error, falling back:", error);
+  }
 
-    // If no image was generated, return the text response as error info
+  // Fallback: try with standard model
+  try {
+    const result = await attemptStaging(imageBase64, mimeType, prompt, false);
+    if (result.success) {
+      return result;
+    }
     return {
       success: false,
-      error: text || "No staged image was generated. Please try again.",
+      error: "Image generation is not available. The AI analyzed your image but could not generate a staged version. This feature requires Gemini's image generation capabilities which may have quota limits.",
     };
   } catch (error) {
     console.error("Gemini staging error:", error);
+
+    // Check for rate limit errors
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    if (errorMessage.includes("429") || errorMessage.includes("quota")) {
+      return {
+        success: false,
+        error: "Rate limit exceeded. Please wait a minute and try again, or upgrade your Google AI API plan for higher limits.",
+      };
+    }
+
     return {
       success: false,
-      error: error instanceof Error ? error.message : "Failed to process image",
+      error: errorMessage || "Failed to process image",
     };
   }
 }
