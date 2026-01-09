@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -11,6 +12,14 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+  DropdownMenuSeparator,
+  DropdownMenuLabel,
+} from "@/components/ui/dropdown-menu";
+import {
   Download,
   Eye,
   Clock,
@@ -18,17 +27,32 @@ import {
   XCircle,
   Loader2,
   ArrowLeftRight,
+  Building2,
+  Plus,
+  Check,
+  MapPin,
 } from "lucide-react";
+import { createClient } from "@/lib/supabase/client";
 import type { StagingJob } from "@/lib/database.types";
+import Link from "next/link";
+
+interface PropertyOption {
+  id: string;
+  address: string;
+}
 
 interface HistoryJobCardProps {
   job: StagingJob;
+  properties: PropertyOption[];
 }
 
-export function HistoryJobCard({ job }: HistoryJobCardProps) {
+export function HistoryJobCard({ job, properties }: HistoryJobCardProps) {
+  const router = useRouter();
   const [showDetail, setShowDetail] = useState(false);
   const [showComparison, setShowComparison] = useState(false);
   const [sliderPosition, setSliderPosition] = useState(50);
+  const [isAssigning, setIsAssigning] = useState(false);
+  const [currentPropertyId, setCurrentPropertyId] = useState<string | null>(job.property_id);
 
   const getStatusBadge = (status: string) => {
     switch (status) {
@@ -92,6 +116,27 @@ export function HistoryJobCard({ job }: HistoryJobCardProps) {
     setSliderPosition(Math.max(0, Math.min(100, percentage)));
   };
 
+  const handleAssignToProperty = async (propertyId: string | null) => {
+    setIsAssigning(true);
+    const supabase = createClient();
+
+    const { error } = await supabase
+      .from("staging_jobs")
+      .update({ property_id: propertyId })
+      .eq("id", job.id);
+
+    if (error) {
+      console.error("Failed to assign property:", error);
+    } else {
+      setCurrentPropertyId(propertyId);
+      router.refresh();
+    }
+
+    setIsAssigning(false);
+  };
+
+  const currentProperty = properties.find((p) => p.id === currentPropertyId);
+
   const roomTypeLabel = job.room_type
     .split("-")
     .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
@@ -105,13 +150,18 @@ export function HistoryJobCard({ job }: HistoryJobCardProps) {
   return (
     <>
       <Card className="overflow-hidden hover:shadow-lg transition-shadow">
-        {/* Image Preview */}
-        <div className="relative aspect-video bg-slate-100 dark:bg-slate-900">
+        {/* Image Preview - Clickable */}
+        <div
+          className={`relative aspect-video bg-slate-100 dark:bg-slate-900 ${
+            job.staged_image_url ? "cursor-pointer" : ""
+          }`}
+          onClick={() => job.staged_image_url && setShowDetail(true)}
+        >
           {job.staged_image_url ? (
             <img
               src={job.staged_image_url}
               alt="Staged room"
-              className="w-full h-full object-cover"
+              className="w-full h-full object-cover hover:opacity-90 transition-opacity"
             />
           ) : (
             <div className="flex items-center justify-center h-full">
@@ -126,16 +176,39 @@ export function HistoryJobCard({ job }: HistoryJobCardProps) {
           <div className="absolute top-2 right-2">
             {getStatusBadge(job.status)}
           </div>
+          {/* Click to view hint */}
+          {job.staged_image_url && (
+            <div className="absolute inset-0 flex items-center justify-center bg-black/0 hover:bg-black/20 transition-colors">
+              <div className="opacity-0 hover:opacity-100 transition-opacity">
+                <div className="bg-white/90 dark:bg-slate-800/90 rounded-full p-2">
+                  <Eye className="h-5 w-5 text-slate-700 dark:text-slate-200" />
+                </div>
+              </div>
+            </div>
+          )}
         </div>
 
         <CardContent className="p-4">
           {/* Room Type & Style */}
-          <div className="mb-3">
+          <div className="mb-2">
             <h3 className="font-semibold text-slate-900 dark:text-white">
               {roomTypeLabel}
             </h3>
             <p className="text-sm text-slate-500">{styleLabel} style</p>
           </div>
+
+          {/* Property Badge */}
+          {currentProperty && (
+            <Link
+              href={`/properties/${currentProperty.id}`}
+              className="inline-flex items-center gap-1 text-xs text-blue-600 hover:text-blue-800 mb-2"
+            >
+              <MapPin className="h-3 w-3" />
+              {currentProperty.address.length > 30
+                ? currentProperty.address.substring(0, 30) + "..."
+                : currentProperty.address}
+            </Link>
+          )}
 
           {/* Date */}
           <p className="text-xs text-slate-400 mb-4">
@@ -163,6 +236,61 @@ export function HistoryJobCard({ job }: HistoryJobCardProps) {
                 <Download className="h-4 w-4 mr-1" />
                 Download
               </Button>
+              {/* Add to Property Dropdown */}
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    disabled={isAssigning}
+                    className="px-2"
+                  >
+                    {isAssigning ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : (
+                      <Building2 className="h-4 w-4" />
+                    )}
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-56">
+                  <DropdownMenuLabel>Add to Property</DropdownMenuLabel>
+                  <DropdownMenuSeparator />
+                  {properties.length > 0 ? (
+                    <>
+                      {properties.map((property) => (
+                        <DropdownMenuItem
+                          key={property.id}
+                          onClick={() => handleAssignToProperty(property.id)}
+                          className="flex items-center justify-between"
+                        >
+                          <span className="truncate">{property.address}</span>
+                          {currentPropertyId === property.id && (
+                            <Check className="h-4 w-4 text-green-600 shrink-0 ml-2" />
+                          )}
+                        </DropdownMenuItem>
+                      ))}
+                      {currentPropertyId && (
+                        <>
+                          <DropdownMenuSeparator />
+                          <DropdownMenuItem
+                            onClick={() => handleAssignToProperty(null)}
+                            className="text-slate-500"
+                          >
+                            Remove from property
+                          </DropdownMenuItem>
+                        </>
+                      )}
+                    </>
+                  ) : (
+                    <DropdownMenuItem asChild>
+                      <Link href="/properties" className="flex items-center">
+                        <Plus className="h-4 w-4 mr-2" />
+                        Create a property first
+                      </Link>
+                    </DropdownMenuItem>
+                  )}
+                </DropdownMenuContent>
+              </DropdownMenu>
             </div>
           )}
 

@@ -27,6 +27,13 @@ export default async function HistoryPage() {
     .eq("user_id", user?.id)
     .order("created_at", { ascending: false });
 
+  // Fetch all properties for the user (for "Add to Property" feature)
+  const { data: properties } = await supabase
+    .from("properties")
+    .select("id, address")
+    .eq("user_id", user?.id)
+    .order("address", { ascending: true });
+
   const completedJobs = jobs?.filter((job) => job.status === "completed") || [];
   const pendingJobs = jobs?.filter((job) => job.status === "processing" || job.status === "pending") || [];
   const failedJobs = jobs?.filter((job) => job.status === "failed") || [];
@@ -102,7 +109,7 @@ export default async function HistoryPage() {
           </h2>
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
             {jobs.map((job) => (
-              <HistoryJobCard key={job.id} job={job} />
+              <HistoryJobCard key={job.id} job={job} properties={properties || []} />
             ))}
           </div>
         </div>
