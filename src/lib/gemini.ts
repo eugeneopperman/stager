@@ -3,9 +3,10 @@ import { ROOM_TYPES, FURNITURE_STYLES, type RoomType, type FurnitureStyle } from
 
 const genAI = new GoogleGenerativeAI(process.env.GOOGLE_GEMINI_API_KEY || "");
 
-// Use Gemini 2.5 Flash for image generation
+// Use Gemini 2.0 Flash Experimental for image generation
+// Note: This is currently the only Gemini model that supports image output
 const model = genAI.getGenerativeModel({
-  model: "gemini-2.5-flash",
+  model: "gemini-2.0-flash-exp",
   generationConfig: {
     // @ts-expect-error - responseModalities is valid for image generation
     responseModalities: ["image", "text"],
