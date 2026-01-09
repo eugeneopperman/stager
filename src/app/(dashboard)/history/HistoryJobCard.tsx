@@ -222,15 +222,6 @@ export function HistoryJobCard({ job, properties }: HistoryJobCardProps) {
                 variant="outline"
                 size="sm"
                 className="flex-1"
-                onClick={() => setShowDetail(true)}
-              >
-                <Eye className="h-4 w-4 mr-1" />
-                View
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                className="flex-1"
                 onClick={handleDownload}
               >
                 <Download className="h-4 w-4 mr-1" />
@@ -243,12 +234,14 @@ export function HistoryJobCard({ job, properties }: HistoryJobCardProps) {
                     variant="outline"
                     size="sm"
                     disabled={isAssigning}
-                    className="px-2"
                   >
                     {isAssigning ? (
                       <Loader2 className="h-4 w-4 animate-spin" />
                     ) : (
-                      <Building2 className="h-4 w-4" />
+                      <>
+                        <Building2 className="h-4 w-4 mr-1" />
+                        Property
+                      </>
                     )}
                   </Button>
                 </DropdownMenuTrigger>
