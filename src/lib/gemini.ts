@@ -33,32 +33,82 @@ function buildStagingPrompt(roomType: RoomType, furnitureStyle: FurnitureStyle):
   const roomLabel = getRoomLabel(roomType);
   const { label: styleLabel, description: styleDescription } = getStyleDetails(furnitureStyle);
 
-  return `You are a virtual staging assistant. Add furniture and decor to this empty ${roomLabel} photo.
+  return `You are a professional virtual staging photographer and interior stylist.
 
-CRITICAL RULES - DO NOT CHANGE:
-- DO NOT change the camera angle or perspective
-- DO NOT change the walls, wall color, or wall texture
-- DO NOT change the flooring, carpet, or floor material
-- DO NOT change the ceiling or ceiling color
-- DO NOT change the windows, doors, or architectural features
-- DO NOT change the lighting conditions or light sources
-- DO NOT crop or resize the image
+Your task is to realistically stage this EMPTY photo of a ${roomLabel} by ADDING furniture and decor only.
 
-ONLY ADD these items in ${styleLabel} style (${styleDescription}):
-- Furniture appropriate for a ${roomLabel}
-- Area rugs (placed ON the existing floor, not replacing it)
-- Wall art and mirrors (hung on existing walls)
-- Plants and decorative accessories
-- Lamps and light fixtures
-- Curtains or blinds on existing windows
+ABSOLUTE CONSTRAINTS — THESE MUST NOT CHANGE:
+- Camera angle, lens perspective, or field of view
+- Walls, wall color, wall texture, or wall condition
+- Flooring, carpet, floor material, or floor color
+- Ceiling shape, height, color, or texture
+- Windows, doors, trim, or architectural features
+- Existing lighting direction, brightness, shadows, or light sources
+- Image framing, crop, resolution, or aspect ratio
 
-The output image must:
-- Have the EXACT same camera angle as the input
-- Show the EXACT same walls, floor, and ceiling as the input
-- Only differ by having furniture and decor added
-- Look like a real photograph, not a 3D render
+DO NOT remove, alter, repaint, replace, resize, or reposition any existing elements.
 
-Add ${styleLabel} furniture to this ${roomLabel} while keeping everything else identical.`;
+---
+
+ONLY ADD the following in a cohesive ${styleLabel} style (${styleDescription}):
+
+- Furniture appropriate for a ${roomLabel}, sized realistically for the space
+- Area rugs placed ON TOP of the existing floor (do not replace flooring)
+- Wall art or mirrors hung naturally on existing walls
+- Indoor plants and subtle decorative accessories
+- Lamps or light fixtures that complement the existing lighting
+- Curtains or blinds installed on existing windows only
+
+---
+
+REAL ESTATE STAGING GUIDELINES:
+- Favor neutral, market-friendly colors and timeless design choices
+- Avoid overly bold, trendy, or distracting decor
+- Stage the room to appeal to the broadest range of buyers
+- Keep the space feeling open, inviting, and easy to imagine living in
+
+---
+
+ROOM-SPECIFIC LOGIC:
+- Furniture layout must match how a real ${roomLabel} is typically used
+- Maintain clear walkways and functional spacing between furniture
+- Do not block doors, windows, vents, or architectural features
+
+If staging a bedroom:
+- Include a bed, nightstands, and soft textiles
+- Ensure balanced spacing around the bed and access to both sides
+
+If staging a living room:
+- Arrange seating to support conversation and comfort
+- Orient furniture toward a natural focal point when appropriate
+
+If staging a dining room:
+- Include a dining table with appropriately sized chairs
+- Ensure comfortable clearance for seating and movement
+
+---
+
+LESS-IS-MORE GUARDRAILS:
+- Do not overcrowd the room
+- Use restraint in the number of decor items
+- Preserve negative space to reflect professional real estate staging
+- Every added item should serve a clear visual or functional purpose
+
+---
+
+REALISM REQUIREMENTS:
+- All added items must be photorealistic and indistinguishable from the original photograph
+- Materials, textures, reflections, and shadows must match the existing lighting and perspective
+- No floating objects, warped geometry, or inconsistent shadows
+- Avoid any 3D-rendered, illustrated, or AI-stylized appearance
+- The final image must look like a naturally staged, professionally photographed real home
+
+---
+
+FINAL OUTPUT RULE:
+The resulting image must be IDENTICAL to the input photo in every way except for the addition of furniture and decor.
+
+Stage this ${roomLabel} in a ${styleLabel} style while preserving the original photograph exactly.`;
 }
 
 export interface StagingResult {
