@@ -11,10 +11,12 @@ import {
   Settings,
   CreditCard,
   LogOut,
+  AlertTriangle,
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
+import { LOW_CREDITS_THRESHOLD } from "@/lib/constants";
 
 const navigation = [
   { name: "Dashboard", href: "/dashboard", icon: Home },
@@ -53,14 +55,36 @@ export function Sidebar({ credits = 0 }: SidebarProps) {
 
       {/* Credits Badge */}
       <div className="px-4 py-4">
-        <div className="rounded-lg bg-gradient-to-r from-blue-600 to-blue-700 p-4">
-          <p className="text-xs font-medium text-blue-200">Available Credits</p>
+        <div
+          className={cn(
+            "rounded-lg p-4",
+            credits <= LOW_CREDITS_THRESHOLD
+              ? "bg-gradient-to-r from-amber-500 to-amber-600"
+              : "bg-gradient-to-r from-blue-600 to-blue-700"
+          )}
+        >
+          <div className="flex items-center gap-2">
+            {credits <= LOW_CREDITS_THRESHOLD && (
+              <AlertTriangle className="h-4 w-4 text-amber-100" />
+            )}
+            <p
+              className={cn(
+                "text-xs font-medium",
+                credits <= LOW_CREDITS_THRESHOLD ? "text-amber-100" : "text-blue-200"
+              )}
+            >
+              {credits <= LOW_CREDITS_THRESHOLD ? "Low Credits" : "Available Credits"}
+            </p>
+          </div>
           <p className="text-2xl font-bold text-white">{credits}</p>
           <Link
             href="/billing"
-            className="mt-2 inline-block text-xs text-blue-200 hover:text-white transition-colors"
+            className={cn(
+              "mt-2 inline-block text-xs hover:text-white transition-colors",
+              credits <= LOW_CREDITS_THRESHOLD ? "text-amber-100" : "text-blue-200"
+            )}
           >
-            Get more credits →
+            {credits <= LOW_CREDITS_THRESHOLD ? "Buy more credits →" : "Get more credits →"}
           </Link>
         </div>
       </div>

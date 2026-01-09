@@ -40,13 +40,13 @@ The main AI-powered staging functionality.
 - [x] Implement before/after comparison slider
 - [x] Create staging job management
 - [x] Credit deduction on successful staging
-- [ ] Add staging history view
+- [x] Add staging history view
 
 #### Deliverables
 - ✅ Fully functional virtual staging with AI
 - ✅ Intuitive staging workflow
 - ✅ Image comparison tool
-- ⏳ Job history and status tracking (pending)
+- ✅ Job history and status tracking
 
 ---
 
@@ -68,21 +68,22 @@ Property organization and batch processing.
 
 ---
 
-### Phase 4: Credits & Usage Tracking
+### Phase 4: Credits & Usage Tracking ✅ COMPLETE
 Prepare for monetization with usage tracking.
 
 #### Milestones
 - [x] Implement credit balance system (basic)
 - [x] Add credit deduction on staging
-- [ ] Create usage history view
+- [x] Create usage history view
 - [x] Build credit balance UI components
-- [ ] Add low-credit warnings
-- [ ] Implement usage analytics dashboard
+- [x] Add low-credit warnings
+- [x] Implement usage analytics dashboard
 
 #### Deliverables
-- Credit tracking system
-- Usage analytics
-- Foundation for billing integration
+- ✅ Credit tracking system
+- ✅ Usage analytics on billing page
+- ✅ Low credit warnings (sidebar + dashboard + staging page)
+- ✅ Foundation for billing integration
 
 ---
 
@@ -129,15 +130,15 @@ Full monetization with Stripe.
 | Image upload | High | ✅ Complete |
 | AI staging | High | ✅ Complete |
 | Before/after comparison | High | ✅ Complete |
-| Staging history | Medium | ⏳ In Progress |
+| Staging history | Medium | ✅ Complete |
 
 ### Post-MVP Features (Phases 3-5)
 | Feature | Priority | Status |
 |---------|----------|--------|
 | Property management | Medium | Planned |
 | Batch processing | Medium | Planned |
-| Credits system | Medium | Partial |
-| Analytics dashboard | Low | Planned |
+| Credits system | Medium | ✅ Complete |
+| Analytics dashboard | Low | ✅ Complete |
 | Payment integration | Low | Planned |
 | Team accounts | Low | Future |
 
@@ -202,7 +203,7 @@ The staging prompt is designed to:
 - [x] Image upload rejects invalid formats
 - [x] Staging process completes successfully
 - [x] Staged images display correctly
-- [ ] History view shows all past jobs
+- [x] History view shows all past jobs
 - [x] UI is responsive on all screen sizes
 
 ---
@@ -324,4 +325,6 @@ staging_jobs:
 | 0.2.0 | 2025-01-09 | Authentication complete, dashboard layout |
 | 0.3.0 | 2025-01-09 | Staging feature complete with Gemini 2.5 Flash |
 | 0.3.1 | 2025-01-09 | Improved staging prompt for better room preservation |
+| 0.4.0 | 2025-01-09 | Staging history page complete |
+| 0.5.0 | 2025-01-09 | Credits system complete: low credit warnings, billing page with usage analytics |
 | 1.0.0 | TBD | MVP release |

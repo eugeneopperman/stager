@@ -2,19 +2,22 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { ImageUploader } from "@/components/staging/ImageUploader";
 import { RoomTypeSelector } from "@/components/staging/RoomTypeSelector";
 import { StyleSelector } from "@/components/staging/StyleSelector";
 import { StagingResult } from "@/components/staging/StagingResult";
-import { type RoomType, type FurnitureStyle } from "@/lib/constants";
-import { Sparkles, Loader2, AlertCircle } from "lucide-react";
+import { useDashboard } from "@/contexts/DashboardContext";
+import { type RoomType, type FurnitureStyle, LOW_CREDITS_THRESHOLD, CREDITS_PER_STAGING } from "@/lib/constants";
+import { Sparkles, Loader2, AlertCircle, AlertTriangle, CreditCard } from "lucide-react";
 
 type StagingState = "upload" | "processing" | "complete" | "error";
 
 export default function StagePage() {
   const router = useRouter();
+  const { credits } = useDashboard();
   const [state, setState] = useState<StagingState>("upload");
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [preview, setPreview] = useState<string | null>(null);
@@ -22,6 +25,9 @@ export default function StagePage() {
   const [style, setStyle] = useState<FurnitureStyle | null>(null);
   const [stagedImage, setStagedImage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+
+  const isLowCredits = credits <= LOW_CREDITS_THRESHOLD;
+  const hasNoCredits = credits < CREDITS_PER_STAGING;
 
   const handleImageSelect = (file: File, previewUrl: string) => {
     setSelectedFile(file);
@@ -113,7 +119,7 @@ export default function StagePage() {
   };
 
   const isProcessing = state === "processing";
-  const canStage = selectedFile && roomType && style && !isProcessing;
+  const canStage = selectedFile && roomType && style && !isProcessing && !hasNoCredits;
 
   // Show result view
   if (state === "complete" && stagedImage && preview) {
@@ -148,6 +154,51 @@ export default function StagePage() {
           Upload an empty room photo and transform it with AI
         </p>
       </div>
+
+      {/* No Credits Warning */}
+      {hasNoCredits && (
+        <Card className="border-red-200 bg-red-50 dark:bg-red-950/50 dark:border-red-900">
+          <CardContent className="flex items-center gap-3 p-4">
+            <CreditCard className="h-5 w-5 text-red-600 shrink-0" />
+            <div className="flex-1">
+              <p className="font-medium text-red-800 dark:text-red-200">
+                No Credits Remaining
+              </p>
+              <p className="text-sm text-red-600 dark:text-red-400">
+                You need at least {CREDITS_PER_STAGING} credit to stage a photo. Purchase more credits to continue.
+              </p>
+            </div>
+            <Button asChild size="sm">
+              <Link href="/billing">
+                <CreditCard className="mr-2 h-4 w-4" />
+                Buy Credits
+              </Link>
+            </Button>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Low Credits Warning */}
+      {isLowCredits && !hasNoCredits && (
+        <Card className="border-amber-200 bg-amber-50 dark:bg-amber-950/50 dark:border-amber-900">
+          <CardContent className="flex items-center gap-3 p-4">
+            <AlertTriangle className="h-5 w-5 text-amber-600 shrink-0" />
+            <div className="flex-1">
+              <p className="font-medium text-amber-800 dark:text-amber-200">
+                Low Credits Warning
+              </p>
+              <p className="text-sm text-amber-600 dark:text-amber-400">
+                You have only {credits} credit{credits !== 1 ? "s" : ""} remaining. Consider purchasing more to avoid interruptions.
+              </p>
+            </div>
+            <Button asChild variant="outline" size="sm">
+              <Link href="/billing">
+                Get More Credits
+              </Link>
+            </Button>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Error Alert */}
       {(error || state === "error") && (

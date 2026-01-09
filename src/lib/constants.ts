@@ -72,6 +72,7 @@ export type StagingStatus = (typeof STAGING_STATUS)[keyof typeof STAGING_STATUS]
 
 export const DEFAULT_CREDITS = 10;
 export const CREDITS_PER_STAGING = 1;
+export const LOW_CREDITS_THRESHOLD = 3; // Show warning when credits fall to this level or below
 
 export const ACCEPTED_IMAGE_TYPES = [
   "image/jpeg",

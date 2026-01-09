@@ -2,8 +2,9 @@ import { createClient } from "@/lib/supabase/server";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { ImagePlus, Building2, Clock, TrendingUp, ArrowRight } from "lucide-react";
+import { ImagePlus, Building2, Clock, TrendingUp, ArrowRight, AlertTriangle, CreditCard } from "lucide-react";
 import Link from "next/link";
+import { LOW_CREDITS_THRESHOLD, CREDITS_PER_STAGING } from "@/lib/constants";
 
 export default async function DashboardPage() {
   const supabase = await createClient();
@@ -36,6 +37,17 @@ export default async function DashboardPage() {
     .select("*", { count: "exact", head: true })
     .eq("user_id", user?.id)
     .eq("status", "completed");
+
+  // Fetch user credits
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("credits_remaining")
+    .eq("id", user?.id)
+    .single();
+
+  const credits = profile?.credits_remaining || 0;
+  const isLowCredits = credits <= LOW_CREDITS_THRESHOLD;
+  const hasNoCredits = credits < CREDITS_PER_STAGING;
 
   const stats = [
     {
@@ -85,6 +97,51 @@ export default async function DashboardPage() {
           Here&apos;s an overview of your staging activity
         </p>
       </div>
+
+      {/* No Credits Warning */}
+      {hasNoCredits && (
+        <Card className="border-red-200 bg-red-50 dark:bg-red-950/50 dark:border-red-900">
+          <CardContent className="flex items-center gap-3 p-4">
+            <CreditCard className="h-5 w-5 text-red-600 shrink-0" />
+            <div className="flex-1">
+              <p className="font-medium text-red-800 dark:text-red-200">
+                No Credits Remaining
+              </p>
+              <p className="text-sm text-red-600 dark:text-red-400">
+                You&apos;ve run out of staging credits. Purchase more to continue staging photos.
+              </p>
+            </div>
+            <Button asChild size="sm">
+              <Link href="/billing">
+                <CreditCard className="mr-2 h-4 w-4" />
+                Buy Credits
+              </Link>
+            </Button>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Low Credits Warning */}
+      {isLowCredits && !hasNoCredits && (
+        <Card className="border-amber-200 bg-amber-50 dark:bg-amber-950/50 dark:border-amber-900">
+          <CardContent className="flex items-center gap-3 p-4">
+            <AlertTriangle className="h-5 w-5 text-amber-600 shrink-0" />
+            <div className="flex-1">
+              <p className="font-medium text-amber-800 dark:text-amber-200">
+                Running Low on Credits
+              </p>
+              <p className="text-sm text-amber-600 dark:text-amber-400">
+                You have {credits} credit{credits !== 1 ? "s" : ""} remaining. Consider purchasing more to avoid interruptions.
+              </p>
+            </div>
+            <Button asChild variant="outline" size="sm">
+              <Link href="/billing">
+                Get More Credits
+              </Link>
+            </Button>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Quick Actions */}
       <Card className="bg-gradient-to-r from-blue-600 to-blue-700 border-0">
