@@ -32,11 +32,12 @@ export async function POST(request: NextRequest) {
 
     // Parse request body
     const body = await request.json();
-    const { image, mimeType, roomType, style } = body as {
+    const { image, mimeType, roomType, style, propertyId } = body as {
       image: string;
       mimeType: string;
       roomType: RoomType;
       style: FurnitureStyle;
+      propertyId?: string;
     };
 
     if (!image || !mimeType || !roomType || !style) {
@@ -51,6 +52,7 @@ export async function POST(request: NextRequest) {
       .from("staging_jobs")
       .insert({
         user_id: user.id,
+        property_id: propertyId || null,
         original_image_url: `data:${mimeType};base64,${image.substring(0, 100)}...`, // Store truncated for reference
         room_type: roomType,
         style: style,

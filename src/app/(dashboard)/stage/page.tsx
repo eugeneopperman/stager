@@ -1,23 +1,29 @@
 "use client";
 
-import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useState, useEffect } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import { ImageUploader } from "@/components/staging/ImageUploader";
 import { RoomTypeSelector } from "@/components/staging/RoomTypeSelector";
 import { StyleSelector } from "@/components/staging/StyleSelector";
 import { StagingResult } from "@/components/staging/StagingResult";
 import { useDashboard } from "@/contexts/DashboardContext";
+import { createClient } from "@/lib/supabase/client";
 import { type RoomType, type FurnitureStyle, LOW_CREDITS_THRESHOLD, CREDITS_PER_STAGING } from "@/lib/constants";
-import { Sparkles, Loader2, AlertCircle, AlertTriangle, CreditCard } from "lucide-react";
+import type { Property } from "@/lib/database.types";
+import { Sparkles, Loader2, AlertCircle, AlertTriangle, CreditCard, MapPin, X } from "lucide-react";
 
 type StagingState = "upload" | "processing" | "complete" | "error";
 
 export default function StagePage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const propertyId = searchParams.get("property");
   const { credits } = useDashboard();
+
   const [state, setState] = useState<StagingState>("upload");
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [preview, setPreview] = useState<string | null>(null);
@@ -25,9 +31,31 @@ export default function StagePage() {
   const [style, setStyle] = useState<FurnitureStyle | null>(null);
   const [stagedImage, setStagedImage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [property, setProperty] = useState<Property | null>(null);
 
   const isLowCredits = credits <= LOW_CREDITS_THRESHOLD;
   const hasNoCredits = credits < CREDITS_PER_STAGING;
+
+  // Fetch property details if propertyId is provided
+  useEffect(() => {
+    async function fetchProperty() {
+      if (!propertyId) {
+        setProperty(null);
+        return;
+      }
+
+      const supabase = createClient();
+      const { data } = await supabase
+        .from("properties")
+        .select("*")
+        .eq("id", propertyId)
+        .single();
+
+      setProperty(data);
+    }
+
+    fetchProperty();
+  }, [propertyId]);
 
   const handleImageSelect = (file: File, previewUrl: string) => {
     setSelectedFile(file);
@@ -74,6 +102,7 @@ export default function StagePage() {
           mimeType: selectedFile.type,
           roomType,
           style,
+          propertyId: propertyId || undefined,
         }),
       });
 
@@ -154,6 +183,33 @@ export default function StagePage() {
           Upload an empty room photo and transform it with AI
         </p>
       </div>
+
+      {/* Property Info */}
+      {property && (
+        <Card className="border-blue-200 bg-blue-50 dark:bg-blue-950/30 dark:border-blue-900">
+          <CardContent className="flex items-center gap-3 p-4">
+            <div className="p-2 rounded-lg bg-blue-100 dark:bg-blue-900">
+              <MapPin className="h-5 w-5 text-blue-600" />
+            </div>
+            <div className="flex-1">
+              <p className="font-medium text-blue-800 dark:text-blue-200">
+                Staging for Property
+              </p>
+              <p className="text-sm text-blue-600 dark:text-blue-400">
+                {property.address}
+              </p>
+            </div>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="text-blue-600 hover:text-blue-800 hover:bg-blue-100"
+              onClick={() => router.push("/stage")}
+            >
+              <X className="h-4 w-4" />
+            </Button>
+          </CardContent>
+        </Card>
+      )}
 
       {/* No Credits Warning */}
       {hasNoCredits && (

@@ -50,21 +50,22 @@ The main AI-powered staging functionality.
 
 ---
 
-### Phase 3: Property Management
+### Phase 3: Property Management ✅ COMPLETE
 Property organization and batch processing.
 
 #### Milestones
-- [ ] Create property CRUD operations
-- [ ] Build property listing page
-- [ ] Implement property detail view
-- [ ] Add multiple image support per property
-- [ ] Create batch staging capability
-- [ ] Implement property search and filtering
+- [x] Create property CRUD operations
+- [x] Build property listing page
+- [x] Implement property detail view with image gallery
+- [x] Link staging jobs to properties
+- [ ] Create batch staging capability (future)
+- [ ] Implement property search and filtering (future)
 
 #### Deliverables
-- Complete property management system
-- Organized image galleries per property
-- Batch processing for efficiency
+- ✅ Complete property management system
+- ✅ Organized image galleries per property
+- ✅ Direct staging from property pages
+- ⏳ Batch processing (planned for future)
 
 ---
 
@@ -135,8 +136,8 @@ Full monetization with Stripe.
 ### Post-MVP Features (Phases 3-5)
 | Feature | Priority | Status |
 |---------|----------|--------|
-| Property management | Medium | Planned |
-| Batch processing | Medium | Planned |
+| Property management | Medium | ✅ Complete |
+| Batch processing | Medium | Future |
 | Credits system | Medium | ✅ Complete |
 | Analytics dashboard | Low | ✅ Complete |
 | Payment integration | Low | Planned |
@@ -327,4 +328,5 @@ staging_jobs:
 | 0.3.1 | 2025-01-09 | Improved staging prompt for better room preservation |
 | 0.4.0 | 2025-01-09 | Staging history page complete |
 | 0.5.0 | 2025-01-09 | Credits system complete: low credit warnings, billing page with usage analytics |
+| 0.6.0 | 2025-01-09 | Property management: CRUD, listing, detail pages, linked staging |
 | 1.0.0 | TBD | MVP release |
