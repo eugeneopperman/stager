@@ -6,6 +6,7 @@ import { cn } from "@/lib/utils";
 import {
   Home,
   ImagePlus,
+  Images,
   Building2,
   History,
   Settings,
@@ -21,6 +22,7 @@ import { LOW_CREDITS_THRESHOLD } from "@/lib/constants";
 const navigation = [
   { name: "Dashboard", href: "/dashboard", icon: Home },
   { name: "Stage Photo", href: "/stage", icon: ImagePlus },
+  { name: "Batch Stage", href: "/stage/batch", icon: Images },
   { name: "Properties", href: "/properties", icon: Building2 },
   { name: "History", href: "/history", icon: History },
 ];

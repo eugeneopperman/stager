@@ -82,3 +82,4 @@ export const ACCEPTED_IMAGE_TYPES = [
 ];
 
 export const MAX_IMAGE_SIZE = 10 * 1024 * 1024; // 10MB
+export const MAX_BATCH_SIZE = 10; // Maximum images per batch staging
