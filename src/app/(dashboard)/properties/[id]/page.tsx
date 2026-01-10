@@ -14,6 +14,7 @@ import {
   CheckCircle2,
   Clock,
   XCircle,
+  FolderDown,
 } from "lucide-react";
 import Link from "next/link";
 import { PropertyActions } from "./PropertyActions";
@@ -141,6 +142,14 @@ export default async function PropertyDetailPage({ params }: PropertyDetailPageP
         </div>
         <div className="flex gap-2">
           <PropertyActions property={property} />
+          {completedJobs.length > 0 && (
+            <Button variant="outline" asChild>
+              <a href={`/api/properties/${property.id}/download`} download>
+                <FolderDown className="mr-2 h-4 w-4" />
+                Download All
+              </a>
+            </Button>
+          )}
           <Button asChild>
             <Link href={`/stage?property=${property.id}`}>
               <ImagePlus className="mr-2 h-4 w-4" />
@@ -180,11 +189,21 @@ export default async function PropertyDetailPage({ params }: PropertyDetailPageP
 
       {/* Staged Images Gallery */}
       <Card>
-        <CardHeader>
-          <CardTitle>Staged Photos</CardTitle>
-          <CardDescription>
-            All virtual staging jobs for this property
-          </CardDescription>
+        <CardHeader className="flex flex-row items-center justify-between">
+          <div>
+            <CardTitle>Staged Photos</CardTitle>
+            <CardDescription>
+              All virtual staging jobs for this property
+            </CardDescription>
+          </div>
+          {completedJobs.length > 0 && (
+            <Button variant="outline" size="sm" asChild>
+              <a href={`/api/properties/${property.id}/download`} download>
+                <FolderDown className="mr-2 h-4 w-4" />
+                Download All ({completedJobs.length})
+              </a>
+            </Button>
+          )}
         </CardHeader>
         <CardContent>
           {completedJobs.length > 0 ? (

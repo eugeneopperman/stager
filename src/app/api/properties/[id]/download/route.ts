@@ -1,0 +1,125 @@
+import { NextRequest, NextResponse } from "next/server";
+import { createClient } from "@/lib/supabase/server";
+import JSZip from "jszip";
+
+export async function GET(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  const { id } = await params;
+  const supabase = await createClient();
+
+  // Get authenticated user
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  // Fetch property (with user check for security)
+  const { data: property, error: propertyError } = await supabase
+    .from("properties")
+    .select("*")
+    .eq("id", id)
+    .eq("user_id", user.id)
+    .single();
+
+  if (propertyError || !property) {
+    return NextResponse.json({ error: "Property not found" }, { status: 404 });
+  }
+
+  // Fetch all completed staging jobs for this property
+  const { data: stagingJobs, error: jobsError } = await supabase
+    .from("staging_jobs")
+    .select("*")
+    .eq("property_id", id)
+    .eq("status", "completed")
+    .order("created_at", { ascending: true });
+
+  if (jobsError) {
+    return NextResponse.json({ error: "Failed to fetch staging jobs" }, { status: 500 });
+  }
+
+  if (!stagingJobs || stagingJobs.length === 0) {
+    return NextResponse.json({ error: "No completed images to download" }, { status: 400 });
+  }
+
+  // Create ZIP file
+  const zip = new JSZip();
+
+  // Create folder name from address (sanitize for filesystem)
+  const folderName = property.address
+    .replace(/[^a-zA-Z0-9\s-]/g, "")
+    .replace(/\s+/g, "-")
+    .substring(0, 100);
+
+  const folder = zip.folder(folderName);
+  if (!folder) {
+    return NextResponse.json({ error: "Failed to create ZIP folder" }, { status: 500 });
+  }
+
+  // Track room type counts for unique naming
+  const roomTypeCounts: Record<string, number> = {};
+
+  // Fetch and add each image to the ZIP
+  for (const job of stagingJobs) {
+    if (!job.staged_image_url) continue;
+
+    try {
+      // Format room type for filename
+      const roomType = job.room_type
+        .split("-")
+        .map((word: string) => word.charAt(0).toUpperCase() + word.slice(1))
+        .join("-");
+
+      // Track count for this room type
+      roomTypeCounts[roomType] = (roomTypeCounts[roomType] || 0) + 1;
+      const count = roomTypeCounts[roomType];
+
+      // Create filename: Room-Type-Style-1.png (only add number if multiple of same room type)
+      const style = job.style.charAt(0).toUpperCase() + job.style.slice(1);
+      const suffix = count > 1 ? `-${count}` : "";
+      const filename = `${roomType}-${style}${suffix}.png`;
+
+      // Fetch the image
+      let imageData: ArrayBuffer;
+
+      if (job.staged_image_url.startsWith("data:")) {
+        // Handle base64 data URLs
+        const base64Data = job.staged_image_url.split(",")[1];
+        const binaryString = atob(base64Data);
+        const bytes = new Uint8Array(binaryString.length);
+        for (let i = 0; i < binaryString.length; i++) {
+          bytes[i] = binaryString.charCodeAt(i);
+        }
+        imageData = bytes.buffer;
+      } else {
+        // Fetch from URL
+        const response = await fetch(job.staged_image_url);
+        if (!response.ok) {
+          console.error(`Failed to fetch image: ${job.staged_image_url}`);
+          continue;
+        }
+        imageData = await response.arrayBuffer();
+      }
+
+      folder.file(filename, imageData);
+    } catch (error) {
+      console.error(`Error processing image for job ${job.id}:`, error);
+      continue;
+    }
+  }
+
+  // Generate ZIP
+  const zipContent = await zip.generateAsync({ type: "arraybuffer" });
+
+  // Return ZIP file
+  return new NextResponse(zipContent, {
+    headers: {
+      "Content-Type": "application/zip",
+      "Content-Disposition": `attachment; filename="${folderName}.zip"`,
+    },
+  });
+}
