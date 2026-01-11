@@ -1,10 +1,8 @@
 import { createClient } from "@/lib/supabase/server";
 import { Card, CardContent } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Building2, Plus, MapPin, ImageIcon } from "lucide-react";
-import Link from "next/link";
-import { PropertyCard } from "./PropertyCard";
+import { Building2, ImageIcon } from "lucide-react";
 import { CreatePropertyButton } from "./CreatePropertyButton";
+import { PropertiesListClient } from "./PropertiesListClient";
 
 export default async function PropertiesPage() {
   const supabase = await createClient();
@@ -84,27 +82,8 @@ export default async function PropertiesPage() {
         </Card>
       </div>
 
-      {/* Properties Grid */}
-      {propertiesWithCounts.length > 0 ? (
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-          {propertiesWithCounts.map((property) => (
-            <PropertyCard key={property.id} property={property} />
-          ))}
-        </div>
-      ) : (
-        <Card>
-          <CardContent className="flex flex-col items-center justify-center py-16">
-            <Building2 className="h-12 w-12 text-slate-300 mb-4" />
-            <h3 className="text-lg font-medium text-slate-900 dark:text-white mb-2">
-              No properties yet
-            </h3>
-            <p className="text-slate-500 text-center mb-6 max-w-sm">
-              Add your first property to organize your staging projects
-            </p>
-            <CreatePropertyButton />
-          </CardContent>
-        </Card>
-      )}
+      {/* Properties List with Search & Filter */}
+      <PropertiesListClient properties={propertiesWithCounts} />
     </div>
   );
 }
