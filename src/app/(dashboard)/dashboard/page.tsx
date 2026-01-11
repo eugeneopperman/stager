@@ -205,9 +205,24 @@ export default async function DashboardPage() {
                   className="flex items-center justify-between p-4 rounded-lg bg-slate-50 dark:bg-slate-900"
                 >
                   <div className="flex items-center gap-4">
-                    <div className="h-12 w-12 rounded-lg bg-slate-200 dark:bg-slate-800 flex items-center justify-center">
-                      <ImagePlus className="h-6 w-6 text-slate-400" />
-                    </div>
+                    {job.staged_image_url && job.status === "completed" ? (
+                      <a
+                        href={job.staged_image_url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="h-12 w-12 rounded-lg overflow-hidden bg-slate-200 dark:bg-slate-800 flex-shrink-0 hover:ring-2 hover:ring-blue-500 transition-all"
+                      >
+                        <img
+                          src={job.staged_image_url}
+                          alt={`${job.room_type} staged`}
+                          className="h-full w-full object-cover"
+                        />
+                      </a>
+                    ) : (
+                      <div className="h-12 w-12 rounded-lg bg-slate-200 dark:bg-slate-800 flex items-center justify-center flex-shrink-0">
+                        <ImagePlus className="h-6 w-6 text-slate-400" />
+                      </div>
+                    )}
                     <div>
                       <p className="font-medium text-slate-900 dark:text-white capitalize">
                         {job.room_type.replace("-", " ")}
