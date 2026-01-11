@@ -58,14 +58,18 @@ Property organization and batch processing.
 - [x] Build property listing page
 - [x] Implement property detail view with image gallery
 - [x] Link staging jobs to properties
-- [ ] Create batch staging capability (future)
-- [ ] Implement property search and filtering (future)
+- [x] Create batch staging capability (up to 10 images)
+- [x] Implement property search and filtering
+- [x] Download all property images as ZIP
 
 #### Deliverables
 - ✅ Complete property management system
 - ✅ Organized image galleries per property
 - ✅ Direct staging from property pages
-- ⏳ Batch processing (planned for future)
+- ✅ Batch processing with per-image room types
+- ✅ Property search by address/description
+- ✅ Sort by date, name, staging count
+- ✅ ZIP download for entire property
 
 ---
 
@@ -137,7 +141,11 @@ Full monetization with Stripe.
 | Feature | Priority | Status |
 |---------|----------|--------|
 | Property management | Medium | ✅ Complete |
-| Batch processing | Medium | Future |
+| Batch processing | Medium | ✅ Complete |
+| Property search & filter | Medium | ✅ Complete |
+| Multiple style variations | Medium | ✅ Complete |
+| Global search bar | Medium | ✅ Complete |
+| ZIP download | Low | ✅ Complete |
 | Credits system | Medium | ✅ Complete |
 | Analytics dashboard | Low | ✅ Complete |
 | Payment integration | Low | Planned |
@@ -257,14 +265,20 @@ vercel logs
 |----------|--------|-------------|
 | `/api/staging` | POST | Create new staging job |
 
-### Properties (Planned)
+### Search
 | Endpoint | Method | Description |
 |----------|--------|-------------|
-| `/api/properties` | GET | List user's properties |
-| `/api/properties` | POST | Create new property |
-| `/api/properties/[id]` | GET | Get property details |
-| `/api/properties/[id]` | PUT | Update property |
-| `/api/properties/[id]` | DELETE | Delete property |
+| `/api/search` | GET | Global search (properties + staging jobs) |
+
+### Properties
+| Endpoint | Method | Description |
+|----------|--------|-------------|
+| `/api/properties/[id]/download` | GET | Download all property images as ZIP |
+
+### Account
+| Endpoint | Method | Description |
+|----------|--------|-------------|
+| `/api/account/delete` | DELETE | Delete user account and data |
 
 ---
 
@@ -329,4 +343,31 @@ staging_jobs:
 | 0.4.0 | 2025-01-09 | Staging history page complete |
 | 0.5.0 | 2025-01-09 | Credits system complete: low credit warnings, billing page with usage analytics |
 | 0.6.0 | 2025-01-09 | Property management: CRUD, listing, detail pages, linked staging |
+| 0.7.0 | 2025-01-10 | ZIP download for property images |
+| 0.8.0 | 2025-01-10 | Batch staging: up to 10 images, per-image room types, single style |
+| 0.8.1 | 2025-01-10 | Dashboard thumbnails clickable, show actual staged images |
+| 0.9.0 | 2025-01-10 | Property search & filtering, sort options |
+| 0.9.1 | 2025-01-10 | Multi-style variations: select up to 3 styles per staging |
+| 0.9.2 | 2025-01-10 | Property assignment in batch staging |
+| 0.9.3 | 2025-01-10 | Updated AI prompt to inpainting-focused structure |
+| 0.9.4 | 2025-01-10 | Global search bar: search properties and staging jobs |
 | 1.0.0 | TBD | MVP release |
+
+---
+
+## Next Steps (Suggested)
+
+### High Priority
+- [ ] History management (delete staging jobs)
+- [ ] Property edit/delete functionality
+- [ ] Before/after slider on individual staged images
+
+### Medium Priority
+- [ ] Shareable links for properties/stagings
+- [ ] Email notifications for batch completion
+- [ ] User onboarding/tutorial
+
+### Low Priority
+- [ ] Payment integration (Stripe)
+- [ ] Team accounts
+- [ ] Usage analytics over time

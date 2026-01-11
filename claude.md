@@ -35,26 +35,43 @@ Stager is a web application designed for real estate agents to virtually stage p
 │   ├── app/                    # Next.js App Router
 │   │   ├── (auth)/            # Auth routes (login, signup)
 │   │   ├── (dashboard)/       # Protected dashboard routes
+│   │   │   ├── dashboard/     # Main dashboard
+│   │   │   ├── stage/         # Single photo staging
+│   │   │   ├── stage/batch/   # Batch staging (up to 10)
+│   │   │   ├── history/       # Staging history
+│   │   │   ├── properties/    # Property management
+│   │   │   ├── billing/       # Billing & usage
+│   │   │   └── settings/      # User settings
 │   │   ├── api/               # API routes
+│   │   │   ├── staging/       # Staging API
+│   │   │   ├── search/        # Global search API
+│   │   │   ├── properties/    # Property APIs (incl. ZIP download)
+│   │   │   └── account/       # Account management
 │   │   ├── layout.tsx         # Root layout
 │   │   ├── page.tsx           # Landing page
 │   │   └── globals.css        # Global styles
 │   │
 │   ├── components/
 │   │   ├── ui/                # shadcn/ui components
-│   │   ├── layout/            # Layout components (Header, Sidebar, Footer)
-│   │   ├── staging/           # Staging feature components
+│   │   ├── layout/            # Header (with search), Sidebar
+│   │   ├── staging/           # Staging components (uploaders, selectors)
 │   │   ├── properties/        # Property management components
 │   │   └── dashboard/         # Dashboard widgets
 │   │
+│   ├── contexts/
+│   │   └── DashboardContext.tsx  # Credits & user state
+│   │
 │   └── lib/
 │       ├── supabase/          # Supabase client configuration
-│       ├── gemini.ts          # Gemini API service
+│       ├── gemini.ts          # Gemini API service with staging prompt
+│       ├── database.types.ts  # TypeScript types for Supabase
 │       ├── utils.ts           # Utility functions
-│       └── constants.ts       # App constants (room types, styles)
+│       └── constants.ts       # Room types, styles, credit thresholds
 │
 ├── public/                    # Static assets
-├── claude.md                  # This file
+├── prompt-structure.txt       # Reference AI staging prompt
+├── CLAUDE.md                  # This file
+├── AGENT.md                   # Agent notes and lessons learned
 ├── process-and-development.md # Development roadmap
 └── package.json
 ```
@@ -165,9 +182,17 @@ NEXT_PUBLIC_APP_URL=http://localhost:3000
 | `src/lib/supabase/client.ts` | Browser Supabase client |
 | `src/lib/supabase/server.ts` | Server Supabase client |
 | `src/lib/supabase/middleware.ts` | Middleware Supabase client |
-| `src/lib/gemini.ts` | Gemini API integration |
-| `src/lib/constants.ts` | Room types, styles, etc. |
+| `src/lib/gemini.ts` | Gemini API integration with inpainting-focused prompt |
+| `src/lib/constants.ts` | Room types, styles, credit thresholds |
+| `src/lib/database.types.ts` | TypeScript types for Supabase tables |
 | `src/middleware.ts` | Auth protection middleware |
+| `src/components/layout/Header.tsx` | Header with global search functionality |
+| `src/components/layout/Sidebar.tsx` | Navigation sidebar with credits display |
+| `src/components/staging/BatchImageUploader.tsx` | Multi-image upload component |
+| `src/components/staging/PropertySelector.tsx` | Property selection with inline create |
+| `src/app/(dashboard)/stage/batch/page.tsx` | Batch staging workflow |
+| `prompt-structure.txt` | Reference AI staging prompt |
+| `AGENT.md` | Agent notes and lessons learned |
 
 ## Commands
 
