@@ -31,6 +31,7 @@ import {
   Plus,
   Check,
   MapPin,
+  Trash2,
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import type { StagingJob } from "@/lib/database.types";
@@ -52,6 +53,7 @@ export function HistoryJobCard({ job, properties }: HistoryJobCardProps) {
   const [showComparison, setShowComparison] = useState(false);
   const [sliderPosition, setSliderPosition] = useState(50);
   const [isAssigning, setIsAssigning] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
   const [currentPropertyId, setCurrentPropertyId] = useState<string | null>(job.property_id);
 
   const getStatusBadge = (status: string) => {
@@ -133,6 +135,28 @@ export function HistoryJobCard({ job, properties }: HistoryJobCardProps) {
     }
 
     setIsAssigning(false);
+  };
+
+  const handleDelete = async () => {
+    if (!confirm("Are you sure you want to delete this staging job? This action cannot be undone.")) {
+      return;
+    }
+
+    setIsDeleting(true);
+    const supabase = createClient();
+
+    const { error } = await supabase
+      .from("staging_jobs")
+      .delete()
+      .eq("id", job.id);
+
+    if (error) {
+      console.error("Failed to delete staging job:", error);
+      alert("Failed to delete staging job. Please try again.");
+      setIsDeleting(false);
+    } else {
+      router.refresh();
+    }
   };
 
   const currentProperty = properties.find((p) => p.id === currentPropertyId);
@@ -284,13 +308,45 @@ export function HistoryJobCard({ job, properties }: HistoryJobCardProps) {
                   )}
                 </DropdownMenuContent>
               </DropdownMenu>
+              {/* Delete Button */}
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleDelete}
+                disabled={isDeleting}
+                className="text-red-600 hover:text-red-700 hover:bg-red-50"
+              >
+                {isDeleting ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <Trash2 className="h-4 w-4" />
+                )}
+              </Button>
             </div>
           )}
 
           {job.status === "failed" && job.error_message && (
-            <p className="text-xs text-red-500 truncate" title={job.error_message}>
+            <p className="text-xs text-red-500 truncate mb-2" title={job.error_message}>
               {job.error_message}
             </p>
+          )}
+
+          {/* Delete button for failed/pending jobs */}
+          {(job.status === "failed" || job.status === "pending" || job.status === "processing") && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleDelete}
+              disabled={isDeleting}
+              className="w-full text-red-600 hover:text-red-700 hover:bg-red-50"
+            >
+              {isDeleting ? (
+                <Loader2 className="h-4 w-4 mr-1 animate-spin" />
+              ) : (
+                <Trash2 className="h-4 w-4 mr-1" />
+              )}
+              Delete
+            </Button>
           )}
         </CardContent>
       </Card>

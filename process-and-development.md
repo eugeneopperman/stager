@@ -351,6 +351,7 @@ staging_jobs:
 | 0.9.2 | 2025-01-10 | Property assignment in batch staging |
 | 0.9.3 | 2025-01-10 | Updated AI prompt to inpainting-focused structure |
 | 0.9.4 | 2025-01-10 | Global search bar: search properties and staging jobs |
+| 0.9.5 | 2025-01-11 | History delete, property edit/delete, before/after slider on property images |
 | 1.0.0 | TBD | MVP release |
 
 ---
@@ -358,9 +359,9 @@ staging_jobs:
 ## Next Steps (Suggested)
 
 ### High Priority
-- [ ] History management (delete staging jobs)
-- [ ] Property edit/delete functionality
-- [ ] Before/after slider on individual staged images
+- [x] History management (delete staging jobs)
+- [x] Property edit/delete functionality
+- [x] Before/after slider on individual staged images
 
 ### Medium Priority
 - [ ] Shareable links for properties/stagings

@@ -8,9 +8,6 @@ import {
   ImagePlus,
   ArrowLeft,
   Calendar,
-  Pencil,
-  Download,
-  Eye,
   CheckCircle2,
   Clock,
   XCircle,
@@ -18,6 +15,7 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { PropertyActions } from "./PropertyActions";
+import { StagedImageCard } from "./StagedImageCard";
 
 interface PropertyDetailPageProps {
   params: Promise<{ id: string }>;
@@ -209,47 +207,11 @@ export default async function PropertyDetailPage({ params }: PropertyDetailPageP
           {completedJobs.length > 0 ? (
             <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
               {completedJobs.map((job) => (
-                <div
+                <StagedImageCard
                   key={job.id}
-                  className="group relative aspect-video rounded-lg overflow-hidden bg-slate-100 dark:bg-slate-900"
-                >
-                  {job.staged_image_url && (
-                    <img
-                      src={job.staged_image_url}
-                      alt={`${formatRoomType(job.room_type)} - ${job.style}`}
-                      className="w-full h-full object-cover"
-                    />
-                  )}
-                  {/* Overlay */}
-                  <div className="absolute inset-0 bg-black/0 group-hover:bg-black/50 transition-colors">
-                    <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                      <div className="flex gap-2">
-                        <Button size="sm" variant="secondary" asChild>
-                          <a href={job.staged_image_url || "#"} target="_blank" rel="noopener noreferrer">
-                            <Eye className="h-4 w-4" />
-                          </a>
-                        </Button>
-                        <Button size="sm" variant="secondary" asChild>
-                          <a
-                            href={job.staged_image_url || "#"}
-                            download={`${property.address.replace(/[^a-z0-9]/gi, "-")}-${job.room_type}-${job.id}.png`}
-                          >
-                            <Download className="h-4 w-4" />
-                          </a>
-                        </Button>
-                      </div>
-                    </div>
-                  </div>
-                  {/* Info overlay */}
-                  <div className="absolute bottom-0 left-0 right-0 p-2 bg-gradient-to-t from-black/70 to-transparent">
-                    <p className="text-white text-sm font-medium">
-                      {formatRoomType(job.room_type)}
-                    </p>
-                    <p className="text-white/70 text-xs">
-                      {job.style} • {formatShortDate(job.created_at)}
-                    </p>
-                  </div>
-                </div>
+                  job={job}
+                  propertyAddress={property.address}
+                />
               ))}
             </div>
           ) : stagingJobs && stagingJobs.length > 0 ? (
