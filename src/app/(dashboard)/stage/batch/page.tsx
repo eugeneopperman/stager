@@ -9,7 +9,9 @@ import { Button } from "@/components/ui/button";
 import { BatchImageUploader, type BatchImage } from "@/components/staging/BatchImageUploader";
 import { BatchImageCard, type BatchImageData, type BatchImageStatus } from "@/components/staging/BatchImageCard";
 import { StyleSelector } from "@/components/staging/StyleSelector";
+import { PropertySelector } from "@/components/staging/PropertySelector";
 import { useDashboard } from "@/contexts/DashboardContext";
+import type { Property } from "@/lib/database.types";
 import {
   type RoomType,
   type FurnitureStyle,
@@ -27,6 +29,7 @@ import {
   CheckCircle2,
   XCircle,
   RotateCcw,
+  Building2,
 } from "lucide-react";
 
 type BatchState = "upload" | "configure" | "processing" | "complete";
@@ -43,6 +46,8 @@ export default function BatchStagePage() {
   const [uploadedImages, setUploadedImages] = useState<BatchImage[]>([]);
   const [configuredImages, setConfiguredImages] = useState<ConfiguredImage[]>([]);
   const [style, setStyle] = useState<FurnitureStyle | null>(null);
+  const [propertyId, setPropertyId] = useState<string | null>(null);
+  const [selectedProperty, setSelectedProperty] = useState<Property | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [processingIndex, setProcessingIndex] = useState<number>(-1);
 
@@ -145,6 +150,7 @@ export default function BatchStagePage() {
             mimeType: configuredImages[i].file.type,
             roomType: configuredImages[i].roomType,
             style,
+            propertyId: propertyId || undefined,
           }),
         });
 
@@ -233,6 +239,8 @@ export default function BatchStagePage() {
     setUploadedImages([]);
     setConfiguredImages([]);
     setStyle(null);
+    setPropertyId(null);
+    setSelectedProperty(null);
     setError(null);
     setProcessingIndex(-1);
   };
@@ -337,6 +345,33 @@ export default function BatchStagePage() {
       {/* CONFIGURE STATE */}
       {state === "configure" && (
         <>
+          {/* Property Selection */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Building2 className="h-5 w-5" />
+                Assign to Property
+              </CardTitle>
+              <CardDescription>
+                Optionally assign all staged photos to a property
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <PropertySelector
+                value={propertyId}
+                onChange={(id, property) => {
+                  setPropertyId(id);
+                  setSelectedProperty(property || null);
+                }}
+              />
+              {selectedProperty && (
+                <p className="mt-2 text-sm text-slate-500">
+                  All staged photos will be linked to: {selectedProperty.address}
+                </p>
+              )}
+            </CardContent>
+          </Card>
+
           <Card>
             <CardHeader>
               <CardTitle>Configure Room Types</CardTitle>
@@ -377,6 +412,7 @@ export default function BatchStagePage() {
                   <h3 className="font-semibold">Ready to stage {configuredImages.length} photos?</h3>
                   <p className="text-blue-100 text-sm">
                     This will use {requiredCredits} credit{requiredCredits !== 1 ? "s" : ""} from your account
+                    {selectedProperty && ` • Assigned to ${selectedProperty.address}`}
                   </p>
                 </div>
                 <div className="flex gap-2">
