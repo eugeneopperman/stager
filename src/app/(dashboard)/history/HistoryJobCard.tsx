@@ -160,6 +160,7 @@ export function HistoryJobCard({ job, properties }: HistoryJobCardProps) {
   };
 
   const currentProperty = properties.find((p) => p.id === currentPropertyId);
+  const hasOriginalImage = job.original_image_url && !job.original_image_url.includes("...");
 
   const roomTypeLabel = job.room_type
     .split("-")
@@ -361,20 +362,22 @@ export function HistoryJobCard({ job, properties }: HistoryJobCardProps) {
           </DialogHeader>
 
           <div className="space-y-4">
-            {/* Toggle */}
-            <div className="flex justify-center">
-              <Button
-                variant={showComparison ? "default" : "outline"}
-                size="sm"
-                onClick={() => setShowComparison(!showComparison)}
-              >
-                <ArrowLeftRight className="h-4 w-4 mr-2" />
-                {showComparison ? "Hide Comparison" : "Compare Before/After"}
-              </Button>
-            </div>
+            {/* Toggle - only show if original image exists */}
+            {hasOriginalImage && (
+              <div className="flex justify-center">
+                <Button
+                  variant={showComparison ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => setShowComparison(!showComparison)}
+                >
+                  <ArrowLeftRight className="h-4 w-4 mr-2" />
+                  {showComparison ? "Hide Comparison" : "Compare Before/After"}
+                </Button>
+              </div>
+            )}
 
             {/* Image Display */}
-            {showComparison && job.original_image_url && !job.original_image_url.includes("...") ? (
+            {showComparison && hasOriginalImage ? (
               <div
                 className="relative aspect-video cursor-col-resize select-none rounded-lg overflow-hidden"
                 onMouseMove={handleSliderMove}
