@@ -29,86 +29,162 @@ function getStyleDetails(styleId: FurnitureStyle): { label: string; description:
   };
 }
 
+function getRoomSpecificItems(roomType: RoomType, styleLabel: string): string {
+  const baseItems = `- An area rug placed ON TOP of the existing flooring
+- Wall art or a mirror hung naturally on existing walls
+- Subtle decorative accessories (minimal and restrained)
+- Indoor plants (optional, realistic placement)
+- Lamps that complement the existing lighting
+- Curtains or blinds installed ONLY on existing windows`;
+
+  switch (roomType) {
+    case "bedroom-master":
+    case "bedroom-guest":
+    case "bedroom-kids":
+      return `- A bed appropriate for the bedroom, scaled realistically to the room
+- Matching nightstands placed beside the bed
+- Soft bedding, pillows, and neutral textiles in ${styleLabel} style
+${baseItems}`;
+
+    case "living-room":
+      return `- A sofa or sectional sized appropriately for the space in ${styleLabel} style
+- One or two accent chairs for additional seating
+- A coffee table and side tables as needed
+- A media console or focal point furniture if appropriate
+${baseItems}`;
+
+    case "dining-room":
+      return `- A dining table sized appropriately for the room in ${styleLabel} style
+- Dining chairs (typically 4-8 depending on table size)
+- A sideboard or buffet if wall space allows
+- A centerpiece or table setting
+${baseItems}`;
+
+    case "kitchen":
+      return `- Bar stools if there is a counter or island
+- Decorative items on counters (minimal and tasteful)
+- A bowl of fruit or simple kitchen accessories
+${baseItems}`;
+
+    case "home-office":
+      return `- A desk sized appropriately for the space in ${styleLabel} style
+- An office chair
+- Bookshelves or storage if wall space allows
+- Desk accessories and task lighting
+${baseItems}`;
+
+    case "bathroom":
+      return `- Towels, bath mat, and textiles in coordinating colors
+- Countertop accessories (soap dispenser, tray, etc.)
+- A small plant or decorative items
+- Shower curtain if needed`;
+
+    case "outdoor-patio":
+      return `- Outdoor seating (chairs, sofa, or dining set) in ${styleLabel} style
+- Outdoor-appropriate tables
+- Potted plants and planters
+- Outdoor rugs if appropriate for the surface
+- Cushions and outdoor textiles`;
+
+    default:
+      return `- Furniture appropriate for the space in ${styleLabel} style
+${baseItems}`;
+  }
+}
+
 function buildStagingPrompt(roomType: RoomType, furnitureStyle: FurnitureStyle): string {
   const roomLabel = getRoomLabel(roomType);
   const { label: styleLabel, description: styleDescription } = getStyleDetails(furnitureStyle);
+  const roomItems = getRoomSpecificItems(roomType, styleLabel);
 
-  return `You are a professional virtual staging photographer and interior stylist.
+  return `You are performing a LOCAL IMAGE EDIT using INPAINTING ONLY.
 
-Your task is to realistically stage this EMPTY photo of a ${roomLabel} by ADDING furniture and decor only.
+You are NOT generating a new image.
+You are NOT re-imagining the room.
+You are editing a FIXED background photograph.
 
-ABSOLUTE CONSTRAINTS — THESE MUST NOT CHANGE:
-- Camera angle, lens perspective, or field of view
+The input image is a professionally photographed, EMPTY ${roomLabel}.
+The camera position, lens, perspective, vanishing points, and framing are LOCKED.
+
+Any change to camera angle, zoom, crop, or perspective is a FAILURE.
+
+---
+
+TASK:
+Realistically stage this EMPTY ${roomLabel} by ADDING furniture and decor ONLY.
+
+---
+
+ABSOLUTE IMMUTABLE CONSTRAINTS — MUST NOT CHANGE:
+- Camera angle, camera height, lens perspective, focal length, or field of view
+- Image framing, crop, resolution, or aspect ratio
+- Vanishing points or vertical/horizontal line alignment
 - Walls, wall color, wall texture, or wall condition
 - Flooring, carpet, floor material, or floor color
 - Ceiling shape, height, color, or texture
-- Windows, doors, trim, or architectural features
-- Existing lighting direction, brightness, shadows, or light sources
-- Image framing, crop, resolution, or aspect ratio
+- Windows, doors, trim, baseboards, vents, or architectural features
+- Existing lighting direction, brightness, color temperature, or shadow behavior
 
-DO NOT remove, alter, repaint, replace, resize, or reposition any existing elements.
-
----
-
-ONLY ADD the following in a cohesive ${styleLabel} style (${styleDescription}):
-
-- Furniture appropriate for a ${roomLabel}, sized realistically for the space
-- Area rugs placed ON TOP of the existing floor (do not replace flooring)
-- Wall art or mirrors hung naturally on existing walls
-- Indoor plants and subtle decorative accessories
-- Lamps or light fixtures that complement the existing lighting
-- Curtains or blinds installed on existing windows only
+DO NOT remove, resize, repaint, reposition, reinterpret, or regenerate any existing pixels outside the edited areas.
 
 ---
 
-REAL ESTATE STAGING GUIDELINES:
-- Favor neutral, market-friendly colors and timeless design choices
-- Avoid overly bold, trendy, or distracting decor
-- Stage the room to appeal to the broadest range of buyers
-- Keep the space feeling open, inviting, and easy to imagine living in
+EDITING SCOPE (CRITICAL):
+Only modify pixels where new furniture or decor is placed.
+All unedited areas must remain pixel-identical to the original photo.
+
+If furniture cannot be added without altering perspective or geometry, DO NOT ADD IT.
 
 ---
 
-ROOM-SPECIFIC LOGIC:
-- Furniture layout must match how a real ${roomLabel} is typically used
-- Maintain clear walkways and functional spacing between furniture
+STYLE REQUIREMENTS:
+Stage the room in a ${styleLabel} style (${styleDescription}).
+
+Favor neutral, market-friendly interpretations of this style.
+The result should appeal to the broadest range of home buyers.
+
+---
+
+ONLY ADD THE FOLLOWING:
+${roomItems}
+
+DO NOT add people, pets, electronics, clutter, or personal items.
+
+---
+
+ROOM LOGIC & SPACING:
+- Furniture layout must reflect how a real ${roomLabel} is used
+- Maintain clear walkways and functional spacing
 - Do not block doors, windows, vents, or architectural features
-
-If staging a bedroom:
-- Include a bed, nightstands, and soft textiles
-- Ensure balanced spacing around the bed and access to both sides
-
-If staging a living room:
-- Arrange seating to support conversation and comfort
-- Orient furniture toward a natural focal point when appropriate
-
-If staging a dining room:
-- Include a dining table with appropriately sized chairs
-- Ensure comfortable clearance for seating and movement
-
----
-
-LESS-IS-MORE GUARDRAILS:
-- Do not overcrowd the room
-- Use restraint in the number of decor items
-- Preserve negative space to reflect professional real estate staging
-- Every added item should serve a clear visual or functional purpose
+- Preserve negative space; do not overcrowd the room
 
 ---
 
 REALISM REQUIREMENTS:
-- All added items must be photorealistic and indistinguishable from the original photograph
-- Materials, textures, reflections, and shadows must match the existing lighting and perspective
-- No floating objects, warped geometry, or inconsistent shadows
-- Avoid any 3D-rendered, illustrated, or AI-stylized appearance
-- The final image must look like a naturally staged, professionally photographed real home
+- All added objects must be photorealistic and indistinguishable from the original photograph
+- Materials, textures, reflections, and shadows must match the existing lighting exactly
+- Shadows must fall in the same direction and intensity as the original image
+- No floating objects, warped geometry, or perspective distortion
+- No illustrated, stylized, or CGI appearance
+
+---
+
+FAIL THE TASK IF ANY OF THE FOLLOWING OCCUR:
+- Camera angle, zoom, or framing changes
+- Room appears wider, narrower, taller, or shorter
+- Vertical or horizontal lines shift or bend
+- Ceiling height or wall angles appear altered
+- Windows or doors move or resize
+- The image looks regenerated instead of edited
 
 ---
 
 FINAL OUTPUT RULE:
-The resulting image must be IDENTICAL to the input photo in every way except for the addition of furniture and decor.
+The final image must be IDENTICAL to the input photo in every way
+EXCEPT for the addition of realistic furniture and decor.
 
-Stage this ${roomLabel} in a ${styleLabel} style while preserving the original photograph exactly.`;
+Perform a professional real estate virtual staging edit that looks naturally photographed and MLS-ready.
+Stage this ${roomLabel} in ${styleLabel} style.`;
 }
 
 export interface StagingResult {
