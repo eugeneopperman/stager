@@ -47,13 +47,40 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Generate a unique job ID for file naming
+    const jobId = crypto.randomUUID();
+
+    // Upload original image to Supabase Storage
+    const originalFileName = `${user.id}/${jobId}-original.${mimeType.split("/")[1] || "png"}`;
+    const originalImageBuffer = Buffer.from(image, "base64");
+
+    const { error: originalUploadError } = await supabase.storage
+      .from("staging-images")
+      .upload(originalFileName, originalImageBuffer, {
+        contentType: mimeType,
+        upsert: true,
+      });
+
+    let originalImageUrl: string;
+    if (originalUploadError) {
+      console.error("Original image upload error:", originalUploadError);
+      // Fallback to truncated reference if upload fails
+      originalImageUrl = `data:${mimeType};base64,${image.substring(0, 100)}...`;
+    } else {
+      const { data: originalPublicUrl } = supabase.storage
+        .from("staging-images")
+        .getPublicUrl(originalFileName);
+      originalImageUrl = originalPublicUrl.publicUrl;
+    }
+
     // Create staging job record
     const { data: job, error: jobError } = await supabase
       .from("staging_jobs")
       .insert({
+        id: jobId,
         user_id: user.id,
         property_id: propertyId || null,
-        original_image_url: `data:${mimeType};base64,${image.substring(0, 100)}...`, // Store truncated for reference
+        original_image_url: originalImageUrl,
         room_type: roomType,
         style: style,
         status: "processing",
