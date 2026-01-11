@@ -125,11 +125,17 @@ export function BatchImageUploader({
       {!isFull && (
         <label
           className={cn(
-            "flex flex-col items-center justify-center w-full border-2 border-dashed rounded-xl cursor-pointer transition-all",
+            "flex flex-col items-center justify-center w-full rounded-xl cursor-pointer",
+            // Border
+            "border-2 border-dashed",
+            // Height
             images.length === 0 ? "h-64" : "h-32",
+            // Transitions
+            "transition-all duration-200 ease-out",
+            // States
             isDragging
-              ? "border-blue-500 bg-blue-50 dark:bg-blue-950/30"
-              : "border-slate-300 dark:border-slate-700 hover:border-blue-400 hover:bg-slate-50 dark:hover:bg-slate-900",
+              ? "border-primary bg-primary/5 dark:bg-primary/10 scale-[1.01] shadow-lg shadow-primary/10"
+              : "border-border/60 dark:border-white/10 hover:border-primary/50 hover:bg-accent/30 dark:hover:bg-white/5",
             disabled && "opacity-50 cursor-not-allowed"
           )}
           onDrop={handleDrop}
@@ -139,28 +145,28 @@ export function BatchImageUploader({
           <div className="flex flex-col items-center justify-center py-4 px-4 text-center">
             <div
               className={cn(
-                "p-3 rounded-full mb-3 transition-colors",
+                "p-3 rounded-full mb-3 transition-all duration-200",
                 isDragging
-                  ? "bg-blue-100 dark:bg-blue-900"
-                  : "bg-slate-100 dark:bg-slate-800"
+                  ? "bg-primary/15 dark:bg-primary/20 scale-110"
+                  : "bg-muted/80 dark:bg-white/5"
               )}
             >
               {isDragging ? (
-                <Upload className="h-6 w-6 text-blue-600" />
+                <Upload className="h-6 w-6 text-primary" />
               ) : images.length === 0 ? (
-                <Images className="h-6 w-6 text-slate-400" />
+                <Images className="h-6 w-6 text-muted-foreground" />
               ) : (
-                <Plus className="h-6 w-6 text-slate-400" />
+                <Plus className="h-6 w-6 text-muted-foreground" />
               )}
             </div>
-            <p className="text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
+            <p className="text-sm font-medium text-foreground mb-1">
               {isDragging
                 ? "Drop images here"
                 : images.length === 0
                 ? "Upload room photos"
                 : "Add more photos"}
             </p>
-            <p className="text-xs text-slate-500 dark:text-slate-400">
+            <p className="text-xs text-muted-foreground">
               {images.length === 0
                 ? "Drag and drop or click to browse (up to 10 images)"
                 : `${images.length} of ${MAX_BATCH_SIZE} images`}
@@ -179,8 +185,12 @@ export function BatchImageUploader({
 
       {/* Image Counter when full */}
       {isFull && (
-        <div className="text-center py-2 px-4 bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 rounded-lg">
-          <p className="text-sm text-amber-700 dark:text-amber-400">
+        <div className={cn(
+          "text-center py-2.5 px-4 rounded-xl",
+          "bg-amber-500/10 dark:bg-amber-500/15",
+          "border border-amber-500/20 dark:border-amber-500/30"
+        )}>
+          <p className="text-sm font-medium text-amber-700 dark:text-amber-400">
             Maximum {MAX_BATCH_SIZE} images reached
           </p>
         </div>
@@ -188,7 +198,7 @@ export function BatchImageUploader({
 
       {/* Error Message */}
       {error && (
-        <p className="text-sm text-red-600 dark:text-red-400">{error}</p>
+        <p className="text-sm text-destructive">{error}</p>
       )}
 
       {/* Image Grid */}
@@ -197,7 +207,13 @@ export function BatchImageUploader({
           {images.map((image) => (
             <div
               key={image.id}
-              className="relative aspect-video rounded-lg overflow-hidden bg-slate-100 dark:bg-slate-900 group"
+              className={cn(
+                "relative aspect-video rounded-xl overflow-hidden group",
+                "bg-muted/50 dark:bg-white/5",
+                "ring-1 ring-border/50 dark:ring-white/10",
+                "transition-all duration-200",
+                "hover:ring-border hover:shadow-md"
+              )}
             >
               <img
                 src={image.preview}
@@ -208,7 +224,12 @@ export function BatchImageUploader({
                 <Button
                   variant="destructive"
                   size="icon"
-                  className="absolute top-1 right-1 h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity"
+                  className={cn(
+                    "absolute top-1.5 right-1.5 h-6 w-6",
+                    "opacity-0 group-hover:opacity-100",
+                    "transition-all duration-200",
+                    "scale-90 group-hover:scale-100"
+                  )}
                   onClick={() => onImageRemove(image.id)}
                 >
                   <X className="h-3 w-3" />

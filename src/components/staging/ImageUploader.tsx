@@ -93,7 +93,11 @@ export function ImageUploader({
 
   if (preview) {
     return (
-      <div className="relative rounded-xl overflow-hidden bg-slate-100 dark:bg-slate-900">
+      <div className={cn(
+        "relative rounded-xl overflow-hidden",
+        "bg-muted/50 dark:bg-white/5",
+        "ring-1 ring-border/50 dark:ring-white/10"
+      )}>
         <img
           src={preview}
           alt="Uploaded preview"
@@ -110,10 +114,17 @@ export function ImageUploader({
           </Button>
         )}
         {disabled && (
-          <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
-            <div className="flex items-center gap-2 text-white">
-              <Loader2 className="h-5 w-5 animate-spin" />
-              <span>Processing...</span>
+          <div className={cn(
+            "absolute inset-0 flex items-center justify-center",
+            "bg-black/40 backdrop-blur-sm"
+          )}>
+            <div className={cn(
+              "flex items-center gap-3 px-5 py-3 rounded-xl",
+              "bg-background/80 backdrop-blur-md",
+              "border border-border/50 shadow-xl"
+            )}>
+              <Loader2 className="h-5 w-5 animate-spin text-primary" />
+              <span className="text-sm font-medium">Processing...</span>
             </div>
           </div>
         )}
@@ -125,10 +136,15 @@ export function ImageUploader({
     <div>
       <label
         className={cn(
-          "flex flex-col items-center justify-center w-full h-80 border-2 border-dashed rounded-xl cursor-pointer transition-all",
+          "flex flex-col items-center justify-center w-full h-80 rounded-xl cursor-pointer",
+          // Border
+          "border-2 border-dashed",
+          // Transitions
+          "transition-all duration-200 ease-out",
+          // States
           isDragging
-            ? "border-blue-500 bg-blue-50 dark:bg-blue-950/30"
-            : "border-slate-300 dark:border-slate-700 hover:border-blue-400 hover:bg-slate-50 dark:hover:bg-slate-900",
+            ? "border-primary bg-primary/5 dark:bg-primary/10 scale-[1.01] shadow-lg shadow-primary/10"
+            : "border-border/60 dark:border-white/10 hover:border-primary/50 hover:bg-accent/30 dark:hover:bg-white/5",
           disabled && "opacity-50 cursor-not-allowed"
         )}
         onDrop={handleDrop}
@@ -138,25 +154,25 @@ export function ImageUploader({
         <div className="flex flex-col items-center justify-center py-8 px-4 text-center">
           <div
             className={cn(
-              "p-4 rounded-full mb-4 transition-colors",
+              "p-4 rounded-full mb-4 transition-all duration-200",
               isDragging
-                ? "bg-blue-100 dark:bg-blue-900"
-                : "bg-slate-100 dark:bg-slate-800"
+                ? "bg-primary/15 dark:bg-primary/20 scale-110"
+                : "bg-muted/80 dark:bg-white/5"
             )}
           >
             {isDragging ? (
-              <Upload className="h-10 w-10 text-blue-600" />
+              <Upload className="h-10 w-10 text-primary" />
             ) : (
-              <ImageIcon className="h-10 w-10 text-slate-400" />
+              <ImageIcon className="h-10 w-10 text-muted-foreground" />
             )}
           </div>
-          <p className="text-lg font-medium text-slate-700 dark:text-slate-300 mb-1">
+          <p className="text-lg font-medium text-foreground mb-1">
             {isDragging ? "Drop your image here" : "Upload a room photo"}
           </p>
-          <p className="text-sm text-slate-500 dark:text-slate-400 mb-4">
+          <p className="text-sm text-muted-foreground mb-4">
             Drag and drop or click to browse
           </p>
-          <p className="text-xs text-slate-400 dark:text-slate-500">
+          <p className="text-xs text-muted-foreground/70">
             JPEG, PNG, or WebP up to 10MB
           </p>
         </div>
@@ -169,7 +185,7 @@ export function ImageUploader({
         />
       </label>
       {error && (
-        <p className="mt-2 text-sm text-red-600 dark:text-red-400">{error}</p>
+        <p className="mt-2 text-sm text-destructive">{error}</p>
       )}
     </div>
   );

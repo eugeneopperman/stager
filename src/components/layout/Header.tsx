@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef, useCallback } from "react";
 import { Bell, Search, Menu, Building2, ImageIcon, Loader2 } from "lucide-react";
+import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
@@ -135,7 +136,14 @@ export function Header({ user, onMenuClick }: HeaderProps) {
     (searchResults.properties.length > 0 || searchResults.stagingJobs.length > 0);
 
   return (
-    <header className="sticky top-0 z-40 flex h-16 items-center gap-4 border-b bg-white dark:bg-slate-950 px-6">
+    <header className={cn(
+      "sticky top-0 z-40 flex h-16 items-center gap-4 px-6",
+      // Glass effect
+      "bg-background/70 backdrop-blur-xl",
+      "dark:bg-background/60",
+      // Border
+      "border-b border-border/50 dark:border-white/[0.08]"
+    )}>
       {/* Mobile menu button */}
       <Button
         variant="ghost"
@@ -149,23 +157,33 @@ export function Header({ user, onMenuClick }: HeaderProps) {
       {/* Search */}
       <div className="flex-1 max-w-md" ref={searchRef}>
         <div className="relative">
-          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
           <Input
             placeholder="Search properties, staging jobs..."
-            className="pl-10 bg-slate-50 dark:bg-slate-900 border-slate-200 dark:border-slate-800"
+            className="pl-10"
             value={searchQuery}
             onChange={handleSearchChange}
             onFocus={() => searchQuery.length >= 2 && setShowResults(true)}
           />
           {isSearching && (
-            <Loader2 className="absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400 animate-spin" />
+            <Loader2 className="absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground animate-spin" />
           )}
 
           {/* Search Results Dropdown */}
           {showResults && searchQuery.length >= 2 && (
-            <div className="absolute top-full left-0 right-0 mt-1 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg shadow-lg overflow-hidden z-50">
+            <div className={cn(
+              "absolute top-full left-0 right-0 mt-2 overflow-hidden z-50",
+              // Glass effect
+              "bg-popover/95 backdrop-blur-xl",
+              "dark:bg-popover/90",
+              // Border and shadow
+              "border border-border/50 dark:border-white/10",
+              "rounded-xl shadow-xl dark:shadow-black/40",
+              // Animation
+              "animate-in fade-in-0 slide-in-from-top-2 duration-200"
+            )}>
               {isSearching ? (
-                <div className="p-4 text-center text-slate-500">
+                <div className="p-4 text-center text-muted-foreground">
                   <Loader2 className="h-5 w-5 animate-spin mx-auto mb-2" />
                   Searching...
                 </div>
@@ -174,22 +192,26 @@ export function Header({ user, onMenuClick }: HeaderProps) {
                   {/* Properties */}
                   {searchResults.properties.length > 0 && (
                     <div>
-                      <div className="px-3 py-2 text-xs font-semibold text-slate-500 bg-slate-50 dark:bg-slate-800">
+                      <div className="px-3 py-2 text-xs font-semibold text-muted-foreground uppercase tracking-wider bg-muted/50">
                         Properties
                       </div>
                       {searchResults.properties.map((property) => (
                         <button
                           key={property.id}
                           onClick={() => handleResultClick(`/properties/${property.id}`)}
-                          className="w-full px-3 py-2 flex items-center gap-3 hover:bg-slate-100 dark:hover:bg-slate-800 text-left"
+                          className={cn(
+                            "w-full px-3 py-2.5 flex items-center gap-3 text-left",
+                            "transition-colors duration-150",
+                            "hover:bg-accent/50 dark:hover:bg-white/5"
+                          )}
                         >
-                          <Building2 className="h-4 w-4 text-slate-400 shrink-0" />
+                          <Building2 className="h-4 w-4 text-muted-foreground shrink-0" />
                           <div className="min-w-0">
-                            <p className="text-sm font-medium text-slate-900 dark:text-white truncate">
+                            <p className="text-sm font-medium text-foreground truncate">
                               {property.address}
                             </p>
                             {property.description && (
-                              <p className="text-xs text-slate-500 truncate">
+                              <p className="text-xs text-muted-foreground truncate">
                                 {property.description}
                               </p>
                             )}
@@ -202,30 +224,34 @@ export function Header({ user, onMenuClick }: HeaderProps) {
                   {/* Staging Jobs */}
                   {searchResults.stagingJobs.length > 0 && (
                     <div>
-                      <div className="px-3 py-2 text-xs font-semibold text-slate-500 bg-slate-50 dark:bg-slate-800">
+                      <div className="px-3 py-2 text-xs font-semibold text-muted-foreground uppercase tracking-wider bg-muted/50">
                         Staging Jobs
                       </div>
                       {searchResults.stagingJobs.map((job) => (
                         <button
                           key={job.id}
                           onClick={() => handleResultClick(`/history`)}
-                          className="w-full px-3 py-2 flex items-center gap-3 hover:bg-slate-100 dark:hover:bg-slate-800 text-left"
+                          className={cn(
+                            "w-full px-3 py-2.5 flex items-center gap-3 text-left",
+                            "transition-colors duration-150",
+                            "hover:bg-accent/50 dark:hover:bg-white/5"
+                          )}
                         >
                           {job.staged_image_url ? (
                             <img
                               src={job.staged_image_url}
                               alt=""
-                              className="h-8 w-8 rounded object-cover shrink-0"
+                              className="h-8 w-8 rounded-lg object-cover shrink-0 ring-1 ring-border/50"
                             />
                           ) : (
-                            <ImageIcon className="h-4 w-4 text-slate-400 shrink-0" />
+                            <ImageIcon className="h-4 w-4 text-muted-foreground shrink-0" />
                           )}
                           <div className="min-w-0">
-                            <p className="text-sm font-medium text-slate-900 dark:text-white truncate">
+                            <p className="text-sm font-medium text-foreground truncate">
                               {getRoomLabel(job.room_type)} - {getStyleLabel(job.style)}
                             </p>
                             {job.property && (
-                              <p className="text-xs text-slate-500 truncate">
+                              <p className="text-xs text-muted-foreground truncate">
                                 {job.property.address}
                               </p>
                             )}
@@ -236,7 +262,7 @@ export function Header({ user, onMenuClick }: HeaderProps) {
                   )}
                 </div>
               ) : (
-                <div className="p-4 text-center text-slate-500 text-sm">
+                <div className="p-4 text-center text-muted-foreground text-sm">
                   No results found for &quot;{searchQuery}&quot;
                 </div>
               )}
@@ -246,19 +272,34 @@ export function Header({ user, onMenuClick }: HeaderProps) {
       </div>
 
       {/* Right side */}
-      <div className="flex items-center gap-4">
+      <div className="flex items-center gap-3">
         {/* Notifications */}
         <Button variant="ghost" size="icon" className="relative">
           <Bell className="h-5 w-5" />
-          <span className="absolute top-1.5 right-1.5 h-2 w-2 rounded-full bg-blue-600" />
+          <span className={cn(
+            "absolute top-1.5 right-1.5 h-2 w-2 rounded-full",
+            "bg-primary",
+            "ring-2 ring-background",
+            "animate-pulse"
+          )} />
         </Button>
 
         {/* User menu */}
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button variant="ghost" className="relative h-10 w-10 rounded-full">
+            <Button
+              variant="ghost"
+              className={cn(
+                "relative h-10 w-10 rounded-full p-0",
+                "ring-2 ring-transparent",
+                "hover:ring-primary/20 transition-all duration-200"
+              )}
+            >
               <Avatar className="h-10 w-10">
-                <AvatarFallback className="bg-blue-600 text-white">
+                <AvatarFallback className={cn(
+                  "bg-gradient-to-br from-primary to-violet-600",
+                  "text-white font-medium"
+                )}>
                   {initials}
                 </AvatarFallback>
               </Avatar>
@@ -268,7 +309,7 @@ export function Header({ user, onMenuClick }: HeaderProps) {
             <DropdownMenuLabel>
               <div className="flex flex-col space-y-1">
                 <p className="text-sm font-medium">{user?.full_name || "User"}</p>
-                <p className="text-xs text-slate-500">{user?.email}</p>
+                <p className="text-xs text-muted-foreground">{user?.email}</p>
               </div>
             </DropdownMenuLabel>
             <DropdownMenuSeparator />
@@ -279,7 +320,7 @@ export function Header({ user, onMenuClick }: HeaderProps) {
               <Link href="/billing">Billing</Link>
             </DropdownMenuItem>
             <DropdownMenuSeparator />
-            <DropdownMenuItem onClick={handleLogout} className="text-red-600">
+            <DropdownMenuItem onClick={handleLogout} variant="destructive">
               Sign out
             </DropdownMenuItem>
           </DropdownMenuContent>

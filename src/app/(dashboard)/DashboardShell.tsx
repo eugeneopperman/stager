@@ -20,7 +20,13 @@ export function DashboardShell({ children, user, credits = 0 }: DashboardShellPr
 
   return (
     <DashboardProvider credits={credits} user={user}>
-      <div className="flex h-screen bg-slate-50 dark:bg-slate-950">
+      <div className={cn(
+        "flex h-screen",
+        // Base background
+        "bg-background",
+        // Gradient mesh background
+        "bg-mesh"
+      )}>
         {/* Desktop Sidebar */}
         <div className="hidden lg:block">
           <Sidebar credits={credits} />
@@ -33,13 +39,22 @@ export function DashboardShell({ children, user, credits = 0 }: DashboardShellPr
             sidebarOpen ? "block" : "hidden"
           )}
         >
-          {/* Backdrop */}
+          {/* Backdrop with blur */}
           <div
-            className="fixed inset-0 bg-black/50"
+            className={cn(
+              "fixed inset-0",
+              "bg-black/40 backdrop-blur-sm",
+              "transition-opacity duration-300",
+              sidebarOpen ? "opacity-100" : "opacity-0"
+            )}
             onClick={() => setSidebarOpen(false)}
           />
-          {/* Sidebar */}
-          <div className="fixed inset-y-0 left-0 w-64">
+          {/* Sidebar with slide animation */}
+          <div className={cn(
+            "fixed inset-y-0 left-0 w-64",
+            "transition-transform duration-300 ease-out",
+            sidebarOpen ? "translate-x-0" : "-translate-x-full"
+          )}>
             <Sidebar credits={credits} />
           </div>
         </div>
@@ -47,7 +62,13 @@ export function DashboardShell({ children, user, credits = 0 }: DashboardShellPr
         {/* Main content */}
         <div className="flex flex-1 flex-col overflow-hidden">
           <Header user={user} onMenuClick={() => setSidebarOpen(true)} />
-          <main className="flex-1 overflow-y-auto p-6">{children}</main>
+          <main className={cn(
+            "flex-1 overflow-y-auto p-6",
+            // Smooth scroll
+            "scroll-smooth"
+          )}>
+            {children}
+          </main>
         </div>
       </div>
     </DashboardProvider>
