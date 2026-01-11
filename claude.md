@@ -191,6 +191,9 @@ NEXT_PUBLIC_APP_URL=http://localhost:3000
 | `src/components/staging/BatchImageUploader.tsx` | Multi-image upload component |
 | `src/components/staging/PropertySelector.tsx` | Property selection with inline create |
 | `src/app/(dashboard)/stage/batch/page.tsx` | Batch staging workflow |
+| `src/app/(dashboard)/history/HistoryJobCard.tsx` | History card with delete & comparison |
+| `src/app/(dashboard)/properties/[id]/StagedImageCard.tsx` | Property image with comparison slider |
+| `src/app/(dashboard)/properties/[id]/PropertyActions.tsx` | Property edit/delete actions |
 | `prompt-structure.txt` | Reference AI staging prompt |
 | `AGENT.md` | Agent notes and lessons learned |
 

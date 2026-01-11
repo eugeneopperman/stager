@@ -1,10 +1,11 @@
 import { createClient } from "@/lib/supabase/server";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { User, Building2, Mail, Calendar, Shield } from "lucide-react";
+import { User, Building2, Mail, Calendar, Shield, Palette } from "lucide-react";
 import { ProfileForm } from "./ProfileForm";
 import { PasswordSection } from "./PasswordSection";
 import { DangerZone } from "./DangerZone";
+import { ThemeSelector } from "./ThemeSelector";
 
 export default async function SettingsPage() {
   const supabase = await createClient();
@@ -32,19 +33,35 @@ export default async function SettingsPage() {
     <div className="space-y-6 max-w-3xl">
       {/* Header */}
       <div>
-        <h1 className="text-3xl font-bold text-slate-900 dark:text-white">
+        <h1 className="text-3xl font-bold text-foreground">
           Settings
         </h1>
-        <p className="text-slate-600 dark:text-slate-400 mt-1">
+        <p className="text-muted-foreground mt-1">
           Manage your account settings and preferences
         </p>
       </div>
+
+      {/* Appearance Section */}
+      <Card>
+        <CardHeader>
+          <div className="flex items-center gap-2">
+            <Palette className="h-5 w-5 text-muted-foreground" />
+            <CardTitle>Appearance</CardTitle>
+          </div>
+          <CardDescription>
+            Customize how Stager looks on your device
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <ThemeSelector />
+        </CardContent>
+      </Card>
 
       {/* Profile Section */}
       <Card>
         <CardHeader>
           <div className="flex items-center gap-2">
-            <User className="h-5 w-5 text-slate-500" />
+            <User className="h-5 w-5 text-muted-foreground" />
             <CardTitle>Profile</CardTitle>
           </div>
           <CardDescription>
@@ -63,7 +80,7 @@ export default async function SettingsPage() {
       <Card>
         <CardHeader>
           <div className="flex items-center gap-2">
-            <Mail className="h-5 w-5 text-slate-500" />
+            <Mail className="h-5 w-5 text-muted-foreground" />
             <CardTitle>Account</CardTitle>
           </div>
           <CardDescription>
@@ -72,14 +89,14 @@ export default async function SettingsPage() {
         </CardHeader>
         <CardContent className="space-y-6">
           {/* Email */}
-          <div className="flex items-center justify-between py-3 border-b">
+          <div className="flex items-center justify-between py-3 border-b border-border/50">
             <div>
-              <p className="font-medium text-slate-900 dark:text-white">
+              <p className="font-medium text-foreground">
                 Email Address
               </p>
-              <p className="text-sm text-slate-500">{user?.email}</p>
+              <p className="text-sm text-muted-foreground">{user?.email}</p>
             </div>
-            <Badge variant="outline" className="text-green-600 border-green-200">
+            <Badge variant="success">
               Verified
             </Badge>
           </div>
@@ -90,14 +107,14 @@ export default async function SettingsPage() {
           {/* Member Since */}
           <div className="flex items-center justify-between py-3">
             <div>
-              <p className="font-medium text-slate-900 dark:text-white">
+              <p className="font-medium text-foreground">
                 Member Since
               </p>
-              <p className="text-sm text-slate-500">
+              <p className="text-sm text-muted-foreground">
                 {profile?.created_at ? formatDate(profile.created_at) : "Unknown"}
               </p>
             </div>
-            <Calendar className="h-5 w-5 text-slate-400" />
+            <Calendar className="h-5 w-5 text-muted-foreground" />
           </div>
         </CardContent>
       </Card>
