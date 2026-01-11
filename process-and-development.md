@@ -352,6 +352,7 @@ staging_jobs:
 | 0.9.3 | 2025-01-10 | Updated AI prompt to inpainting-focused structure |
 | 0.9.4 | 2025-01-10 | Global search bar: search properties and staging jobs |
 | 0.9.5 | 2025-01-11 | History delete, property edit/delete, before/after slider on property images |
+| 0.9.6 | 2025-01-11 | Store original images in Supabase Storage for comparison slider |
 | 1.0.0 | TBD | MVP release |
 
 ---

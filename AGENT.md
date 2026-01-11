@@ -39,6 +39,12 @@ The staging prompt was refined to be **inpainting-focused**:
 - Sequential processing is used for batch staging to avoid Gemini rate limits
 - Error handling includes specific messaging for 429 errors
 
+### Original Image Storage
+- Original images are uploaded to Supabase Storage alongside staged images
+- File naming: `{user_id}/{job_id}-original.{ext}` and `{user_id}/{job_id}-staged.{ext}`
+- This enables the before/after comparison slider feature
+- **Note**: Old staging jobs (before v0.9.5) have truncated original URLs and won't support comparison
+
 ---
 
 ## Key Architecture Patterns
@@ -86,7 +92,17 @@ useEffect(() => {
 | `MultiStyleSelector.tsx` | Multi-style selection (up to 3) |
 | `PropertySelector.tsx` | Property dropdown with inline create |
 | `RoomTypeSelector.tsx` | Room type selection |
-| `ComparisonSlider.tsx` | Before/after image comparison |
+
+### Property Detail Components (`/src/app/(dashboard)/properties/[id]/`)
+| Component | Purpose |
+|-----------|---------|
+| `StagedImageCard.tsx` | Staged image with before/after comparison slider |
+| `PropertyActions.tsx` | Edit/delete dropdown for property |
+
+### History Components (`/src/app/(dashboard)/history/`)
+| Component | Purpose |
+|-----------|---------|
+| `HistoryJobCard.tsx` | Staging job card with delete, comparison, property assignment |
 
 ### Layout Components (`/src/components/layout/`)
 | Component | Purpose |
