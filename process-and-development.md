@@ -360,6 +360,7 @@ staging_jobs:
 | 0.9.8 | 2025-01-11 | Theme toggle: light/dark/system modes with next-themes |
 | 0.9.9 | 2025-01-11 | Collapsible sidebar: collapse to icons, auto-hide mode, tooltips, keyboard shortcut |
 | 0.9.10 | 2025-01-12 | Stage page redesign: two-panel layout, room type dropdown, style image gallery |
+| 0.9.11 | 2025-01-12 | Container width standardization: max-w-7xl centered layout across all pages |
 | 1.0.0 | TBD | MVP release |
 
 ---

@@ -103,7 +103,9 @@ function DashboardContent({ children, user, credits = 0 }: DashboardShellProps) 
           // Smooth scroll
           "scroll-smooth"
         )}>
-          {children}
+          <div className="max-w-7xl mx-auto w-full">
+            {children}
+          </div>
         </main>
       </div>
     </div>
