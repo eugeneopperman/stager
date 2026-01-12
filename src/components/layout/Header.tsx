@@ -137,25 +137,26 @@ export function Header({ user, onMenuClick }: HeaderProps) {
 
   return (
     <header className={cn(
-      "sticky top-0 z-40 flex h-16 items-center gap-4 px-6",
+      "sticky top-0 z-40 h-16 px-6",
       // Glass effect
       "bg-background/70 backdrop-blur-xl",
       "dark:bg-background/60",
       // Border
       "border-b border-border/50 dark:border-white/[0.08]"
     )}>
-      {/* Mobile menu button */}
-      <Button
-        variant="ghost"
-        size="icon"
-        className="lg:hidden"
-        onClick={onMenuClick}
-      >
-        <Menu className="h-5 w-5" />
-      </Button>
+      <div className="max-w-7xl mx-auto w-full h-full flex items-center gap-4">
+        {/* Mobile menu button */}
+        <Button
+          variant="ghost"
+          size="icon"
+          className="lg:hidden"
+          onClick={onMenuClick}
+        >
+          <Menu className="h-5 w-5" />
+        </Button>
 
-      {/* Search */}
-      <div className="flex-1 max-w-md" ref={searchRef}>
+        {/* Search */}
+        <div className="flex-1 max-w-md" ref={searchRef}>
         <div className="relative">
           <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
           <Input
@@ -325,6 +326,7 @@ export function Header({ user, onMenuClick }: HeaderProps) {
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
+      </div>
       </div>
     </header>
   );
