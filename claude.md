@@ -223,3 +223,26 @@ npm run lint         # Run ESLint
 - Images should be uploaded to Supabase Storage, not stored as base64
 - Gemini API calls should happen server-side only (protect API key)
 - Use optimistic updates for better UX where appropriate
+
+## Custom Commands
+
+### "wrap up this session"
+When the user prompts "wrap up this session", update the following documentation files with progress and learnings from the current session:
+
+1. **AGENT.md** - Add any new:
+   - Component locations and their purposes
+   - Architecture patterns discovered or implemented
+   - Debugging tips or gotchas encountered
+   - UI/UX patterns used
+
+2. **process-and-development.md** - Update:
+   - Version history with new version entry
+   - Feature status (mark completed items)
+   - Add any new roadmap items discussed
+
+3. **CLAUDE.md** - Update:
+   - Important Files Reference table with new files
+   - Directory structure if new folders were added
+   - Any new patterns or conventions established
+
+After updating, commit the documentation changes with message: "Update documentation for session [date]"
