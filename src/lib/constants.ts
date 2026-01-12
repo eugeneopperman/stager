@@ -13,48 +13,57 @@ export const ROOM_TYPES = [
 export const FURNITURE_STYLES = [
   {
     id: "modern",
-    label: "Modern/Contemporary",
+    label: "Modern",
     description: "Clean lines, neutral colors, sleek furniture",
+    image: "/styles/modern.svg",
   },
   {
     id: "traditional",
-    label: "Traditional/Classic",
-    description: "Elegant, timeless pieces with rich woods and fabrics",
+    label: "Traditional",
+    description: "Elegant, timeless pieces with rich woods",
+    image: "/styles/traditional.svg",
   },
   {
     id: "minimalist",
     label: "Minimalist",
     description: "Simple, functional, uncluttered spaces",
+    image: "/styles/minimalist.svg",
   },
   {
     id: "mid-century",
-    label: "Mid-Century Modern",
-    description: "Retro-inspired with organic curves and warm tones",
+    label: "Mid-Century",
+    description: "Retro-inspired with organic curves",
+    image: "/styles/mid-century.svg",
   },
   {
     id: "scandinavian",
     label: "Scandinavian",
     description: "Light woods, white walls, cozy textiles",
+    image: "/styles/scandinavian.svg",
   },
   {
     id: "industrial",
     label: "Industrial",
     description: "Raw materials, exposed elements, urban feel",
+    image: "/styles/industrial.svg",
   },
   {
     id: "coastal",
-    label: "Coastal/Beach",
-    description: "Light, airy, ocean-inspired colors and textures",
+    label: "Coastal",
+    description: "Light, airy, ocean-inspired colors",
+    image: "/styles/coastal.svg",
   },
   {
     id: "farmhouse",
-    label: "Farmhouse/Rustic",
-    description: "Warm, inviting, natural materials and vintage accents",
+    label: "Farmhouse",
+    description: "Warm, inviting, natural materials",
+    image: "/styles/farmhouse.svg",
   },
   {
     id: "luxury",
-    label: "Luxury/Glam",
+    label: "Luxury",
     description: "Opulent, sophisticated, high-end finishes",
+    image: "/styles/luxury.svg",
   },
 ] as const;
 

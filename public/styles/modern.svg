@@ -1,0 +1,16 @@
+<svg viewBox="0 0 400 300" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="modern-wall" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" style="stop-color:#f5f5f5"/>
+      <stop offset="100%" style="stop-color:#e5e5e5"/>
+    </linearGradient>
+  </defs>
+  <rect width="400" height="300" fill="url(#modern-wall)"/>
+  <rect x="0" y="200" width="400" height="100" fill="#d4d4d4"/>
+  <rect x="50" y="120" width="120" height="80" rx="2" fill="#404040"/>
+  <rect x="55" y="125" width="110" height="70" rx="1" fill="#525252"/>
+  <rect x="230" y="100" width="80" height="100" rx="2" fill="#262626"/>
+  <rect x="320" y="100" width="30" height="100" fill="#404040"/>
+  <circle cx="280" cy="70" r="25" fill="#fafafa" stroke="#d4d4d4" stroke-width="2"/>
+  <rect x="100" y="180" width="200" height="20" rx="2" fill="#737373"/>
+</svg>

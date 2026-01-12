@@ -3,34 +3,30 @@
 import { useState, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { ImageUploader } from "@/components/staging/ImageUploader";
-import { RoomTypeSelector } from "@/components/staging/RoomTypeSelector";
-import { MultiStyleSelector } from "@/components/staging/MultiStyleSelector";
+import { RoomTypeDropdown } from "@/components/staging/RoomTypeDropdown";
+import { StyleGallery } from "@/components/staging/StyleGallery";
+import { PropertySelector } from "@/components/staging/PropertySelector";
+import { CreditDisplay } from "@/components/staging/CreditDisplay";
 import { useDashboard } from "@/contexts/DashboardContext";
-import { createClient } from "@/lib/supabase/client";
 import {
   type RoomType,
   type FurnitureStyle,
   FURNITURE_STYLES,
-  LOW_CREDITS_THRESHOLD,
   CREDITS_PER_STAGING,
 } from "@/lib/constants";
-import type { Property } from "@/lib/database.types";
 import {
   Sparkles,
   Loader2,
   AlertCircle,
-  AlertTriangle,
-  CreditCard,
-  MapPin,
-  X,
   Download,
   RotateCcw,
   CheckCircle2,
   XCircle,
   ArrowLeftRight,
+  Layers,
 } from "lucide-react";
 
 type StagingState = "upload" | "processing" | "complete" | "error";
@@ -45,7 +41,7 @@ interface StagedVariation {
 export default function StagePage() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const propertyId = searchParams.get("property");
+  const propertyIdParam = searchParams.get("property");
   const { credits } = useDashboard();
 
   const [state, setState] = useState<StagingState>("upload");
@@ -53,37 +49,22 @@ export default function StagePage() {
   const [preview, setPreview] = useState<string | null>(null);
   const [roomType, setRoomType] = useState<RoomType | null>(null);
   const [styles, setStyles] = useState<FurnitureStyle[]>([]);
+  const [propertyId, setPropertyId] = useState<string | null>(propertyIdParam);
   const [variations, setVariations] = useState<StagedVariation[]>([]);
   const [processingIndex, setProcessingIndex] = useState(-1);
   const [error, setError] = useState<string | null>(null);
-  const [property, setProperty] = useState<Property | null>(null);
   const [compareIndex, setCompareIndex] = useState(0);
   const [sliderPosition, setSliderPosition] = useState(50);
 
   const requiredCredits = styles.length * CREDITS_PER_STAGING;
   const hasEnoughCredits = credits >= requiredCredits;
-  const isLowCredits = credits <= LOW_CREDITS_THRESHOLD;
 
-  // Fetch property details if propertyId is provided
+  // Sync propertyId with URL param
   useEffect(() => {
-    async function fetchProperty() {
-      if (!propertyId) {
-        setProperty(null);
-        return;
-      }
-
-      const supabase = createClient();
-      const { data } = await supabase
-        .from("properties")
-        .select("*")
-        .eq("id", propertyId)
-        .single();
-
-      setProperty(data);
+    if (propertyIdParam) {
+      setPropertyId(propertyIdParam);
     }
-
-    fetchProperty();
-  }, [propertyId]);
+  }, [propertyIdParam]);
 
   const handleImageSelect = (file: File, previewUrl: string) => {
     setSelectedFile(file);
@@ -111,7 +92,6 @@ export default function StagePage() {
     setState("processing");
     setError(null);
 
-    // Initialize variations
     const initialVariations: StagedVariation[] = styles.map((style) => ({
       style,
       imageUrl: null,
@@ -119,7 +99,6 @@ export default function StagePage() {
     }));
     setVariations(initialVariations);
 
-    // Convert file to base64 once
     const base64 = await new Promise<string>((resolve, reject) => {
       const reader = new FileReader();
       reader.onload = () => {
@@ -131,11 +110,9 @@ export default function StagePage() {
       reader.readAsDataURL(selectedFile);
     });
 
-    // Process each style sequentially
     for (let i = 0; i < styles.length; i++) {
       setProcessingIndex(i);
 
-      // Update status to processing
       setVariations((prev) =>
         prev.map((v, idx) => (idx === i ? { ...v, status: "processing" } : v))
       );
@@ -159,7 +136,6 @@ export default function StagePage() {
           throw new Error(data.error || "Failed to stage image");
         }
 
-        // Update with result
         setVariations((prev) =>
           prev.map((v, idx) =>
             idx === i
@@ -180,7 +156,7 @@ export default function StagePage() {
 
     setProcessingIndex(-1);
     setState("complete");
-    router.refresh(); // Refresh to update credits
+    router.refresh();
   };
 
   const handleReset = () => {
@@ -222,7 +198,7 @@ export default function StagePage() {
   const canStage = selectedFile && roomType && styles.length > 0 && !isProcessing && hasEnoughCredits;
   const completedVariations = variations.filter((v) => v.status === "completed");
 
-  // Show result view
+  // Complete view with comparison slider
   if (state === "complete" && variations.length > 0 && preview) {
     const currentVariation = completedVariations[compareIndex] || completedVariations[0];
 
@@ -230,10 +206,10 @@ export default function StagePage() {
       <div className="max-w-5xl mx-auto space-y-6">
         <div className="flex items-start justify-between">
           <div>
-            <h1 className="text-3xl font-bold text-slate-900 dark:text-white">
+            <h1 className="text-3xl font-bold text-foreground">
               Staging Complete!
             </h1>
-            <p className="text-slate-600 dark:text-slate-400 mt-1">
+            <p className="text-muted-foreground mt-1">
               {completedVariations.length} style variation{completedVariations.length !== 1 ? "s" : ""} generated
             </p>
           </div>
@@ -251,7 +227,6 @@ export default function StagePage() {
           </div>
         </div>
 
-        {/* Style Tabs */}
         {completedVariations.length > 1 && (
           <div className="flex gap-2 overflow-x-auto pb-2">
             {completedVariations.map((variation, index) => (
@@ -267,7 +242,6 @@ export default function StagePage() {
           </div>
         )}
 
-        {/* Comparison Slider */}
         {currentVariation?.imageUrl && (
           <Card>
             <CardContent className="p-0">
@@ -285,14 +259,12 @@ export default function StagePage() {
                   setSliderPosition(Math.max(0, Math.min(100, x)));
                 }}
               >
-                {/* Staged Image (Background) */}
                 <img
                   src={currentVariation.imageUrl}
                   alt="Staged"
                   className="absolute inset-0 w-full h-full object-cover"
                 />
 
-                {/* Original Image (Foreground, clipped) */}
                 <div
                   className="absolute inset-0 overflow-hidden"
                   style={{ width: `${sliderPosition}%` }}
@@ -305,7 +277,6 @@ export default function StagePage() {
                   />
                 </div>
 
-                {/* Slider Line */}
                 <div
                   className="absolute top-0 bottom-0 w-1 bg-white shadow-lg cursor-ew-resize"
                   style={{ left: `${sliderPosition}%`, transform: "translateX(-50%)" }}
@@ -315,7 +286,6 @@ export default function StagePage() {
                   </div>
                 </div>
 
-                {/* Labels */}
                 <div className="absolute bottom-4 left-4 px-3 py-1 bg-black/70 rounded text-white text-sm">
                   Original
                 </div>
@@ -327,283 +297,218 @@ export default function StagePage() {
           </Card>
         )}
 
-        {/* All Variations Grid */}
-        <Card>
-          <CardHeader>
-            <CardTitle>All Variations</CardTitle>
-            <CardDescription>Click on any variation to compare with the original</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
-              {variations.map((variation, index) => (
-                <div
-                  key={variation.style}
-                  className={`relative aspect-video rounded-lg overflow-hidden cursor-pointer border-2 transition-all ${
-                    completedVariations[compareIndex]?.style === variation.style
-                      ? "border-blue-500 ring-2 ring-blue-500"
-                      : "border-transparent hover:border-slate-300"
-                  }`}
-                  onClick={() => {
-                    const completedIndex = completedVariations.findIndex(
-                      (v) => v.style === variation.style
-                    );
-                    if (completedIndex >= 0) setCompareIndex(completedIndex);
-                  }}
-                >
-                  {variation.status === "completed" && variation.imageUrl ? (
-                    <>
-                      <img
-                        src={variation.imageUrl}
-                        alt={getStyleLabel(variation.style)}
-                        className="w-full h-full object-cover"
-                      />
-                      <div className="absolute top-1 right-1">
-                        <CheckCircle2 className="h-5 w-5 text-green-500 drop-shadow" />
-                      </div>
-                      <Button
-                        variant="secondary"
-                        size="icon"
-                        className="absolute bottom-1 right-1 h-7 w-7"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleDownload(variation);
-                        }}
-                      >
-                        <Download className="h-3 w-3" />
-                      </Button>
-                    </>
-                  ) : variation.status === "failed" ? (
-                    <div className="w-full h-full bg-red-100 dark:bg-red-950 flex items-center justify-center">
-                      <XCircle className="h-8 w-8 text-red-500" />
-                    </div>
-                  ) : (
-                    <div className="w-full h-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center">
-                      <Loader2 className="h-6 w-6 animate-spin text-slate-400" />
-                    </div>
-                  )}
-                  <div className="absolute bottom-0 left-0 right-0 p-2 bg-gradient-to-t from-black/70 to-transparent">
-                    <p className="text-white text-xs font-medium truncate">
-                      {getStyleLabel(variation.style)}
-                    </p>
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
+          {variations.map((variation) => (
+            <div
+              key={variation.style}
+              className={`relative aspect-video rounded-lg overflow-hidden cursor-pointer border-2 transition-all ${
+                completedVariations[compareIndex]?.style === variation.style
+                  ? "border-primary ring-2 ring-primary"
+                  : "border-transparent hover:border-border"
+              }`}
+              onClick={() => {
+                const completedIndex = completedVariations.findIndex(
+                  (v) => v.style === variation.style
+                );
+                if (completedIndex >= 0) setCompareIndex(completedIndex);
+              }}
+            >
+              {variation.status === "completed" && variation.imageUrl ? (
+                <>
+                  <img
+                    src={variation.imageUrl}
+                    alt={getStyleLabel(variation.style)}
+                    className="w-full h-full object-cover"
+                  />
+                  <div className="absolute top-1 right-1">
+                    <CheckCircle2 className="h-5 w-5 text-green-500 drop-shadow" />
                   </div>
+                  <Button
+                    variant="secondary"
+                    size="icon"
+                    className="absolute bottom-1 right-1 h-7 w-7"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleDownload(variation);
+                    }}
+                  >
+                    <Download className="h-3 w-3" />
+                  </Button>
+                </>
+              ) : variation.status === "failed" ? (
+                <div className="w-full h-full bg-destructive/10 flex items-center justify-center">
+                  <XCircle className="h-8 w-8 text-destructive" />
                 </div>
-              ))}
+              ) : (
+                <div className="w-full h-full bg-muted flex items-center justify-center">
+                  <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+                </div>
+              )}
+              <div className="absolute bottom-0 left-0 right-0 p-2 bg-gradient-to-t from-black/70 to-transparent">
+                <p className="text-white text-xs font-medium truncate">
+                  {getStyleLabel(variation.style)}
+                </p>
+              </div>
             </div>
-          </CardContent>
-        </Card>
+          ))}
+        </div>
       </div>
     );
   }
 
+  // Main staging interface - Two-panel layout
   return (
-    <div className="max-w-4xl mx-auto space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold text-slate-900 dark:text-white">
-          Stage a Photo
-        </h1>
-        <p className="text-slate-600 dark:text-slate-400 mt-1">
-          Upload an empty room photo and transform it with AI
-        </p>
+    <div className="max-w-6xl mx-auto">
+      {/* Header */}
+      <div className="flex items-center justify-between mb-6">
+        <div>
+          <h1 className="text-2xl font-bold text-foreground">Stage a Photo</h1>
+          <p className="text-sm text-muted-foreground">
+            Transform empty rooms with AI-powered virtual staging
+          </p>
+        </div>
+        <Button variant="outline" size="sm" asChild>
+          <Link href="/stage/batch">
+            <Layers className="mr-2 h-4 w-4" />
+            Batch Mode
+          </Link>
+        </Button>
       </div>
-
-      {/* Property Info */}
-      {property && (
-        <Card className="border-blue-200 bg-blue-50 dark:bg-blue-950/30 dark:border-blue-900">
-          <CardContent className="flex items-center gap-3 p-4">
-            <div className="p-2 rounded-lg bg-blue-100 dark:bg-blue-900">
-              <MapPin className="h-5 w-5 text-blue-600" />
-            </div>
-            <div className="flex-1">
-              <p className="font-medium text-blue-800 dark:text-blue-200">
-                Staging for Property
-              </p>
-              <p className="text-sm text-blue-600 dark:text-blue-400">
-                {property.address}
-              </p>
-            </div>
-            <Button
-              variant="ghost"
-              size="icon"
-              className="text-blue-600 hover:text-blue-800 hover:bg-blue-100"
-              onClick={() => router.push("/stage")}
-            >
-              <X className="h-4 w-4" />
-            </Button>
-          </CardContent>
-        </Card>
-      )}
-
-      {/* Credit Warnings */}
-      {styles.length > 0 && !hasEnoughCredits && (
-        <Card className="border-red-200 bg-red-50 dark:bg-red-950/50 dark:border-red-900">
-          <CardContent className="flex items-center gap-3 p-4">
-            <CreditCard className="h-5 w-5 text-red-600 shrink-0" />
-            <div className="flex-1">
-              <p className="font-medium text-red-800 dark:text-red-200">
-                Insufficient Credits
-              </p>
-              <p className="text-sm text-red-600 dark:text-red-400">
-                You need {requiredCredits} credits for {styles.length} style{styles.length !== 1 ? "s" : ""} but have {credits}.
-              </p>
-            </div>
-            <Button asChild size="sm">
-              <Link href="/billing">Buy Credits</Link>
-            </Button>
-          </CardContent>
-        </Card>
-      )}
-
-      {isLowCredits && hasEnoughCredits && styles.length > 0 && (
-        <Card className="border-amber-200 bg-amber-50 dark:bg-amber-950/50 dark:border-amber-900">
-          <CardContent className="flex items-center gap-3 p-4">
-            <AlertTriangle className="h-5 w-5 text-amber-600 shrink-0" />
-            <p className="text-sm text-amber-600 dark:text-amber-400">
-              This will use {requiredCredits} of your {credits} remaining credits.
-            </p>
-          </CardContent>
-        </Card>
-      )}
 
       {/* Error Alert */}
       {(error || state === "error") && (
-        <Card className="border-red-200 bg-red-50 dark:bg-red-950/50 dark:border-red-900">
+        <Card className="mb-6 border-destructive bg-destructive/10">
           <CardContent className="flex items-center gap-3 p-4">
-            <AlertCircle className="h-5 w-5 text-red-600 shrink-0" />
-            <div>
-              <p className="font-medium text-red-800 dark:text-red-200">
-                Staging Failed
-              </p>
-              <p className="text-sm text-red-600 dark:text-red-400">
+            <AlertCircle className="h-5 w-5 text-destructive shrink-0" />
+            <div className="flex-1">
+              <p className="font-medium text-destructive">
                 {error || "An unexpected error occurred. Please try again."}
               </p>
             </div>
-            <Button
-              variant="outline"
-              size="sm"
-              className="ml-auto shrink-0"
-              onClick={handleReset}
-            >
+            <Button variant="outline" size="sm" onClick={handleReset}>
               Try Again
             </Button>
           </CardContent>
         </Card>
       )}
 
-      {/* Upload Section */}
-      <Card>
-        <CardHeader>
-          <CardTitle>1. Upload Your Photo</CardTitle>
-          <CardDescription>
-            Upload a photo of an empty or unfurnished room
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <ImageUploader
-            onImageSelect={handleImageSelect}
-            onImageClear={handleImageClear}
-            preview={preview}
-            disabled={isProcessing}
-          />
-        </CardContent>
-      </Card>
+      {/* Two-panel layout */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Left Panel - Image Upload */}
+        <div className="space-y-4">
+          <Card className="overflow-hidden">
+            <CardContent className="p-4">
+              <ImageUploader
+                onImageSelect={handleImageSelect}
+                onImageClear={handleImageClear}
+                preview={preview}
+                disabled={isProcessing}
+              />
+            </CardContent>
+          </Card>
 
-      {/* Room Type Section */}
-      <Card>
-        <CardHeader>
-          <CardTitle>2. Select Room Type</CardTitle>
-          <CardDescription>
-            Choose the type of room in your photo
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <RoomTypeSelector
-            value={roomType}
-            onChange={setRoomType}
-            disabled={isProcessing}
-          />
-        </CardContent>
-      </Card>
+          {/* Processing indicator */}
+          {isProcessing && (
+            <Card>
+              <CardContent className="p-4">
+                <div className="flex items-center gap-3">
+                  <Loader2 className="h-5 w-5 animate-spin text-primary" />
+                  <div className="flex-1">
+                    <p className="font-medium text-sm">
+                      Generating {styles.length > 1 ? "variations" : "staging"}...
+                    </p>
+                    <p className="text-xs text-muted-foreground">
+                      Style {processingIndex + 1} of {styles.length}: {getStyleLabel(styles[processingIndex])}
+                    </p>
+                  </div>
+                </div>
+                <div className="mt-3 flex gap-1.5">
+                  {variations.map((v) => (
+                    <div
+                      key={v.style}
+                      className={`h-1.5 flex-1 rounded-full transition-colors ${
+                        v.status === "completed"
+                          ? "bg-green-500"
+                          : v.status === "processing"
+                          ? "bg-primary animate-pulse"
+                          : v.status === "failed"
+                          ? "bg-destructive"
+                          : "bg-muted"
+                      }`}
+                    />
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          )}
+        </div>
 
-      {/* Style Section - Now Multi-Select */}
-      <Card>
-        <CardHeader>
-          <CardTitle>3. Choose Furniture Styles</CardTitle>
-          <CardDescription>
-            Select up to 3 styles to generate variations
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <MultiStyleSelector
+        {/* Right Panel - Controls */}
+        <div className="space-y-5">
+          {/* Room Type */}
+          <div className="space-y-2">
+            <label className="text-sm font-medium text-foreground">
+              Room Type
+            </label>
+            <RoomTypeDropdown
+              value={roomType}
+              onChange={setRoomType}
+              disabled={isProcessing}
+            />
+          </div>
+
+          {/* Style Gallery */}
+          <StyleGallery
             value={styles}
             onChange={setStyles}
             disabled={isProcessing}
           />
-        </CardContent>
-      </Card>
 
-      {/* Processing Progress */}
-      {isProcessing && (
-        <Card>
-          <CardContent className="p-6">
-            <div className="flex items-center gap-4">
-              <Loader2 className="h-6 w-6 animate-spin text-blue-600" />
-              <div>
-                <p className="font-medium text-slate-900 dark:text-white">
-                  Generating variations...
-                </p>
-                <p className="text-sm text-slate-500">
-                  Processing style {processingIndex + 1} of {styles.length}:{" "}
-                  {getStyleLabel(styles[processingIndex])}
-                </p>
-              </div>
-            </div>
-            <div className="mt-4 flex gap-2">
-              {variations.map((v, i) => (
-                <div
-                  key={v.style}
-                  className={`h-2 flex-1 rounded-full ${
-                    v.status === "completed"
-                      ? "bg-green-500"
-                      : v.status === "processing"
-                      ? "bg-blue-500 animate-pulse"
-                      : v.status === "failed"
-                      ? "bg-red-500"
-                      : "bg-slate-200 dark:bg-slate-700"
-                  }`}
-                />
-              ))}
-            </div>
-          </CardContent>
-        </Card>
-      )}
+          {/* Property Selector */}
+          <div className="space-y-2">
+            <label className="text-sm font-medium text-foreground">
+              Property <span className="text-muted-foreground font-normal">(optional)</span>
+            </label>
+            <PropertySelector
+              value={propertyId}
+              onChange={(id) => setPropertyId(id)}
+              disabled={isProcessing}
+            />
+          </div>
 
-      {/* Stage Button */}
-      {!isProcessing && (
-        <Card className="bg-gradient-to-r from-blue-600 to-blue-700 border-0">
-          <CardContent className="p-6">
-            <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
-              <div className="text-white text-center sm:text-left">
-                <h3 className="font-semibold">Ready to stage?</h3>
-                <p className="text-blue-100 text-sm">
-                  {styles.length === 0
-                    ? "Select at least one style"
-                    : `This will use ${requiredCredits} credit${requiredCredits !== 1 ? "s" : ""} for ${styles.length} variation${styles.length !== 1 ? "s" : ""}`}
-                </p>
-              </div>
-              <Button
-                size="lg"
-                variant="secondary"
-                onClick={handleStage}
-                disabled={!canStage}
-                className="w-full sm:w-auto"
-              >
-                <Sparkles className="mr-2 h-5 w-5" />
-                Generate {styles.length > 1 ? `${styles.length} Variations` : "Staging"}
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
-      )}
+          {/* Credit Display */}
+          <CreditDisplay
+            credits={credits}
+            creditsToUse={requiredCredits}
+          />
+
+          {/* Generate Button */}
+          <Button
+            size="lg"
+            className="w-full"
+            onClick={handleStage}
+            disabled={!canStage}
+          >
+            <Sparkles className="mr-2 h-5 w-5" />
+            {styles.length === 0
+              ? "Select a Style"
+              : !selectedFile
+              ? "Upload an Image"
+              : !roomType
+              ? "Select Room Type"
+              : !hasEnoughCredits
+              ? "Insufficient Credits"
+              : `Generate ${styles.length} Variation${styles.length !== 1 ? "s" : ""}`}
+          </Button>
+
+          {/* Quick tip */}
+          {selectedFile && roomType && styles.length === 0 && (
+            <p className="text-xs text-center text-muted-foreground">
+              Select 1-3 furniture styles above to continue
+            </p>
+          )}
+        </div>
+      </div>
     </div>
   );
 }

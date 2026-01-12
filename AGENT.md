@@ -88,10 +88,13 @@ useEffect(() => {
 | `ImageUploader.tsx` | Single image upload with drag-drop |
 | `BatchImageUploader.tsx` | Multi-image upload (up to 10) |
 | `BatchImageCard.tsx` | Per-image config card with room type dropdown |
-| `StyleSelector.tsx` | Single style selection |
+| `StyleSelector.tsx` | Single style selection (legacy) |
 | `MultiStyleSelector.tsx` | Multi-style selection (up to 3) |
+| `StyleGallery.tsx` | Visual style grid with thumbnail images |
 | `PropertySelector.tsx` | Property dropdown with inline create |
-| `RoomTypeSelector.tsx` | Room type selection |
+| `RoomTypeSelector.tsx` | Room type button grid (legacy) |
+| `RoomTypeDropdown.tsx` | Compact room type dropdown with icons |
+| `CreditDisplay.tsx` | Inline credit usage progress bar |
 
 ### Property Detail Components (`/src/app/(dashboard)/properties/[id]/`)
 | Component | Purpose |
@@ -248,6 +251,36 @@ The app uses a premium glassmorphic design with:
 - **Hover states**: `hover:scale-[1.02]` with smooth transitions
 
 CSS variables are defined in `/src/app/globals.css` using OKLch color space for better color interpolation.
+
+---
+
+## Stage Page Two-Panel Layout
+
+The Stage Photo page (`/stage`) uses a two-panel layout for better UX:
+
+**Layout Structure:**
+```
+┌─────────────────────────────────────────────────────────────┐
+│  Header: "Stage a Photo"                    [Batch Mode]    │
+├────────────────────────────┬────────────────────────────────┤
+│                            │  Room Type Dropdown            │
+│   IMAGE PREVIEW            │  Style Gallery (3x3 grid)      │
+│   (drag & drop)            │  Property Selector (optional)  │
+│                            │  Credit Display                │
+│                            │  [Generate Button]             │
+└────────────────────────────┴────────────────────────────────┘
+```
+
+**Key Components:**
+- `RoomTypeDropdown`: Compact select with room icons
+- `StyleGallery`: 3-column image grid with visual thumbnails
+- `CreditDisplay`: Progress bar showing credit usage
+- `PropertySelector`: Optional property assignment with inline create
+
+**Style Images:**
+- Located in `/public/styles/` as SVG placeholders
+- Can be replaced with real photography/AI-generated images
+- Referenced in `FURNITURE_STYLES` constant via `image` property
 
 ---
 

@@ -1,0 +1,23 @@
+<svg viewBox="0 0 400 300" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="luxury-wall" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" style="stop-color:#1c1917"/>
+      <stop offset="100%" style="stop-color:#292524"/>
+    </linearGradient>
+    <linearGradient id="gold" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#fbbf24"/>
+      <stop offset="50%" style="stop-color:#f59e0b"/>
+      <stop offset="100%" style="stop-color:#d97706"/>
+    </linearGradient>
+  </defs>
+  <rect width="400" height="300" fill="url(#luxury-wall)"/>
+  <rect x="0" y="230" width="400" height="70" fill="#44403c"/>
+  <rect x="50" y="120" width="180" height="110" rx="4" fill="#581c87"/>
+  <rect x="60" y="130" width="160" height="70" fill="#7e22ce"/>
+  <ellipse cx="140" cy="210" rx="70" ry="15" fill="#581c87"/>
+  <rect x="260" y="80" width="90" height="150" rx="3" fill="#44403c"/>
+  <rect x="270" y="90" width="70" height="110" fill="url(#gold)" opacity="0.4"/>
+  <circle cx="80" cy="60" r="30" fill="url(#gold)" opacity="0.8"/>
+  <line x1="80" y1="90" x2="80" y2="120" stroke="url(#gold)" stroke-width="2"/>
+  <rect x="360" y="140" width="25" height="90" rx="2" fill="url(#gold)"/>
+</svg>
