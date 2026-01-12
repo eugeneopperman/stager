@@ -69,7 +69,10 @@ Stager is a web application designed for real estate agents to virtually stage p
 │       ├── utils.ts           # Utility functions
 │       └── constants.ts       # Room types, styles, credit thresholds
 │
-├── public/                    # Static assets
+├── public/
+│   └── styles/               # Furniture style preview images (SVG)
+├── docs/
+│   └── PRD-*.md              # Product requirement documents
 ├── prompt-structure.txt       # Reference AI staging prompt
 ├── CLAUDE.md                  # This file
 ├── AGENT.md                   # Agent notes and lessons learned
@@ -184,23 +187,30 @@ NEXT_PUBLIC_APP_URL=http://localhost:3000
 | `src/lib/supabase/server.ts` | Server Supabase client |
 | `src/lib/supabase/middleware.ts` | Middleware Supabase client |
 | `src/lib/gemini.ts` | Gemini API integration with inpainting-focused prompt |
-| `src/lib/constants.ts` | Room types, styles, credit thresholds |
+| `src/lib/constants.ts` | Room types, styles (with image paths), credit thresholds |
 | `src/lib/database.types.ts` | TypeScript types for Supabase tables |
 | `src/middleware.ts` | Auth protection middleware |
 | `src/contexts/SidebarContext.tsx` | Sidebar collapse/auto-hide state management |
 | `src/components/providers/ThemeProvider.tsx` | next-themes wrapper for dark/light mode |
-| `src/components/layout/Header.tsx` | Header with global search functionality |
+| `src/components/layout/Header.tsx` | Header with search (max-w-7xl aligned with content) |
 | `src/components/layout/Sidebar.tsx` | Collapsible navigation sidebar with tooltips |
 | `src/components/ui/tooltip.tsx` | Tooltip component for collapsed UI elements |
+| `src/components/staging/ImageUploader.tsx` | Single image drag-drop upload |
 | `src/components/staging/BatchImageUploader.tsx` | Multi-image upload component |
+| `src/components/staging/RoomTypeDropdown.tsx` | Compact room type dropdown with icons |
+| `src/components/staging/StyleGallery.tsx` | Visual style grid with thumbnail images |
+| `src/components/staging/CreditDisplay.tsx` | Inline credit usage progress bar |
 | `src/components/staging/PropertySelector.tsx` | Property selection with inline create |
-| `src/app/(dashboard)/DashboardShell.tsx` | Dashboard layout with sidebar provider |
+| `src/app/(dashboard)/DashboardShell.tsx` | Dashboard layout with max-w-7xl container |
+| `src/app/(dashboard)/stage/page.tsx` | Two-panel staging interface |
 | `src/app/(dashboard)/stage/batch/page.tsx` | Batch staging workflow |
 | `src/app/(dashboard)/settings/ThemeSelector.tsx` | Light/dark/system theme picker |
 | `src/app/(dashboard)/settings/SidebarSettings.tsx` | Sidebar behavior settings |
 | `src/app/(dashboard)/history/HistoryJobCard.tsx` | History card with delete & comparison |
 | `src/app/(dashboard)/properties/[id]/StagedImageCard.tsx` | Property image with comparison slider |
 | `src/app/(dashboard)/properties/[id]/PropertyActions.tsx` | Property edit/delete actions |
+| `public/styles/*.svg` | Furniture style preview images (9 styles) |
+| `docs/PRD-Stage-Photo-Redesign.md` | Stage page redesign PRD |
 | `prompt-structure.txt` | Reference AI staging prompt |
 | `AGENT.md` | Agent notes and lessons learned |
 

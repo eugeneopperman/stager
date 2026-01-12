@@ -361,6 +361,7 @@ staging_jobs:
 | 0.9.9 | 2025-01-11 | Collapsible sidebar: collapse to icons, auto-hide mode, tooltips, keyboard shortcut |
 | 0.9.10 | 2025-01-12 | Stage page redesign: two-panel layout, room type dropdown, style image gallery |
 | 0.9.11 | 2025-01-12 | Container width standardization: max-w-7xl centered layout across all pages |
+| 0.9.12 | 2025-01-12 | Header alignment: constrained to match content width, fixed sidebar double-spacing bug |
 | 1.0.0 | TBD | MVP release |
 
 ---
@@ -373,6 +374,8 @@ staging_jobs:
 - [x] Before/after slider on individual staged images
 - [x] Dark/light theme toggle
 - [x] Collapsible/auto-hide sidebar
+- [x] Stage page UX redesign (two-panel layout, visual style gallery)
+- [x] Consistent container width across all pages (max-w-7xl centered)
 
 ### Medium Priority
 - [ ] Shareable links for properties/stagings

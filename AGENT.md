@@ -284,6 +284,72 @@ The Stage Photo page (`/stage`) uses a two-panel layout for better UX:
 
 ---
 
+## Dashboard Layout & Container Patterns
+
+### Centralized Container Width (max-w-7xl)
+
+All dashboard pages use a centralized container in `DashboardShell.tsx`:
+
+```tsx
+<main className="flex-1 overflow-y-auto p-6 scroll-smooth">
+  <div className="max-w-7xl mx-auto w-full">
+    {children}
+  </div>
+</main>
+```
+
+**Key points:**
+- All pages inherit `max-w-7xl` (1280px) centered layout
+- Pages with narrower content (Settings: `max-w-3xl`, Billing: `max-w-4xl`) add their own constraint with `mx-auto`
+- Header content also uses `max-w-7xl mx-auto` to align with page content
+
+### Sidebar Spacing (Important Bug Fix)
+
+**Problem encountered:** Double sidebar offset caused by both the sidebar container AND a spacer div taking up width.
+
+**Solution:** The sidebar container (`w-64` or `w-16`) already reserves space in the flex layout. Do NOT add a separate spacer div - this causes double the intended offset.
+
+```tsx
+// CORRECT - Sidebar container handles spacing
+<div className={cn("hidden lg:block shrink-0", sidebarWidth)}>
+  <Sidebar />
+</div>
+
+// WRONG - Don't add extra spacer
+{/* <div className={sidebarWidth} /> */}
+```
+
+### Header Alignment Pattern
+
+To align header content with main page content:
+
+```tsx
+<header className="sticky top-0 z-40 h-16 px-6 ...">
+  <div className="max-w-7xl mx-auto w-full h-full flex items-center gap-4">
+    {/* Left: Search */}
+    <div className="flex-1 max-w-md">...</div>
+
+    {/* Right: Actions - use ml-auto to push to far right */}
+    <div className="flex items-center gap-3 ml-auto">...</div>
+  </div>
+</header>
+```
+
+---
+
+## PRD Workflow
+
+When planning major feature changes:
+1. Create PRD document in `/docs/PRD-[Feature-Name].md`
+2. Include current state analysis, proposed solutions with options
+3. Ask user to select preferred options
+4. Update PRD with "SELECTED" markers on chosen options
+5. Implement based on approved plan
+
+Example: `docs/PRD-Stage-Photo-Redesign.md`
+
+---
+
 ## Session Continuity Tips
 
 1. Read `CLAUDE.md` for project overview and conventions
