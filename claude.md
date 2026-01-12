@@ -20,7 +20,7 @@ Stager is a web application designed for real estate agents to virtually stage p
   - Storage (image uploads)
 
 ### AI Integration
-- **Google Gemini Flash 2.5** - Image generation and editing
+- **Google Gemini 3 Pro Image** (Nano Banana Pro) - Image generation and editing
 - SDK: `@google/generative-ai`
 
 ### Deployment
