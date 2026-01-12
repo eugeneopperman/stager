@@ -43,7 +43,7 @@ function DashboardContent({ children, user, credits = 0 }: DashboardShellProps) 
       {/* Desktop Sidebar */}
       <div
         className={cn(
-          "hidden lg:block",
+          "hidden lg:block shrink-0",
           "transition-all duration-300 ease-out",
           // Auto-hide mode: fixed positioning, slides in/out
           isAutoHide
@@ -58,15 +58,6 @@ function DashboardContent({ children, user, credits = 0 }: DashboardShellProps) 
       >
         <Sidebar credits={credits} />
       </div>
-
-      {/* Spacer for non-auto-hide mode */}
-      {!isAutoHide && (
-        <div className={cn(
-          "hidden lg:block shrink-0",
-          "transition-all duration-300 ease-out",
-          sidebarWidth
-        )} />
-      )}
 
       {/* Mobile Sidebar */}
       <div
