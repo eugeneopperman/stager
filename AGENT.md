@@ -108,7 +108,21 @@ useEffect(() => {
 | Component | Purpose |
 |-----------|---------|
 | `Header.tsx` | Top bar with global search, notifications, user menu |
-| `Sidebar.tsx` | Navigation sidebar with credit display |
+| `Sidebar.tsx` | Collapsible navigation sidebar with tooltips, credit display |
+
+### Settings Components (`/src/app/(dashboard)/settings/`)
+| Component | Purpose |
+|-----------|---------|
+| `ThemeSelector.tsx` | Light/dark/system theme picker |
+| `SidebarSettings.tsx` | Sidebar mode: always visible vs auto-hide |
+| `ProfileForm.tsx` | User name and company form |
+| `PasswordSection.tsx` | Password change section |
+| `DangerZone.tsx` | Account deletion |
+
+### Provider Components (`/src/components/providers/`)
+| Component | Purpose |
+|-----------|---------|
+| `ThemeProvider.tsx` | next-themes wrapper for app-wide theme support |
 
 ---
 
@@ -173,6 +187,67 @@ After making changes:
 2. Test locally with `npm run dev` if needed
 3. Commit and push to GitHub
 4. If changes don't appear on production, run `npx vercel --prod --yes`
+
+---
+
+## UI & Theme Patterns
+
+### Theme Toggle (next-themes)
+The app uses `next-themes` for dark/light/system theme support:
+- **ThemeProvider**: Wraps the app in `/src/app/layout.tsx`
+- **ThemeSelector**: UI component in settings with light/dark/system options
+- Pattern: Use `useTheme()` hook, check `mounted` state before rendering to prevent hydration mismatch
+
+```tsx
+const { theme, setTheme } = useTheme();
+const [mounted, setMounted] = useState(false);
+
+useEffect(() => {
+  setMounted(true);
+}, []);
+
+if (!mounted) return <Skeleton />; // Prevent hydration mismatch
+```
+
+### Collapsible Sidebar (SidebarContext)
+The sidebar has two modes controlled by `SidebarContext`:
+- **Normal mode**: Sidebar always visible, can toggle between expanded (256px) and collapsed (64px)
+- **Auto-hide mode**: Sidebar slides off-canvas, appears on left-edge hover
+
+**Key implementation details:**
+1. **State management**: `/src/contexts/SidebarContext.tsx` with localStorage persistence
+2. **Hover detection**: Invisible 16px trigger zone at left edge when auto-hide enabled
+3. **Delayed hide**: 300ms delay before hiding to prevent flicker
+4. **Keyboard shortcut**: `[` key toggles collapsed state (excludes inputs/textareas)
+
+**localStorage keys:**
+- `stager-sidebar-collapsed`: boolean
+- `stager-sidebar-autohide`: boolean
+
+### Tooltip Pattern for Collapsed UI
+When UI elements collapse to icons, use tooltips:
+```tsx
+{isCollapsed ? (
+  <Tooltip>
+    <TooltipTrigger asChild>{navLink}</TooltipTrigger>
+    <TooltipContent side="right">{item.name}</TooltipContent>
+  </Tooltip>
+) : (
+  navLink
+)}
+```
+
+---
+
+## Glassmorphism UI Pattern
+
+The app uses a premium glassmorphic design with:
+- **Glass cards**: `bg-card/80 backdrop-blur-xl border-white/[0.08]`
+- **Subtle shadows**: `shadow-xl shadow-black/5`
+- **Gradient overlays**: `bg-gradient-to-br from-white/5 via-transparent to-black/5`
+- **Hover states**: `hover:scale-[1.02]` with smooth transitions
+
+CSS variables are defined in `/src/app/globals.css` using OKLch color space for better color interpolation.
 
 ---
 

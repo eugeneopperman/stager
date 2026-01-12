@@ -148,6 +148,9 @@ Full monetization with Stripe.
 | ZIP download | Low | ✅ Complete |
 | Credits system | Medium | ✅ Complete |
 | Analytics dashboard | Low | ✅ Complete |
+| Dark/Light theme toggle | Medium | ✅ Complete |
+| Collapsible sidebar | Medium | ✅ Complete |
+| Auto-hide sidebar | Low | ✅ Complete |
 | Payment integration | Low | Planned |
 | Team accounts | Low | Future |
 
@@ -353,6 +356,9 @@ staging_jobs:
 | 0.9.4 | 2025-01-10 | Global search bar: search properties and staging jobs |
 | 0.9.5 | 2025-01-11 | History delete, property edit/delete, before/after slider on property images |
 | 0.9.6 | 2025-01-11 | Store original images in Supabase Storage for comparison slider |
+| 0.9.7 | 2025-01-11 | UI modernization: glassmorphism design, micro-animations, OKLch colors |
+| 0.9.8 | 2025-01-11 | Theme toggle: light/dark/system modes with next-themes |
+| 0.9.9 | 2025-01-11 | Collapsible sidebar: collapse to icons, auto-hide mode, tooltips, keyboard shortcut |
 | 1.0.0 | TBD | MVP release |
 
 ---
@@ -363,13 +369,17 @@ staging_jobs:
 - [x] History management (delete staging jobs)
 - [x] Property edit/delete functionality
 - [x] Before/after slider on individual staged images
+- [x] Dark/light theme toggle
+- [x] Collapsible/auto-hide sidebar
 
 ### Medium Priority
 - [ ] Shareable links for properties/stagings
 - [ ] Email notifications for batch completion
 - [ ] User onboarding/tutorial
+- [ ] Image quality options (resolution selection)
 
 ### Low Priority
 - [ ] Payment integration (Stripe)
 - [ ] Team accounts
 - [ ] Usage analytics over time
+- [ ] Mobile app (React Native)
