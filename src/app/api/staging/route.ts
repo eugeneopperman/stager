@@ -72,42 +72,41 @@ export async function POST(request: NextRequest) {
     const jobId = crypto.randomUUID();
     console.log("[Staging API] Job ID:", jobId);
 
-    // Upload original image to Supabase Storage
+    // Try to upload original image to Supabase Storage (non-blocking)
     const originalFileName = `${user.id}/${jobId}-original.${mimeType.split("/")[1] || "png"}`;
-    const originalImageBuffer = Buffer.from(image, "base64");
+    let originalImageUrl = `data:${mimeType};base64,${image.substring(0, 100)}...`; // Default fallback
 
-    const { error: originalUploadError } = await supabase.storage
-      .from("staging-images")
-      .upload(originalFileName, originalImageBuffer, {
-        contentType: mimeType,
-        upsert: true,
-      });
-
-    let originalImageUrl: string;
-    let urlType = "unknown";
-    if (originalUploadError) {
-      console.error("[Staging API] Original image upload error:", originalUploadError);
-      originalImageUrl = `data:${mimeType};base64,${image.substring(0, 100)}...`;
-      urlType = "base64-fallback";
-    } else {
-      // Use signed URL (works even if bucket isn't public)
-      const { data: signedUrlData, error: signedUrlError } = await supabase.storage
+    try {
+      const originalImageBuffer = Buffer.from(image, "base64");
+      const { error: originalUploadError } = await supabase.storage
         .from("staging-images")
-        .createSignedUrl(originalFileName, 3600); // 1 hour expiry
+        .upload(originalFileName, originalImageBuffer, {
+          contentType: mimeType,
+          upsert: true,
+        });
 
-      if (signedUrlError || !signedUrlData?.signedUrl) {
-        console.error("[Staging API] Signed URL error:", signedUrlError);
-        // Fall back to public URL
-        const { data: originalPublicUrl } = supabase.storage
+      if (!originalUploadError) {
+        // Try to get a signed URL
+        const { data: signedUrlData } = await supabase.storage
           .from("staging-images")
-          .getPublicUrl(originalFileName);
-        originalImageUrl = originalPublicUrl.publicUrl;
-        urlType = "public";
+          .createSignedUrl(originalFileName, 3600);
+
+        if (signedUrlData?.signedUrl) {
+          originalImageUrl = signedUrlData.signedUrl;
+          console.log("[Staging API] Original image uploaded with signed URL");
+        } else {
+          const { data: publicUrl } = supabase.storage
+            .from("staging-images")
+            .getPublicUrl(originalFileName);
+          originalImageUrl = publicUrl.publicUrl;
+          console.log("[Staging API] Original image uploaded with public URL");
+        }
       } else {
-        originalImageUrl = signedUrlData.signedUrl;
-        urlType = "signed";
+        console.error("[Staging API] Storage upload failed:", originalUploadError.message);
       }
-      console.log("[Staging API] Original image uploaded, URL type:", urlType);
+    } catch (storageError) {
+      console.error("[Staging API] Storage error (non-fatal):", storageError);
+      // Continue with base64 fallback
     }
 
     // Select provider
@@ -231,13 +230,13 @@ export async function POST(request: NextRequest) {
     console.log("[Staging API] Webhook URL:", webhookUrl || "none (will use polling)");
 
     // Start async staging with Replicate
-    // Use signed URL which Replicate can access
+    // Use base64 data URL directly (storage URLs have permission issues)
     const replicateProvider = getReplicateProvider();
     try {
       const asyncResult = await replicateProvider.stageImageAsync(
         {
           imageBase64: image,
-          imageUrl: originalImageUrl, // Use signed URL
+          // Skip imageUrl - use base64 directly to avoid storage permission issues
           mimeType,
           roomType,
           furnitureStyle: style,
