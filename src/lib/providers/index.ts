@@ -51,12 +51,13 @@ export function getProvider(providerId: StagingProvider): BaseStagingProvider {
  * Default provider configuration
  */
 export function getDefaultConfig(): ProviderConfig {
-  // Use env var to select provider, default to Gemini
-  const defaultProvider = (process.env.AI_DEFAULT_PROVIDER as StagingProvider) || "gemini";
+  // Default to Gemini - SDXL doesn't add furniture well, need specialized model
+  // SD integration is complete but needs a better model for interior design
+  const defaultProvider: StagingProvider = "gemini";
   return {
     defaultProvider,
     enableFallback: true,
-    fallbackProvider: defaultProvider === "stable-diffusion" ? "gemini" : "stable-diffusion",
+    fallbackProvider: "stable-diffusion",
   };
 }
 
