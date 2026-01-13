@@ -180,6 +180,11 @@ export default function StagePage() {
     });
 
     for (let i = 0; i < styles.length; i++) {
+      // Add delay between requests to avoid Replicate throttling (skip first request)
+      if (i > 0) {
+        await new Promise(resolve => setTimeout(resolve, 2000));
+      }
+
       setProcessingIndex(i);
 
       setVariations((prev) =>
