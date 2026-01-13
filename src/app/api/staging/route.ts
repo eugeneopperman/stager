@@ -220,6 +220,7 @@ export async function POST(request: NextRequest) {
       const asyncResult = await replicateProvider.stageImageAsync(
         {
           imageBase64: image,
+          imageUrl: originalImageUrl, // Use the uploaded image URL
           mimeType,
           roomType,
           furnitureStyle: style,

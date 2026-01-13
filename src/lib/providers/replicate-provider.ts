@@ -58,20 +58,22 @@ export class ReplicateProvider extends BaseStagingProvider {
     const prompt = this.buildPrompt(input.roomType, input.furnitureStyle);
     const negativePrompt = this.buildNegativePrompt(input.roomType);
 
-    // Prepare the img2img request
+    // Use URL if available, otherwise use base64 data URL
+    const imageSource = input.imageUrl || `data:${input.mimeType};base64,${input.imageBase64}`;
+    console.log("[ReplicateProvider] Image source type:", input.imageUrl ? "URL" : "base64");
+    console.log("[ReplicateProvider] Image source:", imageSource.substring(0, 100) + "...");
+
+    // Prepare the img2img request with simplified parameters
     const predictionInput: Record<string, unknown> = {
       prompt,
       negative_prompt: negativePrompt,
-      image: `data:${input.mimeType};base64,${input.imageBase64}`,
-      // Lower prompt_strength = more preservation of original image
-      // 0.8 allows furniture to be added while keeping room structure
-      prompt_strength: 0.8,
-      num_inference_steps: 30,
+      image: imageSource,
+      prompt_strength: 0.75, // Lower = more preservation
+      num_inference_steps: 25,
       guidance_scale: 7.5,
-      scheduler: "K_EULER",
-      refine: "expert_ensemble_refiner",
-      high_noise_frac: 0.8,
     };
+
+    console.log("[ReplicateProvider] Creating prediction with prompt:", prompt.substring(0, 100) + "...");
 
     try {
       const prediction = await this.createPrediction(
@@ -80,6 +82,7 @@ export class ReplicateProvider extends BaseStagingProvider {
         webhookUrl
       );
 
+      console.log("[ReplicateProvider] Prediction created:", prediction.id);
       return {
         jobId: input.jobId || prediction.id,
         predictionId: prediction.id,
@@ -87,7 +90,7 @@ export class ReplicateProvider extends BaseStagingProvider {
         estimatedTimeSeconds: this.getEstimatedProcessingTime(),
       };
     } catch (error) {
-      console.error("Replicate inpainting error:", error);
+      console.error("[ReplicateProvider] Error creating prediction:", error);
       throw error;
     }
   }

@@ -34,6 +34,7 @@ export interface StagingResult {
  */
 export interface StagingInput {
   imageBase64: string;
+  imageUrl?: string; // Public URL of the uploaded image (for async providers)
   mimeType: string;
   roomType: RoomType;
   furnitureStyle: FurnitureStyle;
