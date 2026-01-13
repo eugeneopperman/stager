@@ -1,18 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
-import {
-  getProviderRouter,
-  getReplicateProvider,
-  type StagingProvider,
-} from "@/lib/providers";
-import { runPreprocessingPipeline } from "@/lib/preprocessing";
+import { stageImage } from "@/lib/gemini";
 import { type RoomType, type FurnitureStyle, CREDITS_PER_STAGING } from "@/lib/constants";
 
 /**
  * POST /api/staging
  *
- * Stage a room image with AI.
- * Supports both sync (Gemini) and async (Stable Diffusion) providers.
+ * Stage a room image with Gemini AI.
  */
 export async function POST(request: NextRequest) {
   const startTime = Date.now();
@@ -51,14 +45,12 @@ export async function POST(request: NextRequest) {
       roomType,
       style,
       propertyId,
-      preferredProvider,
     } = body as {
       image: string;
       mimeType: string;
       roomType: RoomType;
       style: FurnitureStyle;
       propertyId?: string;
-      preferredProvider?: StagingProvider;
     };
 
     if (!image || !mimeType || !roomType || !style) {
@@ -93,14 +85,6 @@ export async function POST(request: NextRequest) {
       originalImageUrl = originalPublicUrl.publicUrl;
     }
 
-    // Select provider based on availability and preference
-    const router = getProviderRouter();
-    const { provider, fallbackUsed } = await router.selectProvider(preferredProvider);
-
-    if (fallbackUsed) {
-      console.log(`Using fallback provider: ${provider.providerId}`);
-    }
-
     // Create staging job record
     const { data: job, error: jobError } = await supabase
       .from("staging_jobs")
@@ -124,134 +108,69 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Handle sync provider (Gemini)
-    if (provider.supportsSync) {
-      const result = await provider.stageImageSync({
-        imageBase64: image,
-        mimeType,
-        roomType,
-        furnitureStyle: style,
-        jobId,
-      });
+    // Stage the image with Gemini
+    const result = await stageImage(image, mimeType, roomType, style);
 
-      if (!result.success || !result.imageData) {
-        await supabase
-          .from("staging_jobs")
-          .update({
-            status: "failed",
-            error_message: result.error || "Staging failed",
-            processing_time_ms: Date.now() - startTime,
-          })
-          .eq("id", job.id);
-
-        return NextResponse.json(
-          { error: result.error || "Failed to stage image" },
-          { status: 500 }
-        );
-      }
-
-      // Upload staged image
-      const fileName = `${user.id}/${job.id}-staged.${result.mimeType?.split("/")[1] || "png"}`;
-      const imageBuffer = Buffer.from(result.imageData, "base64");
-
-      const { error: uploadError } = await supabase.storage
-        .from("staging-images")
-        .upload(fileName, imageBuffer, {
-          contentType: result.mimeType || "image/png",
-          upsert: true,
-        });
-
-      const { data: publicUrl } = supabase.storage
-        .from("staging-images")
-        .getPublicUrl(fileName);
-
-      const stagedImageUrl = uploadError
-        ? `data:${result.mimeType};base64,${result.imageData}`
-        : publicUrl.publicUrl;
-
-      // Update job as completed
+    if (!result.success || !result.imageData) {
       await supabase
         .from("staging_jobs")
         .update({
-          status: "completed",
-          staged_image_url: stagedImageUrl,
-          completed_at: new Date().toISOString(),
+          status: "failed",
+          error_message: result.error || "Staging failed",
           processing_time_ms: Date.now() - startTime,
         })
         .eq("id", job.id);
 
-      // Deduct credits
-      await supabase
-        .from("profiles")
-        .update({
-          credits_remaining: profile.credits_remaining - CREDITS_PER_STAGING,
-        })
-        .eq("id", user.id);
-
-      return NextResponse.json({
-        success: true,
-        jobId: job.id,
-        stagedImageUrl,
-        provider: provider.providerId,
-        async: false,
-      });
+      return NextResponse.json(
+        { error: result.error || "Failed to stage image" },
+        { status: 500 }
+      );
     }
 
-    // Handle async provider (Stable Diffusion)
-    // Update status to processing (skip preprocessing for now to reduce API calls)
-    await supabase
-      .from("staging_jobs")
-      .update({ status: "processing" })
-      .eq("id", job.id);
+    // Upload staged image
+    const fileName = `${user.id}/${job.id}-staged.${result.mimeType?.split("/")[1] || "png"}`;
+    const imageBuffer = Buffer.from(result.imageData, "base64");
 
-    // TODO: Re-enable preprocessing when Replicate rate limits are resolved
-    // const preprocessingResults = await runPreprocessingPipeline(
-    //   originalImageUrl,
-    //   jobId,
-    //   user.id
-    // );
+    const { error: uploadError } = await supabase.storage
+      .from("staging-images")
+      .upload(fileName, imageBuffer, {
+        contentType: result.mimeType || "image/png",
+        upsert: true,
+      });
 
-    // Get webhook URL for completion callback (only use HTTPS URLs)
-    const appUrl = process.env.NEXT_PUBLIC_APP_URL || "";
-    const webhookUrl = appUrl.startsWith("https://")
-      ? `${appUrl}/api/webhooks/replicate`
-      : undefined;
+    const { data: publicUrl } = supabase.storage
+      .from("staging-images")
+      .getPublicUrl(fileName);
 
-    // Start async staging with Replicate (no ControlNet inputs for now)
-    // If no webhook, client will poll for status
-    const replicateProvider = getReplicateProvider();
-    const asyncResult = await replicateProvider.stageImageAsync(
-      {
-        imageBase64: image,
-        mimeType,
-        roomType,
-        furnitureStyle: style,
-        jobId,
-      },
-      webhookUrl || ""
-    );
+    const stagedImageUrl = uploadError
+      ? `data:${result.mimeType};base64,${result.imageData}`
+      : publicUrl.publicUrl;
 
-    // Store prediction ID for webhook matching
+    // Update job as completed
     await supabase
       .from("staging_jobs")
       .update({
-        replicate_prediction_id: asyncResult.predictionId,
-        generation_params: {
-          prompt: replicateProvider.buildPrompt(roomType, style),
-          negative_prompt: replicateProvider.buildNegativePrompt(roomType),
-        },
+        status: "completed",
+        staged_image_url: stagedImageUrl,
+        completed_at: new Date().toISOString(),
+        processing_time_ms: Date.now() - startTime,
       })
       .eq("id", job.id);
 
-    // Return immediately for async - client will poll for status
+    // Deduct credits
+    await supabase
+      .from("profiles")
+      .update({
+        credits_remaining: profile.credits_remaining - CREDITS_PER_STAGING,
+      })
+      .eq("id", user.id);
+
     return NextResponse.json({
       success: true,
       jobId: job.id,
-      status: "processing",
-      provider: provider.providerId,
-      async: true,
-      estimatedTimeSeconds: provider.getEstimatedProcessingTime(),
-      pollUrl: `/api/staging/${job.id}/status`,
+      stagedImageUrl,
+      provider: "gemini",
+      async: false,
     });
   } catch (error) {
     console.error("Staging API error:", error);
