@@ -68,7 +68,36 @@ export async function GET() {
     }
 
     // Test 7: Create a test prediction to see exact error
-    results.step7_testPrediction = "Skipped - use ?test=true to run";
+    results.step7_testPrediction = "Testing Replicate prediction...";
+    try {
+      const testToken = process.env.REPLICATE_API_TOKEN || "";
+      // Use a simple test - just check if we can hit the predictions endpoint
+      const testResponse = await fetch("https://api.replicate.com/v1/predictions", {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${testToken}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          version: "7762fd07cf82c948538e41f63f77d685e02b063e37e496e96eefd46c929f9bdc",
+          input: {
+            prompt: "test",
+            // Tiny 1x1 white PNG as base64 data URL
+            image: "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8/5+hHgAHggJ/PchI7wAAAABJRU5ErkJggg==",
+          },
+        }),
+      });
+      const testResult = await testResponse.text();
+      results.step7_testPrediction = {
+        status: testResponse.status,
+        ok: testResponse.ok,
+        response: testResult.substring(0, 500),
+      };
+    } catch (testError) {
+      results.step7_testPrediction = {
+        error: testError instanceof Error ? testError.message : "Unknown error",
+      };
+    }
 
     return NextResponse.json({
       success: true,
