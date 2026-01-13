@@ -51,7 +51,7 @@ export function getProvider(providerId: StagingProvider): BaseStagingProvider {
  * Default provider configuration
  */
 export function getDefaultConfig(): ProviderConfig {
-  const defaultProvider = (process.env.AI_DEFAULT_PROVIDER as StagingProvider) || "stable-diffusion";
+  const defaultProvider = (process.env.AI_DEFAULT_PROVIDER as StagingProvider) || "gemini";
   return {
     defaultProvider,
     enableFallback: true,
