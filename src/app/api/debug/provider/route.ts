@@ -1,0 +1,51 @@
+import { NextResponse } from "next/server";
+import { getProviderRouter, getGeminiProvider } from "@/lib/providers";
+
+/**
+ * GET /api/debug/provider
+ *
+ * Debug endpoint to test provider system
+ */
+export async function GET() {
+  const results: Record<string, unknown> = {};
+
+  try {
+    // Test 1: Get provider router
+    results.step1_router = "Getting router...";
+    const router = getProviderRouter();
+    results.step1_router = "Router OK";
+
+    // Test 2: Select provider
+    results.step2_select = "Selecting provider...";
+    const { provider, fallbackUsed } = await router.selectProvider();
+    results.step2_select = {
+      providerId: provider.providerId,
+      fallbackUsed,
+      supportsSync: provider.supportsSync,
+    };
+
+    // Test 3: Health check
+    results.step3_health = "Checking health...";
+    const allHealth = await router.getAllProvidersHealth();
+    results.step3_health = allHealth;
+
+    // Test 4: Direct Gemini provider
+    results.step4_gemini = "Getting Gemini provider...";
+    const gemini = getGeminiProvider();
+    results.step4_gemini = {
+      providerId: gemini.providerId,
+      supportsSync: gemini.supportsSync,
+    };
+
+    return NextResponse.json({
+      success: true,
+      results,
+    });
+  } catch (error) {
+    return NextResponse.json({
+      success: false,
+      error: error instanceof Error ? error.message : String(error),
+      results,
+    });
+  }
+}
