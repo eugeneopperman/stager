@@ -1,6 +1,6 @@
 import { ROOM_TYPES, FURNITURE_STYLES, type RoomType, type FurnitureStyle } from "../constants";
 import { BaseStagingProvider } from "./base-provider";
-import { getRoomFurniturePrompt, getRoomNegativePrompt, getRoomPlacementPrompt, getRoomMaxItems } from "../staging/room-rules";
+import { getRoomFurniturePrompt, getRoomNegativePrompt } from "../staging/room-rules";
 import type {
   StagingResult,
   StagingInput,
@@ -65,16 +65,16 @@ export class ReplicateProvider extends BaseStagingProvider {
 
     // Prepare the interior design model request
     // This model uses RealVisXL V5.0 base with Depth ControlNet and ProMax ControlNet
-    // Balance: preserve structure but allow furniture additions
+    // Using model defaults which worked well in v1.033
     const predictionInput: Record<string, unknown> = {
       image: imageSource,
       prompt,
       negative_prompt: negativePrompt,
-      depth_strength: 0.7,      // Moderate - preserve walls/doors but allow furniture
-      promax_strength: 0.6,     // Moderate - preserve major lines but allow additions
-      guidance_scale: 9,        // Higher to follow furniture prompt more strongly
-      num_inference_steps: 50,  // Higher quality
-      refiner_strength: 0.4,    // Standard refiner for good quality
+      depth_strength: 0.8,      // Model default - good structure preservation
+      promax_strength: 0.8,     // Model default - preserves architectural lines
+      guidance_scale: 7.5,      // Model default
+      num_inference_steps: 50,
+      refiner_strength: 0.4,    // Model default
     };
 
     console.log("[ReplicateProvider] Creating prediction with prompt:", prompt.substring(0, 100) + "...");
@@ -151,27 +151,26 @@ export class ReplicateProvider extends BaseStagingProvider {
 
   /**
    * Build a prompt optimized for the interior design model.
-   * Uses room-specific rules for appropriate furniture selection and placement.
+   * Simple, clean prompt that worked well in v1.033.
    */
   buildPrompt(roomType: RoomType, furnitureStyle: FurnitureStyle): string {
     const roomLabel = this.getRoomLabel(roomType);
     const { label: styleLabel } = this.getStyleDetails(furnitureStyle);
     const furnitureList = getRoomFurniturePrompt(roomType, styleLabel);
-    const placementGuidance = getRoomPlacementPrompt(roomType);
-    const maxItems = getRoomMaxItems(roomType);
 
-    // Lead with furniture, add structure note at end (SD models respond better to this order)
-    return `${styleLabel} style ${roomLabel} with ${furnitureList}. ${placementGuidance}. ${maxItems} furniture pieces maximum. Professional real estate photography, photorealistic, 8k, natural lighting. Keep all existing doors, windows, closets, and mirrors unchanged.`.trim();
+    // Simple prompt - let the model's ControlNet handle structure preservation
+    return `${styleLabel} style ${roomLabel} interior design with ${furnitureList}, masterfully designed, photorealistic, professional real estate photography, 8k, highly detailed, natural lighting, magazine quality`.trim();
   }
 
   /**
-   * Build negative prompt with room-specific forbidden items and quality issues.
+   * Build negative prompt with room-specific forbidden items.
+   * Simple version that worked well in v1.033.
    */
   buildNegativePrompt(roomType: RoomType): string {
     const roomNegatives = getRoomNegativePrompt(roomType);
 
-    // Keep negative prompt focused - too many terms can confuse the model
-    return `${roomNegatives}, empty room, no furniture, furniture blocking doors, overcrowded, cluttered, blurry, low quality, distorted, cartoon, CGI, 3D render, people, pets, text, watermark, vintage, retro, 80s style, faded colors`.trim();
+    // Simple negative prompt - quality issues and wrong items
+    return `${roomNegatives}, blurry, low quality, distorted, cartoon, illustration, CGI, 3D render, people, pets, text, watermark, cluttered, messy, overcrowded, floating objects`.trim();
   }
 
   /**
