@@ -44,15 +44,15 @@ export abstract class BaseStagingProvider {
   /**
    * Start an async staging job (returns immediately with job ID).
    * Only available if supportsAsync is true.
-   * Completion will be signaled via webhook.
+   * Completion will be signaled via webhook or polling.
    *
    * @param input - Staging input with image and configuration
-   * @param webhookUrl - URL to call when processing completes
+   * @param webhookUrl - Optional URL to call when processing completes (uses polling if not provided)
    * @returns Async result with job/prediction ID
    */
   abstract stageImageAsync(
     input: StagingInput,
-    webhookUrl: string
+    webhookUrl?: string
   ): Promise<AsyncStagingResult>;
 
   /**
