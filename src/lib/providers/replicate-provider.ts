@@ -65,16 +65,16 @@ export class ReplicateProvider extends BaseStagingProvider {
 
     // Prepare the interior design model request
     // This model uses RealVisXL V5.0 base with Depth ControlNet and ProMax ControlNet
-    // CRITICAL: High depth/promax values to preserve room structure (doors, windows, closets, mirrors)
+    // Balance: preserve structure but allow furniture additions
     const predictionInput: Record<string, unknown> = {
       image: imageSource,
       prompt,
       negative_prompt: negativePrompt,
-      depth_strength: 0.9,      // HIGH - Preserve room structure (doors, windows, closets, mirrors)
-      promax_strength: 0.85,    // HIGH - Preserve architectural lines and edges
-      guidance_scale: 7.5,      // Model's default, good balance
+      depth_strength: 0.7,      // Moderate - preserve walls/doors but allow furniture
+      promax_strength: 0.6,     // Moderate - preserve major lines but allow additions
+      guidance_scale: 9,        // Higher to follow furniture prompt more strongly
       num_inference_steps: 50,  // Higher quality
-      refiner_strength: 0.3,    // Lower refiner to reduce structural changes
+      refiner_strength: 0.4,    // Standard refiner for good quality
     };
 
     console.log("[ReplicateProvider] Creating prediction with prompt:", prompt.substring(0, 100) + "...");
@@ -152,7 +152,6 @@ export class ReplicateProvider extends BaseStagingProvider {
   /**
    * Build a prompt optimized for the interior design model.
    * Uses room-specific rules for appropriate furniture selection and placement.
-   * CRITICAL: Emphasizes preserving all existing room architecture.
    */
   buildPrompt(roomType: RoomType, furnitureStyle: FurnitureStyle): string {
     const roomLabel = this.getRoomLabel(roomType);
@@ -161,24 +160,18 @@ export class ReplicateProvider extends BaseStagingProvider {
     const placementGuidance = getRoomPlacementPrompt(roomType);
     const maxItems = getRoomMaxItems(roomType);
 
-    // Structure preservation is CRITICAL - only add furniture, never modify architecture
-    const structurePreservation = "IMPORTANT: Preserve all existing architectural elements exactly as they are - all doors, windows, closets, mirrors, light fixtures, outlets, vents, flooring, walls, ceiling, trim, and moldings must remain unchanged. Only add furniture to the empty space.";
-
-    // Prompt optimized for interior design model with placement rules
-    return `${structurePreservation} ${styleLabel} style ${roomLabel} interior design with ${furnitureList}. ${placementGuidance}. Maximum ${maxItems} furniture pieces, not overcrowded. Photorealistic, professional real estate photography, 8k, highly detailed, natural lighting`.trim();
+    // Lead with furniture, add structure note at end (SD models respond better to this order)
+    return `${styleLabel} style ${roomLabel} with ${furnitureList}. ${placementGuidance}. ${maxItems} furniture pieces maximum. Professional real estate photography, photorealistic, 8k, natural lighting. Keep all existing doors, windows, closets, and mirrors unchanged.`.trim();
   }
 
   /**
-   * Build negative prompt with room-specific forbidden items and structural protection.
+   * Build negative prompt with room-specific forbidden items and quality issues.
    */
   buildNegativePrompt(roomType: RoomType): string {
     const roomNegatives = getRoomNegativePrompt(roomType);
 
-    // CRITICAL: Forbid any structural changes - doors, windows, closets, mirrors, fixtures must stay
-    const structuralProtection = "removing doors, removing windows, removing closets, removing mirrors, altering walls, changing architecture, modified room structure, different flooring, changed ceiling, removed fixtures, altered trim, missing doors, missing windows, missing closet, missing mirror";
-
-    // Focus on structural preservation, placement problems, and quality issues
-    return `${structuralProtection}, ${roomNegatives}, furniture blocking doorways, furniture blocking windows, furniture in front of doors, overcrowded, cluttered, floating objects, blurry, low quality, distorted, cartoon, illustration, CGI, 3D render, people, pets, text, watermark`.trim();
+    // Keep negative prompt focused - too many terms can confuse the model
+    return `${roomNegatives}, empty room, no furniture, furniture blocking doors, overcrowded, cluttered, blurry, low quality, distorted, cartoon, CGI, 3D render, people, pets, text, watermark, vintage, retro, 80s style, faded colors`.trim();
   }
 
   /**
