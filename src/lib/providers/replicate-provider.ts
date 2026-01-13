@@ -233,26 +233,30 @@ cluttered, messy, overcrowded`.trim();
     // Extract version hash if model is in "owner/name:version" format
     const version = model.includes(":") ? model.split(":")[1] : model;
 
+    // Build body WITHOUT webhook first
     const body: Record<string, unknown> = {
       version,
       input,
     };
 
-    // Only include webhook if it's a valid HTTPS URL (strict check)
-    const isValidWebhook = webhookUrl &&
-      typeof webhookUrl === "string" &&
-      webhookUrl.length > 10 &&
-      webhookUrl.startsWith("https://");
-
-    if (isValidWebhook) {
+    // Only add webhook if it's a valid HTTPS URL (very strict check)
+    if (webhookUrl &&
+        typeof webhookUrl === "string" &&
+        webhookUrl.trim().length > 15 &&
+        webhookUrl.startsWith("https://") &&
+        !webhookUrl.includes(" ") &&
+        !webhookUrl.includes("\n")) {
       body.webhook = webhookUrl;
       body.webhook_events_filter = ["completed"];
+      console.log("[ReplicateProvider] Webhook ENABLED:", webhookUrl);
+    } else {
+      // Explicitly ensure no webhook in body
+      delete body.webhook;
+      delete body.webhook_events_filter;
+      console.log("[ReplicateProvider] Webhook DISABLED - no valid URL provided");
     }
 
-    console.log("[ReplicateProvider] Creating prediction with version:", version);
-    console.log("[ReplicateProvider] Webhook:", isValidWebhook ? webhookUrl : "none (polling mode)");
-    console.log("[ReplicateProvider] Input keys:", Object.keys(input));
-    console.log("[ReplicateProvider] Image param length:", String(input.image || "").length);
+    console.log("[ReplicateProvider] Creating prediction - version:", version, "body keys:", Object.keys(body), "has webhook:", "webhook" in body);
 
     const response = await fetch(`${this.baseUrl}/predictions`, {
       method: "POST",
