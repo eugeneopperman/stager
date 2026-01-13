@@ -51,12 +51,14 @@ export function getProvider(providerId: StagingProvider): BaseStagingProvider {
  * Default provider configuration
  */
 export function getDefaultConfig(): ProviderConfig {
-  // Use env var to select provider, default to Gemini
-  const defaultProvider = (process.env.AI_DEFAULT_PROVIDER as StagingProvider) || "gemini";
+  // TEMPORARILY hardcoded to Gemini while debugging SD issues
+  // TODO: Re-enable env var once SD is working
+  // const defaultProvider = (process.env.AI_DEFAULT_PROVIDER as StagingProvider) || "gemini";
+  const defaultProvider: StagingProvider = "gemini";
   return {
     defaultProvider,
     enableFallback: true,
-    fallbackProvider: defaultProvider === "stable-diffusion" ? "gemini" : "stable-diffusion",
+    fallbackProvider: "stable-diffusion",
   };
 }
 
