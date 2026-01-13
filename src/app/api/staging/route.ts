@@ -111,8 +111,7 @@ export async function POST(request: NextRequest) {
         original_image_url: originalImageUrl,
         room_type: roomType,
         style: style,
-        status: provider.supportsSync ? "processing" : "queued",
-        provider: provider.providerId,
+        status: "processing",
       })
       .select()
       .single();
