@@ -206,6 +206,7 @@ export async function POST(request: NextRequest) {
 
     // Handle async provider (Stable Diffusion)
     console.log("[Staging API] Using async provider (Stable Diffusion)");
+    console.log("[Staging API] Original image URL:", originalImageUrl.substring(0, 150));
 
     // Get webhook URL for completion callback (only use HTTPS URLs)
     const appUrl = process.env.NEXT_PUBLIC_APP_URL || "";

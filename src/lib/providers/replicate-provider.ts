@@ -244,6 +244,10 @@ cluttered, messy, overcrowded`.trim();
       body.webhook_events_filter = ["completed"];
     }
 
+    console.log("[ReplicateProvider] Creating prediction with version:", version);
+    console.log("[ReplicateProvider] Input keys:", Object.keys(input));
+    console.log("[ReplicateProvider] Image param type:", typeof input.image, "length:", String(input.image || "").length);
+
     const response = await fetch(`${this.baseUrl}/predictions`, {
       method: "POST",
       headers: {
@@ -253,12 +257,15 @@ cluttered, messy, overcrowded`.trim();
       body: JSON.stringify(body),
     });
 
+    const responseText = await response.text();
+    console.log("[ReplicateProvider] Response status:", response.status);
+    console.log("[ReplicateProvider] Response body:", responseText.substring(0, 500));
+
     if (!response.ok) {
-      const error = await response.text();
-      throw new Error(`Replicate API error: ${response.status} - ${error}`);
+      throw new Error(`Replicate API error: ${response.status} - ${responseText}`);
     }
 
-    return response.json();
+    return JSON.parse(responseText);
   }
 
   private getRoomLabel(roomId: RoomType): string {
