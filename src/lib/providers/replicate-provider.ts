@@ -24,20 +24,21 @@ interface ReplicatePrediction {
 }
 
 /**
- * Stable Diffusion provider using Replicate API.
- * Uses SDXL img2img model to add furniture while preserving room structure.
+ * Interior Design provider using Replicate API.
+ * Uses adirik/interior-design model - designed to preserve room structure while adding furniture.
+ * Much faster (~7s) and cheaper (~$0.006) than previous SDXL models.
  */
 export class ReplicateProvider extends BaseStagingProvider {
   readonly providerId = "stable-diffusion" as const;
-  readonly displayName = "Stable Diffusion SDXL";
+  readonly displayName = "Interior Design AI";
   readonly supportsSync = false;
   readonly supportsAsync = true;
 
   private apiToken: string;
   private baseUrl = "https://api.replicate.com/v1";
 
-  // Interior Design SDXL model - bundles RealVisXL V5.0, Depth ControlNet, ProMax ControlNet, and SDXL Refiner
-  private model = "rocketdigitalai/interior-design-sdxl:a3c091059a25590ce2d5ea13651fab63f447f21760e50c358d4b850e844f59ee";
+  // adirik/interior-design - preserves room layout while adding furniture via intelligent inpainting
+  private model = "adirik/interior-design:76604baddc85b1b4616e1c6475eca080da339c8875bd4996705440484a6eac38";
 
   constructor() {
     super();
@@ -63,18 +64,15 @@ export class ReplicateProvider extends BaseStagingProvider {
     console.log("[ReplicateProvider] Image source type:", input.imageUrl ? "URL" : "base64");
     console.log("[ReplicateProvider] Image source:", imageSource.substring(0, 100) + "...");
 
-    // Prepare the interior design model request
-    // This model uses RealVisXL V5.0 base with Depth ControlNet and ProMax ControlNet
-    // Using model defaults which worked well in v1.033
+    // Prepare the adirik/interior-design model request
+    // This model preserves room layout while adding furniture via intelligent inpainting
     const predictionInput: Record<string, unknown> = {
       image: imageSource,
       prompt,
       negative_prompt: negativePrompt,
-      depth_strength: 0.8,      // Model default - good structure preservation
-      promax_strength: 0.8,     // Model default - preserves architectural lines
-      guidance_scale: 7.5,      // Model default
-      num_inference_steps: 50,
-      refiner_strength: 0.4,    // Model default
+      guidance_scale: 15,         // Default - controls prompt adherence
+      prompt_strength: 0.8,       // Default - inpainting intensity (0.8 = preserve structure well)
+      num_inference_steps: 50,    // Quality vs speed tradeoff
     };
 
     console.log("[ReplicateProvider] Creating prediction with prompt:", prompt.substring(0, 100) + "...");
@@ -146,31 +144,30 @@ export class ReplicateProvider extends BaseStagingProvider {
   }
 
   getEstimatedProcessingTime(): number {
-    return 90; // Interior design model with ControlNet takes ~86 seconds
+    return 10; // adirik/interior-design model takes ~7 seconds
   }
 
   /**
-   * Build a prompt optimized for the interior design model.
-   * Simple, clean prompt that worked well in v1.033.
+   * Build a prompt optimized for the adirik/interior-design model.
+   * This model preserves room structure - focus on furniture and style.
    */
   buildPrompt(roomType: RoomType, furnitureStyle: FurnitureStyle): string {
     const roomLabel = this.getRoomLabel(roomType);
     const { label: styleLabel } = this.getStyleDetails(furnitureStyle);
     const furnitureList = getRoomFurniturePrompt(roomType, styleLabel);
 
-    // Simple prompt - let the model's ControlNet handle structure preservation
-    return `${styleLabel} style ${roomLabel} interior design with ${furnitureList}, masterfully designed, photorealistic, professional real estate photography, 8k, highly detailed, natural lighting, magazine quality`.trim();
+    // Focus on furniture addition - model handles structure preservation automatically
+    return `Add ${styleLabel} furniture to this ${roomLabel}: ${furnitureList}. Professional real estate photography, photorealistic, natural lighting, high quality`.trim();
   }
 
   /**
-   * Build negative prompt with room-specific forbidden items.
-   * Simple version that worked well in v1.033.
+   * Build negative prompt to avoid quality issues and structural changes.
    */
   buildNegativePrompt(roomType: RoomType): string {
     const roomNegatives = getRoomNegativePrompt(roomType);
 
-    // Simple negative prompt - quality issues and wrong items
-    return `${roomNegatives}, blurry, low quality, distorted, cartoon, illustration, CGI, 3D render, people, pets, text, watermark, cluttered, messy, overcrowded, floating objects`.trim();
+    // Emphasize structure preservation and quality
+    return `${roomNegatives}, changing walls, changing floor, changing windows, changing doors, structural changes, blurry, low quality, distorted, cartoon, illustration, CGI, people, pets, text, watermark`.trim();
   }
 
   /**
