@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { getProviderRouter, getGeminiProvider } from "@/lib/providers";
+import { getProviderRouter, getGeminiProvider, getReplicateProvider } from "@/lib/providers";
 
 /**
  * GET /api/debug/provider
@@ -35,6 +35,18 @@ export async function GET() {
     results.step4_gemini = {
       providerId: gemini.providerId,
       supportsSync: gemini.supportsSync,
+    };
+
+    // Test 5: Replicate provider and API token
+    results.step5_replicate = "Checking Replicate...";
+    const replicate = getReplicateProvider();
+    const replicateHealth = await replicate.checkHealth();
+    results.step5_replicate = {
+      providerId: replicate.providerId,
+      supportsAsync: replicate.supportsAsync,
+      health: replicateHealth,
+      hasToken: !!process.env.REPLICATE_API_TOKEN,
+      tokenPrefix: process.env.REPLICATE_API_TOKEN?.substring(0, 5) || "none",
     };
 
     return NextResponse.json({
