@@ -63,14 +63,14 @@ export class ReplicateProvider extends BaseStagingProvider {
     console.log("[ReplicateProvider] Image source type:", input.imageUrl ? "URL" : "base64");
     console.log("[ReplicateProvider] Image source:", imageSource.substring(0, 100) + "...");
 
-    // Prepare the img2img request - balance between preservation and furniture addition
+    // Prepare the img2img request
     const predictionInput: Record<string, unknown> = {
       prompt,
       negative_prompt: negativePrompt,
       image: imageSource,
-      prompt_strength: 0.5, // Balance: preserve room structure while adding furniture
-      num_inference_steps: 30,
-      guidance_scale: 8.5,
+      prompt_strength: 0.65, // Higher to ensure furniture gets added
+      num_inference_steps: 35,
+      guidance_scale: 12, // Much higher to strongly follow furniture prompt
     };
 
     console.log("[ReplicateProvider] Creating prediction with prompt:", prompt.substring(0, 100) + "...");
@@ -152,13 +152,12 @@ export class ReplicateProvider extends BaseStagingProvider {
   buildPrompt(roomType: RoomType, furnitureStyle: FurnitureStyle): string {
     const roomLabel = this.getRoomLabel(roomType);
     const { label: styleLabel } = this.getStyleDetails(furnitureStyle);
-    const rules = getRoomRules(roomType);
     const furnitureList = getRoomFurniturePrompt(roomType, styleLabel);
 
-    // Simple, focused prompt - let the low prompt_strength preserve the room
-    return `${styleLabel} style ${roomLabel} with elegant furniture: ${furnitureList}.
-Professional real estate photography, photorealistic, natural lighting, interior design magazine quality.
-${rules.promptKeywords.slice(0, 3).join(", ")}`.trim();
+    // Direct, furniture-focused prompt
+    return `A beautifully furnished ${roomLabel} in ${styleLabel} style. The room contains ${furnitureList}.
+Photorealistic interior design photography, professionally staged real estate photo, high-end furniture,
+natural lighting, 8k, highly detailed`.trim();
   }
 
   /**
