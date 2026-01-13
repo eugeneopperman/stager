@@ -88,11 +88,22 @@ export async function POST(request: NextRequest) {
       console.error("[Staging API] Original image upload error:", originalUploadError);
       originalImageUrl = `data:${mimeType};base64,${image.substring(0, 100)}...`;
     } else {
-      const { data: originalPublicUrl } = supabase.storage
+      // Use signed URL (works even if bucket isn't public)
+      const { data: signedUrlData, error: signedUrlError } = await supabase.storage
         .from("staging-images")
-        .getPublicUrl(originalFileName);
-      originalImageUrl = originalPublicUrl.publicUrl;
-      console.log("[Staging API] Original image uploaded");
+        .createSignedUrl(originalFileName, 3600); // 1 hour expiry
+
+      if (signedUrlError || !signedUrlData?.signedUrl) {
+        console.error("[Staging API] Signed URL error:", signedUrlError);
+        // Fall back to public URL
+        const { data: originalPublicUrl } = supabase.storage
+          .from("staging-images")
+          .getPublicUrl(originalFileName);
+        originalImageUrl = originalPublicUrl.publicUrl;
+      } else {
+        originalImageUrl = signedUrlData.signedUrl;
+      }
+      console.log("[Staging API] Original image uploaded, URL type:", signedUrlData?.signedUrl ? "signed" : "public");
     }
 
     // Select provider
@@ -216,13 +227,13 @@ export async function POST(request: NextRequest) {
     console.log("[Staging API] Webhook URL:", webhookUrl || "none (will use polling)");
 
     // Start async staging with Replicate
-    // NOTE: Using base64 data URL instead of storage URL because storage bucket may not be public
+    // Use signed URL which Replicate can access
     const replicateProvider = getReplicateProvider();
     try {
       const asyncResult = await replicateProvider.stageImageAsync(
         {
           imageBase64: image,
-          // Don't pass imageUrl - force base64 data URL usage
+          imageUrl: originalImageUrl, // Use signed URL
           mimeType,
           roomType,
           furnitureStyle: style,
