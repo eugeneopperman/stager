@@ -392,10 +392,10 @@ export default function StagePage() {
         </Card>
       )}
 
-      {/* Two-panel layout */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Left Panel - Image Upload */}
-        <div className="space-y-4">
+      {/* Two-panel layout - 2/3 image, 1/3 controls */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* Left Panel - Image Upload (2/3 width) */}
+        <div className="lg:col-span-2 space-y-4">
           <Card className="overflow-hidden">
             <CardContent className="p-4">
               <ImageUploader
