@@ -63,14 +63,14 @@ export class ReplicateProvider extends BaseStagingProvider {
     console.log("[ReplicateProvider] Image source type:", input.imageUrl ? "URL" : "base64");
     console.log("[ReplicateProvider] Image source:", imageSource.substring(0, 100) + "...");
 
-    // Prepare the img2img request - low prompt_strength to preserve room structure
+    // Prepare the img2img request - balance between preservation and furniture addition
     const predictionInput: Record<string, unknown> = {
       prompt,
       negative_prompt: negativePrompt,
       image: imageSource,
-      prompt_strength: 0.35, // Very low to preserve walls, windows, doors - only add furniture
+      prompt_strength: 0.5, // Balance: preserve room structure while adding furniture
       num_inference_steps: 30,
-      guidance_scale: 8.5, // Higher guidance to follow prompt more closely
+      guidance_scale: 8.5,
     };
 
     console.log("[ReplicateProvider] Creating prediction with prompt:", prompt.substring(0, 100) + "...");
