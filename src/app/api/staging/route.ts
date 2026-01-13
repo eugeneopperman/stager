@@ -216,12 +216,13 @@ export async function POST(request: NextRequest) {
     console.log("[Staging API] Webhook URL:", webhookUrl || "none (will use polling)");
 
     // Start async staging with Replicate
+    // NOTE: Using base64 data URL instead of storage URL because storage bucket may not be public
     const replicateProvider = getReplicateProvider();
     try {
       const asyncResult = await replicateProvider.stageImageAsync(
         {
           imageBase64: image,
-          imageUrl: originalImageUrl, // Use the uploaded image URL
+          // Don't pass imageUrl - force base64 data URL usage
           mimeType,
           roomType,
           furnitureStyle: style,
