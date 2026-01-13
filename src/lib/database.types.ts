@@ -6,6 +6,40 @@ export type Json =
   | { [key: string]: Json | undefined }
   | Json[];
 
+// Staging job status including async flow states
+export type StagingJobStatus =
+  | "pending"
+  | "queued"
+  | "preprocessing"
+  | "processing"
+  | "uploading"
+  | "completed"
+  | "failed";
+
+// AI provider types
+export type StagingProvider = "gemini" | "stable-diffusion";
+
+// ControlNet inputs stored as JSON
+export interface ControlNetInputsJson {
+  depth_map_url?: string;
+  canny_edge_url?: string;
+  segmentation_url?: string;
+}
+
+// Generation parameters stored as JSON
+export interface GenerationParamsJson {
+  prompt?: string;
+  negative_prompt?: string;
+  controlnet_weights?: {
+    depth?: number;
+    canny?: number;
+    segmentation?: number;
+  };
+  seed?: number;
+  steps?: number;
+  guidance_scale?: number;
+}
+
 export interface Database {
   public: {
     Tables: {
@@ -70,11 +104,18 @@ export interface Database {
           staged_image_url: string | null;
           room_type: string;
           style: string;
-          status: "pending" | "processing" | "completed" | "failed";
+          status: StagingJobStatus;
           error_message: string | null;
           credits_used: number;
           created_at: string;
           completed_at: string | null;
+          // New columns for SD + ControlNet support
+          provider: StagingProvider;
+          replicate_prediction_id: string | null;
+          preprocessing_completed_at: string | null;
+          controlnet_inputs: ControlNetInputsJson | null;
+          generation_params: GenerationParamsJson | null;
+          processing_time_ms: number | null;
         };
         Insert: {
           id?: string;
@@ -84,11 +125,17 @@ export interface Database {
           staged_image_url?: string | null;
           room_type: string;
           style: string;
-          status?: "pending" | "processing" | "completed" | "failed";
+          status?: StagingJobStatus;
           error_message?: string | null;
           credits_used?: number;
           created_at?: string;
           completed_at?: string | null;
+          provider?: StagingProvider;
+          replicate_prediction_id?: string | null;
+          preprocessing_completed_at?: string | null;
+          controlnet_inputs?: ControlNetInputsJson | null;
+          generation_params?: GenerationParamsJson | null;
+          processing_time_ms?: number | null;
         };
         Update: {
           id?: string;
@@ -98,11 +145,17 @@ export interface Database {
           staged_image_url?: string | null;
           room_type?: string;
           style?: string;
-          status?: "pending" | "processing" | "completed" | "failed";
+          status?: StagingJobStatus;
           error_message?: string | null;
           credits_used?: number;
           created_at?: string;
           completed_at?: string | null;
+          provider?: StagingProvider;
+          replicate_prediction_id?: string | null;
+          preprocessing_completed_at?: string | null;
+          controlnet_inputs?: ControlNetInputsJson | null;
+          generation_params?: GenerationParamsJson | null;
+          processing_time_ms?: number | null;
         };
       };
     };

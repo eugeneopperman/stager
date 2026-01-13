@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { Card, CardContent } from "@/components/ui/card";
@@ -27,6 +27,7 @@ import {
   XCircle,
   ArrowLeftRight,
   Layers,
+  Cpu,
 } from "lucide-react";
 
 type StagingState = "upload" | "processing" | "complete" | "error";
@@ -34,8 +35,11 @@ type StagingState = "upload" | "processing" | "complete" | "error";
 interface StagedVariation {
   style: FurnitureStyle;
   imageUrl: string | null;
-  status: "pending" | "processing" | "completed" | "failed";
+  status: "pending" | "queued" | "preprocessing" | "processing" | "completed" | "failed";
   error?: string;
+  jobId?: string;
+  provider?: string;
+  progressMessage?: string;
 }
 
 export default function StagePage() {
@@ -55,9 +59,70 @@ export default function StagePage() {
   const [error, setError] = useState<string | null>(null);
   const [compareIndex, setCompareIndex] = useState(0);
   const [sliderPosition, setSliderPosition] = useState(50);
+  const [currentProvider, setCurrentProvider] = useState<string | null>(null);
+  const pollingRef = useRef<Map<string, NodeJS.Timeout>>(new Map());
 
   const requiredCredits = styles.length * CREDITS_PER_STAGING;
   const hasEnoughCredits = credits >= requiredCredits;
+
+  // Poll job status for async jobs
+  const pollJobStatus = useCallback(async (jobId: string, styleIndex: number) => {
+    try {
+      const response = await fetch(`/api/staging/${jobId}/status`);
+      if (!response.ok) {
+        throw new Error("Failed to fetch job status");
+      }
+
+      const data = await response.json();
+
+      // Update variation with current status
+      setVariations((prev) =>
+        prev.map((v, idx) =>
+          idx === styleIndex
+            ? {
+                ...v,
+                status: data.status,
+                imageUrl: data.stagedImageUrl || v.imageUrl,
+                progressMessage: data.progress?.message,
+                error: data.error,
+              }
+            : v
+        )
+      );
+
+      // Check if job is complete or failed
+      if (data.status === "completed" || data.status === "failed") {
+        // Clear polling interval
+        const interval = pollingRef.current.get(jobId);
+        if (interval) {
+          clearInterval(interval);
+          pollingRef.current.delete(jobId);
+        }
+
+        // Check if all jobs are done
+        setVariations((prev) => {
+          const allDone = prev.every(
+            (v) => v.status === "completed" || v.status === "failed"
+          );
+          if (allDone) {
+            setState("complete");
+            router.refresh();
+          }
+          return prev;
+        });
+      }
+    } catch (err) {
+      console.error("Error polling job status:", err);
+    }
+  }, [router]);
+
+  // Cleanup polling on unmount
+  useEffect(() => {
+    return () => {
+      pollingRef.current.forEach((interval) => clearInterval(interval));
+      pollingRef.current.clear();
+    };
+  }, []);
 
   // Sync propertyId with URL param
   useEffect(() => {
@@ -91,6 +156,7 @@ export default function StagePage() {
 
     setState("processing");
     setError(null);
+    setCurrentProvider(null);
 
     const initialVariations: StagedVariation[] = styles.map((style) => ({
       style,
@@ -136,13 +202,46 @@ export default function StagePage() {
           throw new Error(data.error || "Failed to stage image");
         }
 
-        setVariations((prev) =>
-          prev.map((v, idx) =>
-            idx === i
-              ? { ...v, status: "completed", imageUrl: data.stagedImageUrl }
-              : v
-          )
-        );
+        // Track which provider is being used
+        if (data.provider && !currentProvider) {
+          setCurrentProvider(data.provider);
+        }
+
+        // Handle async response (Stable Diffusion)
+        if (data.async) {
+          setVariations((prev) =>
+            prev.map((v, idx) =>
+              idx === i
+                ? {
+                    ...v,
+                    status: "processing",
+                    jobId: data.jobId,
+                    provider: data.provider,
+                    progressMessage: "Starting AI processing...",
+                  }
+                : v
+            )
+          );
+
+          // Start polling for this job
+          const pollInterval = setInterval(() => {
+            pollJobStatus(data.jobId, i);
+          }, 2000); // Poll every 2 seconds
+
+          pollingRef.current.set(data.jobId, pollInterval);
+
+          // Initial poll
+          pollJobStatus(data.jobId, i);
+        } else {
+          // Handle sync response (Gemini)
+          setVariations((prev) =>
+            prev.map((v, idx) =>
+              idx === i
+                ? { ...v, status: "completed", imageUrl: data.stagedImageUrl, provider: data.provider }
+                : v
+            )
+          );
+        }
       } catch (err) {
         setVariations((prev) =>
           prev.map((v, idx) =>
@@ -155,11 +254,20 @@ export default function StagePage() {
     }
 
     setProcessingIndex(-1);
-    setState("complete");
-    router.refresh();
+
+    // Check if any jobs are async - if not, go to complete
+    const hasAsyncJobs = variations.some((v) => v.jobId);
+    if (!hasAsyncJobs) {
+      setState("complete");
+      router.refresh();
+    }
   };
 
   const handleReset = () => {
+    // Clear any active polling intervals
+    pollingRef.current.forEach((interval) => clearInterval(interval));
+    pollingRef.current.clear();
+
     setState("upload");
     setSelectedFile(null);
     setPreview(null);
@@ -169,6 +277,7 @@ export default function StagePage() {
     setError(null);
     setProcessingIndex(-1);
     setCompareIndex(0);
+    setCurrentProvider(null);
   };
 
   const handleDownload = (variation: StagedVariation) => {
@@ -417,10 +526,25 @@ export default function StagePage() {
                     <p className="font-medium text-sm">
                       Generating {styles.length > 1 ? "variations" : "staging"}...
                     </p>
-                    <p className="text-xs text-muted-foreground">
-                      Style {processingIndex + 1} of {styles.length}: {getStyleLabel(styles[processingIndex])}
-                    </p>
+                    {processingIndex >= 0 && processingIndex < styles.length && (
+                      <p className="text-xs text-muted-foreground">
+                        Style {processingIndex + 1} of {styles.length}: {getStyleLabel(styles[processingIndex])}
+                      </p>
+                    )}
+                    {/* Show current variation progress for async jobs */}
+                    {variations.some((v) => v.progressMessage) && (
+                      <p className="text-xs text-muted-foreground mt-1">
+                        {variations.find((v) => v.status === "processing" || v.status === "preprocessing")?.progressMessage}
+                      </p>
+                    )}
                   </div>
+                  {/* Provider badge */}
+                  {currentProvider && (
+                    <div className="flex items-center gap-1 px-2 py-1 bg-muted rounded text-xs text-muted-foreground">
+                      <Cpu className="h-3 w-3" />
+                      {currentProvider === "stable-diffusion" ? "SD + ControlNet" : "Gemini"}
+                    </div>
+                  )}
                 </div>
                 <div className="mt-3 flex gap-1.5">
                   {variations.map((v) => (
@@ -431,6 +555,10 @@ export default function StagePage() {
                           ? "bg-green-500"
                           : v.status === "processing"
                           ? "bg-primary animate-pulse"
+                          : v.status === "preprocessing"
+                          ? "bg-blue-500 animate-pulse"
+                          : v.status === "queued"
+                          ? "bg-yellow-500"
                           : v.status === "failed"
                           ? "bg-destructive"
                           : "bg-muted"
