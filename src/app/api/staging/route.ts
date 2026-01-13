@@ -199,38 +199,24 @@ export async function POST(request: NextRequest) {
     }
 
     // Handle async provider (Stable Diffusion)
-    // Update status to preprocessing
+    // Update status to processing (skip preprocessing for now to reduce API calls)
     await supabase
       .from("staging_jobs")
-      .update({ status: "preprocessing" })
+      .update({ status: "processing" })
       .eq("id", job.id);
 
-    // Run preprocessing pipeline for ControlNet
-    const preprocessingResults = await runPreprocessingPipeline(
-      originalImageUrl,
-      jobId,
-      user.id
-    );
-
-    // Update preprocessing completion
-    await supabase
-      .from("staging_jobs")
-      .update({
-        preprocessing_completed_at: new Date().toISOString(),
-        controlnet_inputs: {
-          depth_map_url: preprocessingResults.depthMap?.imageUrl,
-          canny_edge_url: preprocessingResults.cannyEdge?.imageUrl,
-          segmentation_url: preprocessingResults.segmentation?.imageUrl,
-        },
-        status: "processing",
-      })
-      .eq("id", job.id);
+    // TODO: Re-enable preprocessing when Replicate rate limits are resolved
+    // const preprocessingResults = await runPreprocessingPipeline(
+    //   originalImageUrl,
+    //   jobId,
+    //   user.id
+    // );
 
     // Get webhook URL for completion callback
     const appUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
     const webhookUrl = `${appUrl}/api/webhooks/replicate`;
 
-    // Start async staging with Replicate
+    // Start async staging with Replicate (no ControlNet inputs for now)
     const replicateProvider = getReplicateProvider();
     const asyncResult = await replicateProvider.stageImageAsync(
       {
@@ -240,12 +226,7 @@ export async function POST(request: NextRequest) {
         furnitureStyle: style,
         jobId,
       },
-      webhookUrl,
-      {
-        depthMapUrl: preprocessingResults.depthMap?.imageUrl,
-        cannyEdgeUrl: preprocessingResults.cannyEdge?.imageUrl,
-        segmentationUrl: preprocessingResults.segmentation?.imageUrl,
-      }
+      webhookUrl
     );
 
     // Store prediction ID for webhook matching
