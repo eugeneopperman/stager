@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
-import { getProviderRouter } from "@/lib/providers";
+import { getProviderRouter, getReplicateProvider } from "@/lib/providers";
 import { type RoomType, type FurnitureStyle, CREDITS_PER_STAGING } from "@/lib/constants";
 
 /**
@@ -204,12 +204,67 @@ export async function POST(request: NextRequest) {
       });
     }
 
-    // Handle async provider (Stable Diffusion) - TODO: implement later
-    console.log("[Staging API] Async provider not yet implemented");
-    return NextResponse.json(
-      { error: "Async provider not yet implemented" },
-      { status: 501 }
-    );
+    // Handle async provider (Stable Diffusion)
+    console.log("[Staging API] Using async provider (Stable Diffusion)");
+
+    // Get webhook URL for completion callback (only use HTTPS URLs)
+    const appUrl = process.env.NEXT_PUBLIC_APP_URL || "";
+    const webhookUrl = appUrl.startsWith("https://")
+      ? `${appUrl}/api/webhooks/replicate`
+      : undefined;
+    console.log("[Staging API] Webhook URL:", webhookUrl || "none (will use polling)");
+
+    // Start async staging with Replicate
+    const replicateProvider = getReplicateProvider();
+    try {
+      const asyncResult = await replicateProvider.stageImageAsync(
+        {
+          imageBase64: image,
+          mimeType,
+          roomType,
+          furnitureStyle: style,
+          jobId,
+        },
+        webhookUrl || ""
+      );
+      console.log("[Staging API] Replicate prediction started:", asyncResult.predictionId);
+
+      // Store prediction ID for status polling
+      await supabase
+        .from("staging_jobs")
+        .update({
+          replicate_prediction_id: asyncResult.predictionId,
+        })
+        .eq("id", job.id);
+
+      // Return immediately - client will poll for status
+      return NextResponse.json({
+        success: true,
+        jobId: job.id,
+        status: "processing",
+        provider: provider.providerId,
+        async: true,
+        predictionId: asyncResult.predictionId,
+        estimatedTimeSeconds: replicateProvider.getEstimatedProcessingTime(),
+        pollUrl: `/api/staging/${job.id}/status`,
+      });
+    } catch (error) {
+      console.error("[Staging API] Replicate error:", error);
+
+      // Update job as failed
+      await supabase
+        .from("staging_jobs")
+        .update({
+          status: "failed",
+          error_message: error instanceof Error ? error.message : "Replicate staging failed",
+        })
+        .eq("id", job.id);
+
+      return NextResponse.json(
+        { error: error instanceof Error ? error.message : "Stable Diffusion staging failed" },
+        { status: 500 }
+      );
+    }
 
   } catch (error) {
     console.error("[Staging API] Unexpected error:", error);

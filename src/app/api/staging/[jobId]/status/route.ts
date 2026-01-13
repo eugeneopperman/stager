@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import { getReplicateProvider } from "@/lib/providers";
 import type { StagingJobStatus } from "@/lib/database.types";
+import { CREDITS_PER_STAGING } from "@/lib/constants";
 
 /**
  * Progress step information for UI display
@@ -125,7 +127,7 @@ export async function GET(
   }
 
   // Fetch job status
-  const { data: job, error } = await supabase
+  let { data: job, error } = await supabase
     .from("staging_jobs")
     .select("*")
     .eq("id", jobId)
@@ -137,6 +139,112 @@ export async function GET(
       { error: "Job not found" },
       { status: 404 }
     );
+  }
+
+  // If job is processing and has a Replicate prediction ID, check Replicate status
+  if (
+    job.status === "processing" &&
+    job.provider === "stable-diffusion" &&
+    job.replicate_prediction_id
+  ) {
+    console.log("[Status API] Checking Replicate prediction:", job.replicate_prediction_id);
+    try {
+      const replicateProvider = getReplicateProvider();
+      const prediction = await replicateProvider.getPredictionStatus(job.replicate_prediction_id);
+      console.log("[Status API] Replicate prediction status:", prediction.status);
+
+      if (prediction.status === "succeeded" && prediction.output) {
+        // Download and upload the image
+        const imageUrl = Array.isArray(prediction.output) ? prediction.output[0] : prediction.output;
+        console.log("[Status API] Prediction succeeded, output URL:", imageUrl);
+
+        // Download the image from Replicate
+        const imageResponse = await fetch(imageUrl);
+        if (imageResponse.ok) {
+          const imageBuffer = await imageResponse.arrayBuffer();
+          const mimeType = imageResponse.headers.get("content-type") || "image/png";
+          const ext = mimeType.split("/")[1] || "png";
+
+          // Upload to Supabase Storage
+          const fileName = `${user.id}/${job.id}-staged.${ext}`;
+          const { error: uploadError } = await supabase.storage
+            .from("staging-images")
+            .upload(fileName, imageBuffer, {
+              contentType: mimeType,
+              upsert: true,
+            });
+
+          let stagedImageUrl: string;
+          if (uploadError) {
+            console.error("[Status API] Upload error:", uploadError);
+            stagedImageUrl = imageUrl; // Use Replicate URL as fallback
+          } else {
+            const { data: publicUrl } = supabase.storage
+              .from("staging-images")
+              .getPublicUrl(fileName);
+            stagedImageUrl = publicUrl.publicUrl;
+          }
+
+          // Update job as completed
+          const processingTimeMs = Date.now() - new Date(job.created_at).getTime();
+          await supabase
+            .from("staging_jobs")
+            .update({
+              status: "completed",
+              staged_image_url: stagedImageUrl,
+              completed_at: new Date().toISOString(),
+              processing_time_ms: processingTimeMs,
+            })
+            .eq("id", job.id);
+
+          // Deduct credits
+          const { data: profile } = await supabase
+            .from("profiles")
+            .select("credits_remaining")
+            .eq("id", user.id)
+            .single();
+
+          if (profile) {
+            await supabase
+              .from("profiles")
+              .update({
+                credits_remaining: profile.credits_remaining - CREDITS_PER_STAGING,
+              })
+              .eq("id", user.id);
+          }
+
+          // Update local job object
+          job = {
+            ...job,
+            status: "completed",
+            staged_image_url: stagedImageUrl,
+            completed_at: new Date().toISOString(),
+            processing_time_ms: processingTimeMs,
+          };
+          console.log("[Status API] Job completed successfully");
+        }
+      } else if (prediction.status === "failed") {
+        // Update job as failed
+        await supabase
+          .from("staging_jobs")
+          .update({
+            status: "failed",
+            error_message: prediction.error || "Replicate prediction failed",
+          })
+          .eq("id", job.id);
+
+        job = {
+          ...job,
+          status: "failed",
+          error_message: prediction.error || "Replicate prediction failed",
+        };
+        console.log("[Status API] Job failed:", prediction.error);
+      }
+      // If still processing, just return current status
+    } catch (error) {
+      console.error("[Status API] Error checking Replicate:", error);
+      // Don't fail the status check, just return current DB status
+    }
   }
 
   const progress = getProgressInfo(job.status as StagingJobStatus);

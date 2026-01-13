@@ -1,2 +1,2 @@
 // App version - updated with each deployment
-export const APP_VERSION = "1.012";
+export const APP_VERSION = "1.013";
