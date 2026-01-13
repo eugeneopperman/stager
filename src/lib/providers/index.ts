@@ -79,10 +79,14 @@ export class ProviderRouter {
     preferredProvider?: StagingProvider
   ): Promise<{ provider: BaseStagingProvider; fallbackUsed: boolean }> {
     const targetProvider = preferredProvider || this.config.defaultProvider;
+    console.log("[ProviderRouter] Selecting provider, preferred:", preferredProvider, "default:", this.config.defaultProvider, "target:", targetProvider);
 
     // Check primary provider health
     const primaryHealth = await this.getHealthCached(targetProvider);
+    console.log("[ProviderRouter] Primary health check:", targetProvider, primaryHealth);
+
     if (primaryHealth.available && !primaryHealth.rateLimited) {
+      console.log("[ProviderRouter] Using primary provider:", targetProvider);
       return {
         provider: getProvider(targetProvider),
         fallbackUsed: false,
@@ -92,10 +96,10 @@ export class ProviderRouter {
     // Try fallback if enabled
     if (this.config.enableFallback) {
       const fallbackHealth = await this.getHealthCached(this.config.fallbackProvider);
+      console.log("[ProviderRouter] Fallback health check:", this.config.fallbackProvider, fallbackHealth);
+
       if (fallbackHealth.available && !fallbackHealth.rateLimited) {
-        console.log(
-          `Primary provider ${targetProvider} unavailable, using fallback ${this.config.fallbackProvider}`
-        );
+        console.log("[ProviderRouter] Using fallback provider:", this.config.fallbackProvider);
         return {
           provider: getProvider(this.config.fallbackProvider),
           fallbackUsed: true,
@@ -104,6 +108,7 @@ export class ProviderRouter {
     }
 
     // No provider available
+    console.error("[ProviderRouter] No provider available!");
     throw new Error(
       `No staging provider available. Primary: ${primaryHealth.errorMessage || "unavailable"}, ` +
         `Fallback: ${this.config.enableFallback ? "also unavailable" : "disabled"}`

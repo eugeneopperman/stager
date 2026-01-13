@@ -35,11 +35,18 @@ export class GeminiProvider extends BaseStagingProvider {
 
   async stageImageSync(input: StagingInput): Promise<StagingResult> {
     const startTime = Date.now();
+    console.log("[GeminiProvider] Starting stageImageSync for job:", input.jobId);
+    console.log("[GeminiProvider] Room type:", input.roomType, "Style:", input.furnitureStyle);
+
     const prompt = this.buildPrompt(input.roomType, input.furnitureStyle);
+    console.log("[GeminiProvider] Built prompt, length:", prompt.length);
 
     // Try with image generation model first
     try {
+      console.log("[GeminiProvider] Calling attemptStaging...");
       const result = await this.attemptStaging(input.imageBase64, input.mimeType, prompt);
+      console.log("[GeminiProvider] attemptStaging returned, success:", result.success);
+
       if (result.success) {
         return {
           ...result,
@@ -47,8 +54,9 @@ export class GeminiProvider extends BaseStagingProvider {
           processingTimeMs: Date.now() - startTime,
         };
       }
+      console.log("[GeminiProvider] Staging not successful, error:", result.error);
     } catch (error) {
-      console.error("Gemini image model error:", error);
+      console.error("[GeminiProvider] Gemini image model error:", error);
     }
 
     // Return error if staging failed
