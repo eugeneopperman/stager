@@ -63,14 +63,14 @@ export class ReplicateProvider extends BaseStagingProvider {
     console.log("[ReplicateProvider] Image source type:", input.imageUrl ? "URL" : "base64");
     console.log("[ReplicateProvider] Image source:", imageSource.substring(0, 100) + "...");
 
-    // Prepare the img2img request with simplified parameters
+    // Prepare the img2img request - low prompt_strength to preserve room structure
     const predictionInput: Record<string, unknown> = {
       prompt,
       negative_prompt: negativePrompt,
       image: imageSource,
-      prompt_strength: 0.75, // Lower = more preservation
-      num_inference_steps: 25,
-      guidance_scale: 7.5,
+      prompt_strength: 0.35, // Very low to preserve walls, windows, doors - only add furniture
+      num_inference_steps: 30,
+      guidance_scale: 8.5, // Higher guidance to follow prompt more closely
     };
 
     console.log("[ReplicateProvider] Creating prediction with prompt:", prompt.substring(0, 100) + "...");
@@ -151,30 +151,14 @@ export class ReplicateProvider extends BaseStagingProvider {
    */
   buildPrompt(roomType: RoomType, furnitureStyle: FurnitureStyle): string {
     const roomLabel = this.getRoomLabel(roomType);
-    const { label: styleLabel, description: styleDescription } = this.getStyleDetails(furnitureStyle);
+    const { label: styleLabel } = this.getStyleDetails(furnitureStyle);
     const rules = getRoomRules(roomType);
     const furnitureList = getRoomFurniturePrompt(roomType, styleLabel);
 
-    // Inpainting-focused prompt with clear constraints
-    return `INPAINTING TASK: Add ${styleLabel} style furniture to this empty ${roomLabel}.
-
-PRESERVE EXACTLY: All walls, floors, ceilings, windows, doors, and architectural features.
-DO NOT CHANGE: Room dimensions, perspective, camera angle, or lighting direction.
-
-ADD FURNITURE:
-${furnitureList}
-
-PLACEMENT RULES:
-- ${rules.focalPoint}
-- Keep clear: ${rules.clearanceZones.join(", ")}
-- Maximum ${rules.maxItems} furniture pieces
-
-STYLE: ${styleLabel} - ${styleDescription}
-${rules.promptKeywords.join(", ")}
-
-QUALITY: Professional real estate photography, photorealistic furniture, natural lighting,
-accurate shadows matching room lighting, MLS listing ready, interior design magazine quality,
-seamless integration with existing room`.trim();
+    // Simple, focused prompt - let the low prompt_strength preserve the room
+    return `${styleLabel} style ${roomLabel} with elegant furniture: ${furnitureList}.
+Professional real estate photography, photorealistic, natural lighting, interior design magazine quality.
+${rules.promptKeywords.slice(0, 3).join(", ")}`.trim();
   }
 
   /**
@@ -183,15 +167,8 @@ seamless integration with existing room`.trim();
   buildNegativePrompt(roomType: RoomType): string {
     const roomNegatives = getRoomNegativePrompt(roomType);
 
-    return `${roomNegatives},
-changed room layout, altered perspective, modified walls, different floor,
-changed ceiling, moved windows, moved doors, room appears larger, room appears smaller,
-warped architecture, bent lines, distorted perspective, regenerated room structure,
-different camera angle, zoomed in, zoomed out, cropped differently,
-blurry, low quality, distorted, cartoon, illustration, painting, CGI, 3D render,
-people, pets, animals, faces, hands, text, watermark, signature, logo,
-floating objects, unrealistic shadows, wrong lighting direction,
-cluttered, messy, overcrowded`.trim();
+    // Focus on quality issues and wrong items, let prompt_strength handle structure
+    return `${roomNegatives}, blurry, low quality, distorted, cartoon, illustration, CGI, 3D render, people, pets, text, watermark, cluttered, messy, overcrowded, floating objects`.trim();
   }
 
   /**
