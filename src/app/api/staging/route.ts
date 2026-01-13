@@ -84,9 +84,11 @@ export async function POST(request: NextRequest) {
       });
 
     let originalImageUrl: string;
+    let urlType = "unknown";
     if (originalUploadError) {
       console.error("[Staging API] Original image upload error:", originalUploadError);
       originalImageUrl = `data:${mimeType};base64,${image.substring(0, 100)}...`;
+      urlType = "base64-fallback";
     } else {
       // Use signed URL (works even if bucket isn't public)
       const { data: signedUrlData, error: signedUrlError } = await supabase.storage
@@ -100,10 +102,12 @@ export async function POST(request: NextRequest) {
           .from("staging-images")
           .getPublicUrl(originalFileName);
         originalImageUrl = originalPublicUrl.publicUrl;
+        urlType = "public";
       } else {
         originalImageUrl = signedUrlData.signedUrl;
+        urlType = "signed";
       }
-      console.log("[Staging API] Original image uploaded, URL type:", signedUrlData?.signedUrl ? "signed" : "public");
+      console.log("[Staging API] Original image uploaded, URL type:", urlType);
     }
 
     // Select provider
@@ -282,8 +286,11 @@ export async function POST(request: NextRequest) {
 
   } catch (error) {
     console.error("[Staging API] Unexpected error:", error);
+    const errorMessage = error instanceof Error ? error.message : "An unexpected error occurred";
+    const errorStack = error instanceof Error ? error.stack : undefined;
+    console.error("[Staging API] Error details:", errorMessage, errorStack);
     return NextResponse.json(
-      { error: "An unexpected error occurred" },
+      { error: errorMessage, details: errorStack?.substring(0, 500) },
       { status: 500 }
     );
   }
