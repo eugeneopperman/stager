@@ -51,13 +51,13 @@ export function getProvider(providerId: StagingProvider): BaseStagingProvider {
  * Default provider configuration
  */
 export function getDefaultConfig(): ProviderConfig {
-  // Default to Gemini - SDXL doesn't add furniture well, need specialized model
-  // SD integration is complete but needs a better model for interior design
-  const defaultProvider: StagingProvider = "gemini";
+  // Use AI_DEFAULT_PROVIDER env var to select provider
+  // Now using rocketdigitalai/interior-design-sdxl which properly adds furniture
+  const defaultProvider = (process.env.AI_DEFAULT_PROVIDER as StagingProvider) || "gemini";
   return {
     defaultProvider,
     enableFallback: true,
-    fallbackProvider: "stable-diffusion",
+    fallbackProvider: defaultProvider === "gemini" ? "stable-diffusion" : "gemini",
   };
 }
 

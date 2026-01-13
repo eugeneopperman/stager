@@ -36,8 +36,8 @@ export class ReplicateProvider extends BaseStagingProvider {
   private apiToken: string;
   private baseUrl = "https://api.replicate.com/v1";
 
-  // SDXL img2img model - no mask required
-  private model = "stability-ai/sdxl:7762fd07cf82c948538e41f63f77d685e02b063e37e496e96eefd46c929f9bdc";
+  // Interior Design SDXL model - bundles RealVisXL V5.0, Depth ControlNet, ProMax ControlNet, and SDXL Refiner
+  private model = "rocketdigitalai/interior-design-sdxl:a3c091059a25590ce2d5ea13651fab63f447f21760e50c358d4b850e844f59ee";
 
   constructor() {
     super();
@@ -63,14 +63,17 @@ export class ReplicateProvider extends BaseStagingProvider {
     console.log("[ReplicateProvider] Image source type:", input.imageUrl ? "URL" : "base64");
     console.log("[ReplicateProvider] Image source:", imageSource.substring(0, 100) + "...");
 
-    // Prepare the img2img request
+    // Prepare the interior design model request
+    // This model uses RealVisXL V5.0 base with Depth ControlNet (0.8) and ProMax ControlNet (0.8)
     const predictionInput: Record<string, unknown> = {
+      image: imageSource,
       prompt,
       negative_prompt: negativePrompt,
-      image: imageSource,
-      prompt_strength: 0.65, // Higher to ensure furniture gets added
-      num_inference_steps: 35,
-      guidance_scale: 12, // Much higher to strongly follow furniture prompt
+      depth_strength: 0.8,      // Preserves room structure via depth estimation
+      promax_strength: 0.8,     // Preserves architectural lines
+      guidance_scale: 7.5,      // Model's default, good balance
+      num_inference_steps: 50,  // Higher quality
+      refiner_strength: 0.4,    // SDXL Refiner for production polish
     };
 
     console.log("[ReplicateProvider] Creating prediction with prompt:", prompt.substring(0, 100) + "...");
@@ -142,11 +145,11 @@ export class ReplicateProvider extends BaseStagingProvider {
   }
 
   getEstimatedProcessingTime(): number {
-    return 25; // Inpainting is typically faster than full generation
+    return 90; // Interior design model with ControlNet takes ~86 seconds
   }
 
   /**
-   * Build an inpainting-focused prompt with structural preservation constraints.
+   * Build a prompt optimized for the interior design model.
    * Uses room-specific rules for appropriate furniture selection.
    */
   buildPrompt(roomType: RoomType, furnitureStyle: FurnitureStyle): string {
@@ -154,10 +157,8 @@ export class ReplicateProvider extends BaseStagingProvider {
     const { label: styleLabel } = this.getStyleDetails(furnitureStyle);
     const furnitureList = getRoomFurniturePrompt(roomType, styleLabel);
 
-    // Direct, furniture-focused prompt
-    return `A beautifully furnished ${roomLabel} in ${styleLabel} style. The room contains ${furnitureList}.
-Photorealistic interior design photography, professionally staged real estate photo, high-end furniture,
-natural lighting, 8k, highly detailed`.trim();
+    // Prompt optimized for interior design model
+    return `${styleLabel} style ${roomLabel} interior design with ${furnitureList}, masterfully designed, photorealistic, professional real estate photography, 8k, highly detailed, natural lighting, magazine quality`.trim();
   }
 
   /**
