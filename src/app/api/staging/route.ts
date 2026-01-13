@@ -242,7 +242,7 @@ export async function POST(request: NextRequest) {
           furnitureStyle: style,
           jobId,
         },
-        webhookUrl || ""
+        webhookUrl // Pass undefined if not set, not empty string
       );
       console.log("[Staging API] Replicate prediction started:", asyncResult.predictionId);
 

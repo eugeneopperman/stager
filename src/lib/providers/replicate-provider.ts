@@ -52,7 +52,7 @@ export class ReplicateProvider extends BaseStagingProvider {
 
   async stageImageAsync(
     input: StagingInput,
-    webhookUrl: string,
+    webhookUrl?: string,
     _controlnetInputs?: ControlNetInputs
   ): Promise<AsyncStagingResult> {
     const prompt = this.buildPrompt(input.roomType, input.furnitureStyle);
@@ -238,15 +238,21 @@ cluttered, messy, overcrowded`.trim();
       input,
     };
 
-    // Only include webhook if it's a valid HTTPS URL
-    if (webhookUrl && webhookUrl.startsWith("https://")) {
+    // Only include webhook if it's a valid HTTPS URL (strict check)
+    const isValidWebhook = webhookUrl &&
+      typeof webhookUrl === "string" &&
+      webhookUrl.length > 10 &&
+      webhookUrl.startsWith("https://");
+
+    if (isValidWebhook) {
       body.webhook = webhookUrl;
       body.webhook_events_filter = ["completed"];
     }
 
     console.log("[ReplicateProvider] Creating prediction with version:", version);
+    console.log("[ReplicateProvider] Webhook:", isValidWebhook ? webhookUrl : "none (polling mode)");
     console.log("[ReplicateProvider] Input keys:", Object.keys(input));
-    console.log("[ReplicateProvider] Image param type:", typeof input.image, "length:", String(input.image || "").length);
+    console.log("[ReplicateProvider] Image param length:", String(input.image || "").length);
 
     const response = await fetch(`${this.baseUrl}/predictions`, {
       method: "POST",
