@@ -232,7 +232,8 @@ cluttered, messy, overcrowded`.trim();
       input,
     };
 
-    if (webhookUrl) {
+    // Only include webhook if it's a valid HTTPS URL
+    if (webhookUrl && webhookUrl.startsWith("https://")) {
       body.webhook = webhookUrl;
       body.webhook_events_filter = ["completed"];
     }

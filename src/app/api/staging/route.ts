@@ -212,11 +212,14 @@ export async function POST(request: NextRequest) {
     //   user.id
     // );
 
-    // Get webhook URL for completion callback
-    const appUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
-    const webhookUrl = `${appUrl}/api/webhooks/replicate`;
+    // Get webhook URL for completion callback (only use HTTPS URLs)
+    const appUrl = process.env.NEXT_PUBLIC_APP_URL || "";
+    const webhookUrl = appUrl.startsWith("https://")
+      ? `${appUrl}/api/webhooks/replicate`
+      : undefined;
 
     // Start async staging with Replicate (no ControlNet inputs for now)
+    // If no webhook, client will poll for status
     const replicateProvider = getReplicateProvider();
     const asyncResult = await replicateProvider.stageImageAsync(
       {
@@ -226,7 +229,7 @@ export async function POST(request: NextRequest) {
         furnitureStyle: style,
         jobId,
       },
-      webhookUrl
+      webhookUrl || ""
     );
 
     // Store prediction ID for webhook matching
