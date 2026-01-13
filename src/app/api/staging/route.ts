@@ -255,7 +255,7 @@ export async function POST(request: NextRequest) {
         replicate_prediction_id: asyncResult.predictionId,
         generation_params: {
           prompt: replicateProvider.buildPrompt(roomType, style),
-          negative_prompt: replicateProvider.buildNegativePrompt(),
+          negative_prompt: replicateProvider.buildNegativePrompt(roomType),
         },
       })
       .eq("id", job.id);

@@ -1,6 +1,6 @@
 import { ROOM_TYPES, FURNITURE_STYLES, type RoomType, type FurnitureStyle } from "../constants";
 import { BaseStagingProvider } from "./base-provider";
-import { getControlNetWeights, DEFAULT_CONDITIONING_SCALE } from "../controlnet/weights";
+import { getRoomRules, getRoomFurniturePrompt, getRoomNegativePrompt, getRoomControlNetWeights } from "../staging/room-rules";
 import type {
   StagingResult,
   StagingInput,
@@ -24,20 +24,20 @@ interface ReplicatePrediction {
 }
 
 /**
- * Stable Diffusion + ControlNet provider using Replicate API.
- * Supports async processing with webhook callbacks.
+ * Stable Diffusion Inpainting provider using Replicate API.
+ * Uses SDXL Inpainting model to add furniture while preserving room structure.
  */
 export class ReplicateProvider extends BaseStagingProvider {
   readonly providerId = "stable-diffusion" as const;
-  readonly displayName = "Stable Diffusion + ControlNet";
-  readonly supportsSync = false; // SD takes too long for sync
+  readonly displayName = "Stable Diffusion Inpainting";
+  readonly supportsSync = false;
   readonly supportsAsync = true;
 
   private apiToken: string;
   private baseUrl = "https://api.replicate.com/v1";
 
-  // SDXL with ControlNet model
-  private modelVersion = "lucataco/sdxl-controlnet:latest";
+  // SDXL Inpainting model - preserves non-masked areas
+  private inpaintingModel = "lucataco/sdxl-inpainting";
 
   constructor() {
     super();
@@ -45,7 +45,6 @@ export class ReplicateProvider extends BaseStagingProvider {
   }
 
   async stageImageSync(_input: StagingInput): Promise<StagingResult> {
-    // SD + ControlNet is too slow for sync - always use async
     throw new Error(
       "Stable Diffusion provider does not support sync staging. Use stageImageAsync instead."
     );
@@ -57,36 +56,33 @@ export class ReplicateProvider extends BaseStagingProvider {
     controlnetInputs?: ControlNetInputs
   ): Promise<AsyncStagingResult> {
     const prompt = this.buildPrompt(input.roomType, input.furnitureStyle);
-    const negativePrompt = this.buildNegativePrompt();
-    const weights = getControlNetWeights(input.roomType);
+    const negativePrompt = this.buildNegativePrompt(input.roomType);
+    const rules = getRoomRules(input.roomType);
 
-    // Prepare the prediction request
+    // Prepare the inpainting request
     const predictionInput: Record<string, unknown> = {
       prompt,
       negative_prompt: negativePrompt,
       image: `data:${input.mimeType};base64,${input.imageBase64}`,
-      num_inference_steps: 30,
+      // Mask is required for inpainting - use depth map as basis or generate
+      // Lower strength = more preservation of original
+      strength: 0.65,
+      num_inference_steps: 25,
       guidance_scale: 7.5,
-      controlnet_conditioning_scale: DEFAULT_CONDITIONING_SCALE,
+      scheduler: "K_EULER",
     };
 
-    // Add ControlNet inputs if preprocessing was done
+    // Use depth map as mask if available (furniture goes on floor = closer areas)
+    // Otherwise, the model may need a generated mask
     if (controlnetInputs?.depthMapUrl) {
-      predictionInput.depth_image = controlnetInputs.depthMapUrl;
-      predictionInput.depth_weight = weights.depth;
-    }
-    if (controlnetInputs?.cannyEdgeUrl) {
-      predictionInput.canny_image = controlnetInputs.cannyEdgeUrl;
-      predictionInput.canny_weight = weights.canny;
-    }
-    if (controlnetInputs?.segmentationUrl) {
-      predictionInput.seg_image = controlnetInputs.segmentationUrl;
-      predictionInput.seg_weight = weights.segmentation;
+      // The depth map can help guide where furniture should go
+      // Closer areas (brighter in depth map) = floor = where furniture goes
+      predictionInput.mask = controlnetInputs.depthMapUrl;
     }
 
     try {
       const prediction = await this.createPrediction(
-        this.modelVersion,
+        this.inpaintingModel,
         predictionInput,
         webhookUrl
       );
@@ -98,7 +94,7 @@ export class ReplicateProvider extends BaseStagingProvider {
         estimatedTimeSeconds: this.getEstimatedProcessingTime(),
       };
     } catch (error) {
-      console.error("Replicate prediction error:", error);
+      console.error("Replicate inpainting error:", error);
       throw error;
     }
   }
@@ -114,7 +110,6 @@ export class ReplicateProvider extends BaseStagingProvider {
     }
 
     try {
-      // Simple health check - get account info
       const response = await fetch(`${this.baseUrl}/account`, {
         headers: {
           Authorization: `Bearer ${this.apiToken}`,
@@ -151,34 +146,56 @@ export class ReplicateProvider extends BaseStagingProvider {
   }
 
   getEstimatedProcessingTime(): number {
-    return 30; // SD + ControlNet typically takes 20-45 seconds
-  }
-
-  buildPrompt(roomType: RoomType, furnitureStyle: FurnitureStyle): string {
-    const roomLabel = this.getRoomLabel(roomType);
-    const { label: styleLabel } = this.getStyleDetails(furnitureStyle);
-    const furnitureItems = this.getRoomFurnitureList(roomType, styleLabel);
-
-    // SD prompts are different from Gemini - more concise, keyword-focused
-    return `Professional real estate photo, ${roomLabel} interior, ${styleLabel} style furniture and decor,
-${furnitureItems},
-photorealistic, high quality, professional photography, natural lighting,
-soft shadows, 8k resolution, architectural photography, interior design magazine quality,
-MLS listing photo, staged home, market ready`;
+    return 25; // Inpainting is typically faster than full generation
   }
 
   /**
-   * Build negative prompt to prevent common SD issues
+   * Build an inpainting-focused prompt with structural preservation constraints.
+   * Uses room-specific rules for appropriate furniture selection.
    */
-  buildNegativePrompt(): string {
-    return `blurry, low quality, distorted, warped, bent lines, wrong perspective,
-floating objects, unrealistic shadows, cartoon, illustration, painting,
-artificial, CGI, rendered, 3D render, video game,
-people, pets, animals, faces, hands,
-text, watermark, signature, logo,
-cluttered, messy, dirty, damaged,
-different room, different angle, zoomed, cropped differently,
-walls changed, floor changed, ceiling changed, windows moved, doors moved`;
+  buildPrompt(roomType: RoomType, furnitureStyle: FurnitureStyle): string {
+    const roomLabel = this.getRoomLabel(roomType);
+    const { label: styleLabel, description: styleDescription } = this.getStyleDetails(furnitureStyle);
+    const rules = getRoomRules(roomType);
+    const furnitureList = getRoomFurniturePrompt(roomType, styleLabel);
+
+    // Inpainting-focused prompt with clear constraints
+    return `INPAINTING TASK: Add ${styleLabel} style furniture to this empty ${roomLabel}.
+
+PRESERVE EXACTLY: All walls, floors, ceilings, windows, doors, and architectural features.
+DO NOT CHANGE: Room dimensions, perspective, camera angle, or lighting direction.
+
+ADD FURNITURE:
+${furnitureList}
+
+PLACEMENT RULES:
+- ${rules.focalPoint}
+- Keep clear: ${rules.clearanceZones.join(", ")}
+- Maximum ${rules.maxItems} furniture pieces
+
+STYLE: ${styleLabel} - ${styleDescription}
+${rules.promptKeywords.join(", ")}
+
+QUALITY: Professional real estate photography, photorealistic furniture, natural lighting,
+accurate shadows matching room lighting, MLS listing ready, interior design magazine quality,
+seamless integration with existing room`.trim();
+  }
+
+  /**
+   * Build negative prompt with room-specific forbidden items and structural preservation.
+   */
+  buildNegativePrompt(roomType: RoomType): string {
+    const roomNegatives = getRoomNegativePrompt(roomType);
+
+    return `${roomNegatives},
+changed room layout, altered perspective, modified walls, different floor,
+changed ceiling, moved windows, moved doors, room appears larger, room appears smaller,
+warped architecture, bent lines, distorted perspective, regenerated room structure,
+different camera angle, zoomed in, zoomed out, cropped differently,
+blurry, low quality, distorted, cartoon, illustration, painting, CGI, 3D render,
+people, pets, animals, faces, hands, text, watermark, signature, logo,
+floating objects, unrealistic shadows, wrong lighting direction,
+cluttered, messy, overcrowded`.trim();
   }
 
   /**
@@ -255,35 +272,5 @@ walls changed, floor changed, ceiling changed, windows moved, doors moved`;
       label: style?.label || styleId,
       description: style?.description || "",
     };
-  }
-
-  private getRoomFurnitureList(roomType: RoomType, styleLabel: string): string {
-    switch (roomType) {
-      case "bedroom-master":
-      case "bedroom-guest":
-      case "bedroom-kids":
-        return `${styleLabel} bed with headboard, matching nightstands, soft bedding and pillows, area rug, table lamps, wall art`;
-
-      case "living-room":
-        return `${styleLabel} sofa, accent chairs, coffee table, side tables, area rug, floor lamp, wall art, decorative pillows`;
-
-      case "dining-room":
-        return `${styleLabel} dining table, dining chairs, chandelier or pendant light, area rug, sideboard, table centerpiece`;
-
-      case "kitchen":
-        return `bar stools at counter, decorative fruit bowl, small plants, coordinated accessories`;
-
-      case "home-office":
-        return `${styleLabel} desk, ergonomic office chair, bookshelf, desk lamp, wall art, area rug`;
-
-      case "bathroom":
-        return `matching towels, bath mat, decorative accessories, small plant, coordinated soap dispenser`;
-
-      case "outdoor-patio":
-        return `${styleLabel} outdoor furniture set, potted plants, outdoor rug, decorative cushions, lanterns`;
-
-      default:
-        return `${styleLabel} furniture, area rug, wall art, decorative accessories, plants`;
-    }
   }
 }
