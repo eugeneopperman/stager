@@ -24,20 +24,20 @@ interface ReplicatePrediction {
 }
 
 /**
- * Stable Diffusion Inpainting provider using Replicate API.
- * Uses SDXL Inpainting model to add furniture while preserving room structure.
+ * Stable Diffusion provider using Replicate API.
+ * Uses SDXL img2img model to add furniture while preserving room structure.
  */
 export class ReplicateProvider extends BaseStagingProvider {
   readonly providerId = "stable-diffusion" as const;
-  readonly displayName = "Stable Diffusion Inpainting";
+  readonly displayName = "Stable Diffusion SDXL";
   readonly supportsSync = false;
   readonly supportsAsync = true;
 
   private apiToken: string;
   private baseUrl = "https://api.replicate.com/v1";
 
-  // SDXL Inpainting model - preserves non-masked areas
-  private inpaintingModel = "lucataco/sdxl-inpainting";
+  // SDXL img2img model - no mask required
+  private model = "stability-ai/sdxl:7762fd07cf82c948538e41f63f77d685e02b063e37e496e96eefd46c929f9bdc";
 
   constructor() {
     super();
@@ -53,36 +53,29 @@ export class ReplicateProvider extends BaseStagingProvider {
   async stageImageAsync(
     input: StagingInput,
     webhookUrl: string,
-    controlnetInputs?: ControlNetInputs
+    _controlnetInputs?: ControlNetInputs
   ): Promise<AsyncStagingResult> {
     const prompt = this.buildPrompt(input.roomType, input.furnitureStyle);
     const negativePrompt = this.buildNegativePrompt(input.roomType);
-    const rules = getRoomRules(input.roomType);
 
-    // Prepare the inpainting request
+    // Prepare the img2img request
     const predictionInput: Record<string, unknown> = {
       prompt,
       negative_prompt: negativePrompt,
       image: `data:${input.mimeType};base64,${input.imageBase64}`,
-      // Mask is required for inpainting - use depth map as basis or generate
-      // Lower strength = more preservation of original
-      strength: 0.65,
-      num_inference_steps: 25,
+      // Lower prompt_strength = more preservation of original image
+      // 0.8 allows furniture to be added while keeping room structure
+      prompt_strength: 0.8,
+      num_inference_steps: 30,
       guidance_scale: 7.5,
       scheduler: "K_EULER",
+      refine: "expert_ensemble_refiner",
+      high_noise_frac: 0.8,
     };
-
-    // Use depth map as mask if available (furniture goes on floor = closer areas)
-    // Otherwise, the model may need a generated mask
-    if (controlnetInputs?.depthMapUrl) {
-      // The depth map can help guide where furniture should go
-      // Closer areas (brighter in depth map) = floor = where furniture goes
-      predictionInput.mask = controlnetInputs.depthMapUrl;
-    }
 
     try {
       const prediction = await this.createPrediction(
-        this.inpaintingModel,
+        this.model,
         predictionInput,
         webhookUrl
       );
