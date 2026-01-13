@@ -227,8 +227,11 @@ cluttered, messy, overcrowded`.trim();
     input: Record<string, unknown>,
     webhookUrl?: string
   ): Promise<ReplicatePrediction> {
+    // Extract version hash if model is in "owner/name:version" format
+    const version = model.includes(":") ? model.split(":")[1] : model;
+
     const body: Record<string, unknown> = {
-      version: model,
+      version,
       input,
     };
 
