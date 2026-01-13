@@ -1,6 +1,6 @@
 import { ROOM_TYPES, FURNITURE_STYLES, type RoomType, type FurnitureStyle } from "../constants";
 import { BaseStagingProvider } from "./base-provider";
-import { getRoomRules, getRoomFurniturePrompt, getRoomNegativePrompt, getRoomControlNetWeights } from "../staging/room-rules";
+import { getRoomFurniturePrompt, getRoomNegativePrompt, getRoomPlacementPrompt, getRoomMaxItems } from "../staging/room-rules";
 import type {
   StagingResult,
   StagingInput,
@@ -150,25 +150,27 @@ export class ReplicateProvider extends BaseStagingProvider {
 
   /**
    * Build a prompt optimized for the interior design model.
-   * Uses room-specific rules for appropriate furniture selection.
+   * Uses room-specific rules for appropriate furniture selection and placement.
    */
   buildPrompt(roomType: RoomType, furnitureStyle: FurnitureStyle): string {
     const roomLabel = this.getRoomLabel(roomType);
     const { label: styleLabel } = this.getStyleDetails(furnitureStyle);
     const furnitureList = getRoomFurniturePrompt(roomType, styleLabel);
+    const placementGuidance = getRoomPlacementPrompt(roomType);
+    const maxItems = getRoomMaxItems(roomType);
 
-    // Prompt optimized for interior design model
-    return `${styleLabel} style ${roomLabel} interior design with ${furnitureList}, masterfully designed, photorealistic, professional real estate photography, 8k, highly detailed, natural lighting, magazine quality`.trim();
+    // Prompt optimized for interior design model with placement rules
+    return `${styleLabel} style ${roomLabel} interior design with ${furnitureList}. ${placementGuidance}. Maximum ${maxItems} furniture pieces, not overcrowded. Masterfully designed, photorealistic, professional real estate photography, 8k, highly detailed, natural lighting, magazine quality`.trim();
   }
 
   /**
-   * Build negative prompt with room-specific forbidden items and structural preservation.
+   * Build negative prompt with room-specific forbidden items and placement issues.
    */
   buildNegativePrompt(roomType: RoomType): string {
     const roomNegatives = getRoomNegativePrompt(roomType);
 
-    // Focus on quality issues and wrong items, let prompt_strength handle structure
-    return `${roomNegatives}, blurry, low quality, distorted, cartoon, illustration, CGI, 3D render, people, pets, text, watermark, cluttered, messy, overcrowded, floating objects`.trim();
+    // Focus on quality issues, wrong items, and placement problems
+    return `${roomNegatives}, furniture blocking doorways, furniture blocking windows, furniture in front of doors, furniture blocking walkways, overcrowded, cluttered, messy, floating objects, blurry, low quality, distorted, cartoon, illustration, CGI, 3D render, people, pets, text, watermark`.trim();
   }
 
   /**

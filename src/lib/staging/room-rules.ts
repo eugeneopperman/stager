@@ -494,3 +494,22 @@ export function getRoomControlNetWeights(roomType: RoomType): ControlNetWeights 
   const rules = getRoomRules(roomType);
   return rules.controlnetWeights;
 }
+
+/**
+ * Get placement guidance for a room type (focalPoint + clearanceZones)
+ * This helps AI understand WHERE to place furniture, not just WHAT to place
+ */
+export function getRoomPlacementPrompt(roomType: RoomType): string {
+  const rules = getRoomRules(roomType);
+  const clearanceList = rules.clearanceZones.join(", ");
+
+  return `Placement: ${rules.focalPoint}. Keep clear: ${clearanceList}`;
+}
+
+/**
+ * Get the maximum number of furniture items for a room type
+ */
+export function getRoomMaxItems(roomType: RoomType): number {
+  const rules = getRoomRules(roomType);
+  return rules.maxItems;
+}
