@@ -165,6 +165,9 @@ export default function StagePage() {
     }));
     setVariations(initialVariations);
 
+    // Track if any jobs are async (can't rely on state which updates async)
+    let hasAsyncJobs = false;
+
     const base64 = await new Promise<string>((resolve, reject) => {
       const reader = new FileReader();
       reader.onload = () => {
@@ -209,6 +212,8 @@ export default function StagePage() {
 
         // Handle async response (Stable Diffusion)
         if (data.async) {
+          hasAsyncJobs = true; // Track that we have at least one async job
+
           setVariations((prev) =>
             prev.map((v, idx) =>
               idx === i
@@ -255,8 +260,8 @@ export default function StagePage() {
 
     setProcessingIndex(-1);
 
-    // Check if any jobs are async - if not, go to complete
-    const hasAsyncJobs = variations.some((v) => v.jobId);
+    // Only go to complete if all jobs were sync (Gemini)
+    // For async jobs (SD), polling will handle the transition to complete
     if (!hasAsyncJobs) {
       setState("complete");
       router.refresh();
