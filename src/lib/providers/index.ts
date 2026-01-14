@@ -1,5 +1,6 @@
 import { GeminiProvider } from "./gemini-provider";
 import { ReplicateProvider } from "./replicate-provider";
+import { Decor8Provider } from "./decor8-provider";
 import { BaseStagingProvider } from "./base-provider";
 import type { StagingProvider, ProviderHealth, ProviderConfig } from "./types";
 
@@ -8,10 +9,12 @@ export * from "./types";
 export { BaseStagingProvider } from "./base-provider";
 export { GeminiProvider } from "./gemini-provider";
 export { ReplicateProvider } from "./replicate-provider";
+export { Decor8Provider } from "./decor8-provider";
 
 // Singleton instances
 let geminiProvider: GeminiProvider | null = null;
 let replicateProvider: ReplicateProvider | null = null;
+let decor8Provider: Decor8Provider | null = null;
 
 /**
  * Get the Gemini provider instance (singleton)
@@ -34,6 +37,16 @@ export function getReplicateProvider(): ReplicateProvider {
 }
 
 /**
+ * Get the Decor8 AI provider instance (singleton)
+ */
+export function getDecor8Provider(): Decor8Provider {
+  if (!decor8Provider) {
+    decor8Provider = new Decor8Provider();
+  }
+  return decor8Provider;
+}
+
+/**
  * Get a provider by ID
  */
 export function getProvider(providerId: StagingProvider): BaseStagingProvider {
@@ -42,6 +55,8 @@ export function getProvider(providerId: StagingProvider): BaseStagingProvider {
       return getGeminiProvider();
     case "stable-diffusion":
       return getReplicateProvider();
+    case "decor8":
+      return getDecor8Provider();
     default:
       throw new Error(`Unknown provider: ${providerId}`);
   }
@@ -52,12 +67,12 @@ export function getProvider(providerId: StagingProvider): BaseStagingProvider {
  */
 export function getDefaultConfig(): ProviderConfig {
   // Use AI_DEFAULT_PROVIDER env var to select provider
-  // Now using rocketdigitalai/interior-design-sdxl which properly adds furniture
-  const defaultProvider = (process.env.AI_DEFAULT_PROVIDER as StagingProvider) || "gemini";
+  // Default to Decor8 AI for best quality virtual staging
+  const defaultProvider = (process.env.AI_DEFAULT_PROVIDER as StagingProvider) || "decor8";
   return {
     defaultProvider,
     enableFallback: true,
-    fallbackProvider: defaultProvider === "gemini" ? "stable-diffusion" : "gemini",
+    fallbackProvider: "gemini", // Gemini as fallback
   };
 }
 
@@ -121,7 +136,7 @@ export class ProviderRouter {
    * Get health status for all providers
    */
   async getAllProvidersHealth(): Promise<ProviderHealth[]> {
-    const providers: StagingProvider[] = ["gemini", "stable-diffusion"];
+    const providers: StagingProvider[] = ["decor8", "gemini", "stable-diffusion"];
     return Promise.all(providers.map((p) => this.getHealthCached(p)));
   }
 

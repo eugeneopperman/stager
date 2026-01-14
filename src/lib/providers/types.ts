@@ -3,7 +3,7 @@ import type { RoomType, FurnitureStyle } from "../constants";
 /**
  * Supported AI providers for virtual staging
  */
-export type StagingProvider = "gemini" | "stable-diffusion";
+export type StagingProvider = "gemini" | "stable-diffusion" | "decor8";
 
 /**
  * Job status for async processing flow
