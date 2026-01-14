@@ -70,9 +70,9 @@ export class ReplicateProvider extends BaseStagingProvider {
       image: imageSource,
       prompt,
       negative_prompt: negativePrompt,
-      guidance_scale: 15,         // Default - controls prompt adherence
-      prompt_strength: 0.8,       // Default - inpainting intensity (0.8 = preserve structure well)
-      num_inference_steps: 50,    // Quality vs speed tradeoff
+      guidance_scale: 12,         // Slightly lower for more natural results
+      prompt_strength: 0.65,      // Lower = preserve more original, higher = more changes
+      num_inference_steps: 75,    // Higher for better quality
     };
 
     console.log("[ReplicateProvider] Creating prediction with prompt:", prompt.substring(0, 100) + "...");
@@ -156,8 +156,8 @@ export class ReplicateProvider extends BaseStagingProvider {
     const { label: styleLabel } = this.getStyleDetails(furnitureStyle);
     const furnitureList = getRoomFurniturePrompt(roomType, styleLabel);
 
-    // Focus on furniture addition - model handles structure preservation automatically
-    return `Add ${styleLabel} furniture to this ${roomLabel}: ${furnitureList}. Professional real estate photography, photorealistic, natural lighting, high quality`.trim();
+    // Detailed prompt for high-quality furniture staging
+    return `${styleLabel} ${roomLabel} interior with ${furnitureList}, professionally staged for real estate, high-end furniture, cohesive design, magazine quality interior photography, 8k, photorealistic, natural lighting, luxurious`.trim();
   }
 
   /**
