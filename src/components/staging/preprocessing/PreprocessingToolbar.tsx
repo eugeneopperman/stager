@@ -14,6 +14,7 @@ import { type PreprocessingTool, type ImageAdjustments, DEFAULT_ADJUSTMENTS } fr
 import { AdjustmentsTool } from "./tools/AdjustmentsTool";
 import { CropRotateTool } from "./tools/CropRotateTool";
 import { DeclutterTool } from "./tools/DeclutterTool";
+import { MaskingTool } from "./tools/MaskingTool";
 
 interface PreprocessingToolbarProps {
   imageUrl: string;
@@ -26,7 +27,7 @@ const TOOLS: { id: PreprocessingTool; label: string; icon: React.ElementType; im
   { id: "crop-rotate", label: "Crop", icon: Crop, implemented: true },
   { id: "adjustments", label: "Adjust", icon: SunMedium, implemented: true },
   { id: "declutter", label: "Declutter", icon: Eraser, implemented: true },
-  { id: "masking", label: "Mask", icon: PaintBucket, implemented: false },
+  { id: "masking", label: "Mask", icon: PaintBucket, implemented: true },
 ];
 
 export function PreprocessingToolbar({
@@ -67,7 +68,7 @@ export function PreprocessingToolbar({
   );
 
   const handleApply = useCallback(
-    async (dataUrl: string) => {
+    async (dataUrl: string, maskDataUrl?: string) => {
       // Add current image to history
       setHistory((prev) => [...prev.slice(-9), currentImageUrl]);
 
@@ -77,6 +78,12 @@ export function PreprocessingToolbar({
       const newFile = new File([blob], `preprocessed-${Date.now()}.png`, {
         type: "image/png",
       });
+
+      // Log mask if provided (for future API integration)
+      if (maskDataUrl) {
+        console.log("[PreprocessingToolbar] Mask generated for staging");
+        // TODO: Store mask for use in staging API
+      }
 
       // Update working image
       setWorkingImageUrl(dataUrl);
@@ -217,10 +224,14 @@ export function PreprocessingToolbar({
           disabled={disabled}
         />
       )}
+      {/* Masking Tool */}
       {activeTool === "masking" && (
-        <div className="p-4 bg-muted/30 rounded-lg border text-center text-sm text-muted-foreground">
-          Masking tool coming soon
-        </div>
+        <MaskingTool
+          imageUrl={currentImageUrl}
+          onApply={handleApply}
+          onCancel={handleCancel}
+          disabled={disabled}
+        />
       )}
     </div>
   );
