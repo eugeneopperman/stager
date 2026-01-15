@@ -211,6 +211,7 @@ export class Decor8Provider extends BaseStagingProvider {
     const imageUrl = input.imageUrl || `data:${input.mimeType};base64,${input.imageBase64}`;
 
     console.log("[Decor8Provider] Decluttering room...");
+    console.log("[Decor8Provider] Image URL length:", imageUrl.length, "starts with:", imageUrl.substring(0, 50));
 
     try {
       const response = await fetch(`${this.baseUrl}/remove_objects_from_room`, {
@@ -236,11 +237,13 @@ export class Decor8Provider extends BaseStagingProvider {
       }
 
       const data: Decor8Response = JSON.parse(responseText);
+      console.log("[Decor8Provider] Declutter response data:", JSON.stringify(data, null, 2));
 
       if (data.error || !data.info?.images?.length) {
+        console.error("[Decor8Provider] Declutter failed - error:", data.error, "images:", data.info?.images);
         return {
           success: false,
-          error: data.error || "No decluttered image generated",
+          error: data.error || data.message || "No decluttered image generated",
         };
       }
 
