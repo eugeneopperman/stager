@@ -310,7 +310,7 @@ export function CropRotateTool({
                 left: displaySize.offsetX,
                 top: displaySize.offsetY,
                 width: displaySize.width,
-                height: `${cropPercent.y}%`,
+                height: (displaySize.height * cropPercent.y) / 100,
               }}
             />
             {/* Bottom */}
@@ -320,7 +320,7 @@ export function CropRotateTool({
                 left: displaySize.offsetX,
                 top: displaySize.offsetY + (displaySize.height * (cropPercent.y + cropPercent.height)) / 100,
                 width: displaySize.width,
-                height: `${100 - cropPercent.y - cropPercent.height}%`,
+                height: (displaySize.height * (100 - cropPercent.y - cropPercent.height)) / 100,
               }}
             />
             {/* Left */}
@@ -329,7 +329,7 @@ export function CropRotateTool({
               style={{
                 left: displaySize.offsetX,
                 top: displaySize.offsetY + (displaySize.height * cropPercent.y) / 100,
-                width: `${cropPercent.x}%`,
+                width: (displaySize.width * cropPercent.x) / 100,
                 height: (displaySize.height * cropPercent.height) / 100,
               }}
             />
@@ -339,7 +339,7 @@ export function CropRotateTool({
               style={{
                 left: displaySize.offsetX + (displaySize.width * (cropPercent.x + cropPercent.width)) / 100,
                 top: displaySize.offsetY + (displaySize.height * cropPercent.y) / 100,
-                width: `${100 - cropPercent.x - cropPercent.width}%`,
+                width: (displaySize.width * (100 - cropPercent.x - cropPercent.width)) / 100,
                 height: (displaySize.height * cropPercent.height) / 100,
               }}
             />
