@@ -261,28 +261,67 @@ export class Decor8Provider extends BaseStagingProvider {
         };
       }
 
-      const data: Decor8Response = JSON.parse(responseText);
-      console.log("[Decor8Provider] Declutter response data:", JSON.stringify(data, null, 2));
+      // Log full response to understand structure
+      console.log("[Decor8Provider] Declutter FULL response:", responseText.substring(0, 2000));
 
-      if (data.error || !data.info?.images?.length) {
-        console.error("[Decor8Provider] Declutter failed - error:", data.error, "images:", data.info?.images);
+      // Parse response - structure may vary by endpoint
+      const data = JSON.parse(responseText) as Record<string, unknown>;
+
+      // Check for error
+      if (data.error) {
+        console.error("[Decor8Provider] Declutter API error:", data.error);
         return {
           success: false,
-          error: data.error || data.message || "No decluttered image generated",
+          error: String(data.error),
         };
       }
 
-      const declutteredImage = data.info.images[0];
-      console.log("[Decor8Provider] Decluttered image URL:", declutteredImage.url);
+      // Try to find the output image in various possible locations
+      let outputImageUrl: string | null = null;
+
+      // Check info.images (standard staging response format)
+      const info = data.info as { images?: Array<{ url: string; width?: number; height?: number }> } | undefined;
+      if (info?.images?.length) {
+        outputImageUrl = info.images[0].url;
+        console.log("[Decor8Provider] Found image in info.images");
+      }
+
+      // Check for direct image_url field
+      if (!outputImageUrl && typeof data.image_url === "string") {
+        outputImageUrl = data.image_url;
+        console.log("[Decor8Provider] Found image in image_url field");
+      }
+
+      // Check for output_image_url field
+      if (!outputImageUrl && typeof data.output_image_url === "string") {
+        outputImageUrl = data.output_image_url;
+        console.log("[Decor8Provider] Found image in output_image_url field");
+      }
+
+      // Check for images array at root level
+      const rootImages = data.images as Array<{ url?: string }> | undefined;
+      if (!outputImageUrl && rootImages?.length && rootImages[0].url) {
+        outputImageUrl = rootImages[0].url;
+        console.log("[Decor8Provider] Found image in root images array");
+      }
+
+      if (!outputImageUrl) {
+        console.error("[Decor8Provider] Could not find output image in response. Keys:", Object.keys(data));
+        return {
+          success: false,
+          error: "No decluttered image in response",
+        };
+      }
+
+      console.log("[Decor8Provider] Decluttered image URL:", outputImageUrl);
       console.log("[Decor8Provider] Input was data URL:", imageUrl.startsWith("data:"));
-      console.log("[Decor8Provider] Output dimensions:", declutteredImage.width, "x", declutteredImage.height);
 
       // Fetch and convert to base64
-      const imageResponse = await fetch(declutteredImage.url);
+      const imageResponse = await fetch(outputImageUrl);
       const imageBuffer = await imageResponse.arrayBuffer();
       const imageBase64 = Buffer.from(imageBuffer).toString("base64");
 
-      const mimeType = declutteredImage.url.includes(".jpg") || declutteredImage.url.includes(".jpeg")
+      const mimeType = outputImageUrl.includes(".jpg") || outputImageUrl.includes(".jpeg")
         ? "image/jpeg"
         : "image/png";
 
