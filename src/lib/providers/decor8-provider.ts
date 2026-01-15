@@ -55,11 +55,11 @@ export class Decor8Provider extends BaseStagingProvider {
 
     console.log("[Decor8Provider] Staging room:", roomType, "style:", designStyle);
 
-    // Custom prompt emphasizing furniture addition only
-    const customPrompt = `Add ${styleLabel} style furniture to this empty ${roomLabel}. Professional real estate virtual staging. Only add furniture and decor, preserve all existing room features.`;
+    // Custom prompt emphasizing furniture addition only - explicitly mention keeping windows
+    const customPrompt = `Add ${styleLabel} style furniture to this empty ${roomLabel}. Professional real estate virtual staging. Only add furniture and decor. Keep all windows exactly as they are. Preserve all existing architectural features including windows, doors, walls, flooring.`;
 
-    // Negative prompt to prevent structural changes
-    const negativePrompt = "changing walls, changing floor, changing ceiling, changing windows, changing doors, removing windows, removing doors, altering room structure, construction, renovation, different wall color, different flooring";
+    // Negative prompt to prevent structural changes - emphasize window preservation
+    const negativePrompt = "removing windows, covering windows, blocking windows, no windows, window removed, changing windows, removing doors, changing walls, changing floor, changing ceiling, altering room structure, construction, renovation, different wall color, different flooring, boarded up windows";
 
     try {
       const response = await fetch(`${this.baseUrl}/generate_designs_for_room`, {
