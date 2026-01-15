@@ -214,15 +214,40 @@ export class Decor8Provider extends BaseStagingProvider {
     console.log("[Decor8Provider] Image URL length:", imageUrl.length, "starts with:", imageUrl.substring(0, 50));
 
     try {
+      // Decor8 remove_objects_from_room parameters:
+      // - input_image_url: The image to process
+      // - objects_to_remove: Optional array of object types to remove
+      // If no objects specified, it should auto-detect and remove furniture
+      const requestBody = {
+        input_image_url: imageUrl,
+        // Specify common furniture types to ensure removal
+        objects_to_remove: [
+          "furniture",
+          "sofa",
+          "couch",
+          "chair",
+          "table",
+          "bed",
+          "desk",
+          "cabinet",
+          "shelf",
+          "lamp",
+          "rug",
+          "curtain",
+          "plant",
+          "decoration"
+        ],
+      };
+
+      console.log("[Decor8Provider] Declutter request body keys:", Object.keys(requestBody));
+
       const response = await fetch(`${this.baseUrl}/remove_objects_from_room`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
           "Authorization": `Bearer ${this.apiKey}`,
         },
-        body: JSON.stringify({
-          input_image_url: imageUrl,
-        }),
+        body: JSON.stringify(requestBody),
       });
 
       const responseText = await response.text();
@@ -248,7 +273,9 @@ export class Decor8Provider extends BaseStagingProvider {
       }
 
       const declutteredImage = data.info.images[0];
-      console.log("[Decor8Provider] Decluttered image:", declutteredImage.url);
+      console.log("[Decor8Provider] Decluttered image URL:", declutteredImage.url);
+      console.log("[Decor8Provider] Input was data URL:", imageUrl.startsWith("data:"));
+      console.log("[Decor8Provider] Output dimensions:", declutteredImage.width, "x", declutteredImage.height);
 
       // Fetch and convert to base64
       const imageResponse = await fetch(declutteredImage.url);
