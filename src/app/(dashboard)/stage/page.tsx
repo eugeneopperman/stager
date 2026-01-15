@@ -6,6 +6,7 @@ import Link from "next/link";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { ImageUploader } from "@/components/staging/ImageUploader";
+import { PreprocessingToolbar } from "@/components/staging/preprocessing";
 import { RoomTypeDropdown } from "@/components/staging/RoomTypeDropdown";
 import { StyleGallery } from "@/components/staging/StyleGallery";
 import { PropertySelector } from "@/components/staging/PropertySelector";
@@ -51,6 +52,8 @@ export default function StagePage() {
   const [state, setState] = useState<StagingState>("upload");
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [preview, setPreview] = useState<string | null>(null);
+  const [workingFile, setWorkingFile] = useState<File | null>(null);
+  const [workingPreview, setWorkingPreview] = useState<string | null>(null);
   const [roomType, setRoomType] = useState<RoomType | null>(null);
   const [styles, setStyles] = useState<FurnitureStyle[]>([]);
   const [propertyId, setPropertyId] = useState<string | null>(propertyIdParam);
@@ -60,7 +63,6 @@ export default function StagePage() {
   const [compareIndex, setCompareIndex] = useState(0);
   const [sliderPosition, setSliderPosition] = useState(50);
   const [currentProvider, setCurrentProvider] = useState<string | null>(null);
-  const [declutterFirst, setDeclutterFirst] = useState(false); // Remove existing furniture before staging
   const pollingRef = useRef<Map<string, NodeJS.Timeout>>(new Map());
 
   const requiredCredits = styles.length * CREDITS_PER_STAGING;
@@ -141,7 +143,14 @@ export default function StagePage() {
   const handleImageClear = () => {
     setSelectedFile(null);
     setPreview(null);
+    setWorkingFile(null);
+    setWorkingPreview(null);
     setError(null);
+  };
+
+  const handlePreprocessedImageUpdate = (file: File, previewUrl: string) => {
+    setWorkingFile(file);
+    setWorkingPreview(previewUrl);
   };
 
   const handleStage = async () => {
@@ -169,6 +178,9 @@ export default function StagePage() {
     // Track if any jobs are async (can't rely on state which updates async)
     let hasAsyncJobs = false;
 
+    // Use preprocessed image if available, otherwise use original
+    const imageToStage = workingFile || selectedFile;
+
     const base64 = await new Promise<string>((resolve, reject) => {
       const reader = new FileReader();
       reader.onload = () => {
@@ -177,7 +189,7 @@ export default function StagePage() {
         resolve(base64Data);
       };
       reader.onerror = reject;
-      reader.readAsDataURL(selectedFile);
+      reader.readAsDataURL(imageToStage);
     });
 
     for (let i = 0; i < styles.length; i++) {
@@ -198,11 +210,10 @@ export default function StagePage() {
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             image: base64,
-            mimeType: selectedFile.type,
+            mimeType: imageToStage.type,
             roomType,
             style: styles[i],
             propertyId: propertyId || undefined,
-            declutterFirst,
           }),
         });
 
@@ -283,6 +294,8 @@ export default function StagePage() {
     setState("upload");
     setSelectedFile(null);
     setPreview(null);
+    setWorkingFile(null);
+    setWorkingPreview(null);
     setRoomType(null);
     setStyles([]);
     setVariations([]);
@@ -515,16 +528,41 @@ export default function StagePage() {
 
       {/* Two-panel layout - 2/3 image, 1/3 controls */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Left Panel - Image Upload (2/3 width) */}
+        {/* Left Panel - Image Upload & Preprocessing (2/3 width) */}
         <div className="lg:col-span-2 space-y-4">
           <Card className="overflow-hidden">
             <CardContent className="p-4">
-              <ImageUploader
-                onImageSelect={handleImageSelect}
-                onImageClear={handleImageClear}
-                preview={preview}
-                disabled={isProcessing}
-              />
+              {!preview ? (
+                <ImageUploader
+                  onImageSelect={handleImageSelect}
+                  onImageClear={handleImageClear}
+                  preview={preview}
+                  disabled={isProcessing}
+                />
+              ) : (
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <h3 className="text-sm font-medium text-muted-foreground">
+                      Preprocessing Tools
+                    </h3>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={handleImageClear}
+                      disabled={isProcessing}
+                      className="text-xs"
+                    >
+                      Change Image
+                    </Button>
+                  </div>
+                  <PreprocessingToolbar
+                    imageUrl={workingPreview || preview}
+                    imageFile={workingFile || selectedFile!}
+                    onImageUpdate={handlePreprocessedImageUpdate}
+                    disabled={isProcessing}
+                  />
+                </div>
+              )}
             </CardContent>
           </Card>
 
@@ -614,24 +652,6 @@ export default function StagePage() {
               onChange={(id) => setPropertyId(id)}
               disabled={isProcessing}
             />
-          </div>
-
-          {/* Declutter Option */}
-          <div className="flex items-center gap-3 p-3 rounded-lg border bg-muted/30">
-            <input
-              type="checkbox"
-              id="declutter"
-              checked={declutterFirst}
-              onChange={(e) => setDeclutterFirst(e.target.checked)}
-              disabled={isProcessing}
-              className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary"
-            />
-            <label htmlFor="declutter" className="flex-1 cursor-pointer">
-              <span className="text-sm font-medium text-foreground">Declutter first</span>
-              <p className="text-xs text-muted-foreground">
-                Remove existing furniture before staging (for furnished rooms)
-              </p>
-            </label>
           </div>
 
           {/* Credit Display */}
