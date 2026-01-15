@@ -12,6 +12,7 @@ import {
 } from "lucide-react";
 import { type PreprocessingTool, type ImageAdjustments, DEFAULT_ADJUSTMENTS } from "./types";
 import { AdjustmentsTool } from "./tools/AdjustmentsTool";
+import { CropRotateTool } from "./tools/CropRotateTool";
 
 interface PreprocessingToolbarProps {
   imageUrl: string;
@@ -21,7 +22,7 @@ interface PreprocessingToolbarProps {
 }
 
 const TOOLS: { id: PreprocessingTool; label: string; icon: React.ElementType; implemented: boolean }[] = [
-  { id: "crop-rotate", label: "Crop", icon: Crop, implemented: false },
+  { id: "crop-rotate", label: "Crop", icon: Crop, implemented: true },
   { id: "adjustments", label: "Adjust", icon: SunMedium, implemented: true },
   { id: "declutter", label: "Declutter", icon: Eraser, implemented: false },
   { id: "masking", label: "Mask", icon: PaintBucket, implemented: false },
@@ -127,20 +128,22 @@ export function PreprocessingToolbar({
 
   return (
     <div className="space-y-3">
-      {/* Image Preview with CSS filter applied */}
-      <div className="relative aspect-video rounded-lg overflow-hidden bg-muted">
-        <img
-          src={currentImageUrl}
-          alt="Preview"
-          className="w-full h-full object-contain transition-all duration-150"
-          style={previewStyle}
-        />
-        {hasChanges && (
-          <div className="absolute top-2 left-2 px-2 py-1 bg-primary/90 text-primary-foreground text-xs font-medium rounded">
-            Edited
-          </div>
-        )}
-      </div>
+      {/* Image Preview - hidden when crop tool is active (it has its own preview) */}
+      {activeTool !== "crop-rotate" && (
+        <div className="relative aspect-video rounded-lg overflow-hidden bg-muted">
+          <img
+            src={currentImageUrl}
+            alt="Preview"
+            className="w-full h-full object-contain transition-all duration-150"
+            style={previewStyle}
+          />
+          {hasChanges && (
+            <div className="absolute top-2 left-2 px-2 py-1 bg-primary/90 text-primary-foreground text-xs font-medium rounded">
+              Edited
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Tool Buttons */}
       <div className="flex items-center gap-2">
@@ -195,11 +198,14 @@ export function PreprocessingToolbar({
         />
       )}
 
-      {/* Placeholder panels for unimplemented tools */}
+      {/* Crop & Rotate Tool */}
       {activeTool === "crop-rotate" && (
-        <div className="p-4 bg-muted/30 rounded-lg border text-center text-sm text-muted-foreground">
-          Crop & Rotate tool coming soon
-        </div>
+        <CropRotateTool
+          imageUrl={currentImageUrl}
+          onApply={handleApply}
+          onCancel={handleCancel}
+          disabled={disabled}
+        />
       )}
       {activeTool === "declutter" && (
         <div className="p-4 bg-muted/30 rounded-lg border text-center text-sm text-muted-foreground">
