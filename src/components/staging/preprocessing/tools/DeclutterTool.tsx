@@ -29,18 +29,43 @@ export function DeclutterTool({
     setError(null);
 
     try {
-      // Convert image URL to base64
-      const response = await fetch(imageUrl);
-      const blob = await response.blob();
-      const base64 = await new Promise<string>((resolve, reject) => {
-        const reader = new FileReader();
-        reader.onload = () => {
-          const result = reader.result as string;
-          resolve(result.split(",")[1]);
-        };
-        reader.onerror = reject;
-        reader.readAsDataURL(blob);
-      });
+      let base64: string;
+      let mimeType: string;
+
+      // Check if imageUrl is already a data URL
+      if (imageUrl.startsWith("data:")) {
+        // Extract base64 and mimeType from data URL
+        const matches = imageUrl.match(/^data:([^;]+);base64,(.+)$/);
+        if (matches) {
+          mimeType = matches[1];
+          base64 = matches[2];
+        } else {
+          throw new Error("Invalid data URL format");
+        }
+      } else {
+        // Fetch the image and convert to base64
+        const response = await fetch(imageUrl);
+        if (!response.ok) {
+          throw new Error("Failed to fetch image");
+        }
+        const blob = await response.blob();
+        mimeType = blob.type || "image/png";
+
+        base64 = await new Promise<string>((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onload = () => {
+            const result = reader.result as string;
+            const base64Data = result.split(",")[1];
+            if (base64Data) {
+              resolve(base64Data);
+            } else {
+              reject(new Error("Failed to extract base64 data"));
+            }
+          };
+          reader.onerror = () => reject(new Error("Failed to read image"));
+          reader.readAsDataURL(blob);
+        });
+      }
 
       // Call declutter API
       const apiResponse = await fetch("/api/declutter", {
@@ -48,7 +73,7 @@ export function DeclutterTool({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           image: base64,
-          mimeType: blob.type || "image/png",
+          mimeType,
           stageAfter: false,
         }),
       });
@@ -63,9 +88,12 @@ export function DeclutterTool({
         setDeclutteredUrl(data.declutteredImageUrl);
         setState("preview");
       } else {
-        throw new Error("No decluttered image returned");
+        // Log the response for debugging
+        console.error("[DeclutterTool] Unexpected response:", data);
+        throw new Error(data.error || "No decluttered image returned");
       }
     } catch (err) {
+      console.error("[DeclutterTool] Error:", err);
       setError(err instanceof Error ? err.message : "Declutter failed");
       setState("idle");
     }
