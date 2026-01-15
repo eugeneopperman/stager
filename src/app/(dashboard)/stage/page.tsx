@@ -60,6 +60,7 @@ export default function StagePage() {
   const [compareIndex, setCompareIndex] = useState(0);
   const [sliderPosition, setSliderPosition] = useState(50);
   const [currentProvider, setCurrentProvider] = useState<string | null>(null);
+  const [declutterFirst, setDeclutterFirst] = useState(false); // Remove existing furniture before staging
   const pollingRef = useRef<Map<string, NodeJS.Timeout>>(new Map());
 
   const requiredCredits = styles.length * CREDITS_PER_STAGING;
@@ -201,6 +202,7 @@ export default function StagePage() {
             roomType,
             style: styles[i],
             propertyId: propertyId || undefined,
+            declutterFirst,
           }),
         });
 
@@ -612,6 +614,24 @@ export default function StagePage() {
               onChange={(id) => setPropertyId(id)}
               disabled={isProcessing}
             />
+          </div>
+
+          {/* Declutter Option */}
+          <div className="flex items-center gap-3 p-3 rounded-lg border bg-muted/30">
+            <input
+              type="checkbox"
+              id="declutter"
+              checked={declutterFirst}
+              onChange={(e) => setDeclutterFirst(e.target.checked)}
+              disabled={isProcessing}
+              className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary"
+            />
+            <label htmlFor="declutter" className="flex-1 cursor-pointer">
+              <span className="text-sm font-medium text-foreground">Declutter first</span>
+              <p className="text-xs text-muted-foreground">
+                Remove existing furniture before staging (for furnished rooms)
+              </p>
+            </label>
           </div>
 
           {/* Credit Display */}
