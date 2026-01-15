@@ -47,11 +47,19 @@ export class Decor8Provider extends BaseStagingProvider {
   async stageImageSync(input: StagingInput): Promise<StagingResult> {
     const roomType = this.mapRoomType(input.roomType);
     const designStyle = this.mapDesignStyle(input.furnitureStyle);
+    const roomLabel = ROOM_TYPES.find(r => r.id === input.roomType)?.label || input.roomType;
+    const styleLabel = FURNITURE_STYLES.find(s => s.id === input.furnitureStyle)?.label || input.furnitureStyle;
 
     // Decor8 needs a URL - we'll use base64 data URL
     const imageUrl = input.imageUrl || `data:${input.mimeType};base64,${input.imageBase64}`;
 
     console.log("[Decor8Provider] Staging room:", roomType, "style:", designStyle);
+
+    // Custom prompt emphasizing furniture addition only
+    const customPrompt = `Add ${styleLabel} style furniture to this empty ${roomLabel}. Professional real estate virtual staging. Only add furniture and decor, preserve all existing room features.`;
+
+    // Negative prompt to prevent structural changes
+    const negativePrompt = "changing walls, changing floor, changing ceiling, changing windows, changing doors, removing windows, removing doors, altering room structure, construction, renovation, different wall color, different flooring";
 
     try {
       const response = await fetch(`${this.baseUrl}/generate_designs_for_room`, {
@@ -66,6 +74,10 @@ export class Decor8Provider extends BaseStagingProvider {
           design_style: designStyle,
           num_images: 1,
           keep_original_dimensions: true,
+          prompt: customPrompt,
+          negative_prompt: negativePrompt,
+          guidance_scale: 7.5,  // Default, balanced
+          num_inference_steps: 50,  // Higher quality
         }),
       });
 
