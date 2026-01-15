@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
-import { getProviderRouter, getReplicateProvider } from "@/lib/providers";
+import { getProviderRouter, getReplicateProvider, getDecor8Provider, Decor8Provider } from "@/lib/providers";
 import { type RoomType, type FurnitureStyle, CREDITS_PER_STAGING } from "@/lib/constants";
 
 /**
@@ -51,12 +51,14 @@ export async function POST(request: NextRequest) {
       roomType,
       style,
       propertyId,
+      declutterFirst = false, // If true, remove furniture before staging
     } = body as {
       image: string;
       mimeType: string;
       roomType: RoomType;
       style: FurnitureStyle;
       propertyId?: string;
+      declutterFirst?: boolean;
     };
 
     if (!image || !mimeType || !roomType || !style) {
@@ -140,17 +142,32 @@ export async function POST(request: NextRequest) {
     }
     console.log("[Staging API] Job created in DB");
 
-    // Handle sync provider (Gemini)
+    // Handle sync provider (Decor8 or Gemini)
     if (provider.supportsSync) {
-      console.log("[Staging API] Using sync provider, calling stageImageSync...");
-      const result = await provider.stageImageSync({
-        imageBase64: image,
-        mimeType,
-        roomType,
-        furnitureStyle: style,
-        jobId,
-      });
-      console.log("[Staging API] stageImageSync returned, success:", result.success);
+      console.log("[Staging API] Using sync provider:", provider.providerId, "declutterFirst:", declutterFirst);
+
+      let result;
+
+      // If declutterFirst and using Decor8, use the declutter → stage pipeline
+      if (declutterFirst && provider instanceof Decor8Provider) {
+        console.log("[Staging API] Using declutter → stage pipeline");
+        result = await provider.declutterAndStage({
+          imageBase64: image,
+          mimeType,
+          roomType,
+          furnitureStyle: style,
+          jobId,
+        });
+      } else {
+        result = await provider.stageImageSync({
+          imageBase64: image,
+          mimeType,
+          roomType,
+          furnitureStyle: style,
+          jobId,
+        });
+      }
+      console.log("[Staging API] Staging returned, success:", result.success);
 
       if (!result.success || !result.imageData) {
         console.error("[Staging API] Staging failed:", result.error);

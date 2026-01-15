@@ -193,6 +193,101 @@ export class Decor8Provider extends BaseStagingProvider {
   }
 
   /**
+   * Remove objects/furniture from a room image (declutter)
+   * Useful for staging already-furnished rooms
+   */
+  async declutterRoom(input: StagingInput): Promise<StagingResult> {
+    const imageUrl = input.imageUrl || `data:${input.mimeType};base64,${input.imageBase64}`;
+
+    console.log("[Decor8Provider] Decluttering room...");
+
+    try {
+      const response = await fetch(`${this.baseUrl}/remove_objects_from_room`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${this.apiKey}`,
+        },
+        body: JSON.stringify({
+          input_image_url: imageUrl,
+        }),
+      });
+
+      const responseText = await response.text();
+      console.log("[Decor8Provider] Declutter response status:", response.status);
+
+      if (!response.ok) {
+        console.error("[Decor8Provider] Declutter error:", responseText);
+        return {
+          success: false,
+          error: `Decor8 declutter error: ${response.status} - ${responseText}`,
+        };
+      }
+
+      const data: Decor8Response = JSON.parse(responseText);
+
+      if (data.error || !data.info?.images?.length) {
+        return {
+          success: false,
+          error: data.error || "No decluttered image generated",
+        };
+      }
+
+      const declutteredImage = data.info.images[0];
+      console.log("[Decor8Provider] Decluttered image:", declutteredImage.url);
+
+      // Fetch and convert to base64
+      const imageResponse = await fetch(declutteredImage.url);
+      const imageBuffer = await imageResponse.arrayBuffer();
+      const imageBase64 = Buffer.from(imageBuffer).toString("base64");
+
+      const mimeType = declutteredImage.url.includes(".jpg") || declutteredImage.url.includes(".jpeg")
+        ? "image/jpeg"
+        : "image/png";
+
+      return {
+        success: true,
+        imageData: imageBase64,
+        mimeType,
+      };
+    } catch (error) {
+      console.error("[Decor8Provider] Declutter exception:", error);
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : "Unknown error",
+      };
+    }
+  }
+
+  /**
+   * Declutter a room then stage it - full pipeline for furnished rooms
+   */
+  async declutterAndStage(input: StagingInput): Promise<StagingResult> {
+    console.log("[Decor8Provider] Starting declutter → stage pipeline");
+
+    // Step 1: Declutter
+    const declutterResult = await this.declutterRoom(input);
+    if (!declutterResult.success || !declutterResult.imageData) {
+      return {
+        success: false,
+        error: `Declutter failed: ${declutterResult.error}`,
+      };
+    }
+
+    console.log("[Decor8Provider] Declutter complete, now staging...");
+
+    // Step 2: Stage the decluttered image
+    const stageInput: StagingInput = {
+      ...input,
+      imageBase64: declutterResult.imageData,
+      mimeType: declutterResult.mimeType || "image/png",
+      imageUrl: undefined, // Use the base64 from declutter
+    };
+
+    return this.stageImageSync(stageInput);
+  }
+
+  /**
    * Map our room types to Decor8 room types
    */
   private mapRoomType(roomType: RoomType): string {
