@@ -39,6 +39,7 @@ export interface StagingInput {
   roomType: RoomType;
   furnitureStyle: FurnitureStyle;
   jobId?: string;
+  maskBase64?: string; // Optional B/W mask (white = stage, black = preserve)
 }
 
 /**

@@ -54,6 +54,7 @@ export default function StagePage() {
   const [preview, setPreview] = useState<string | null>(null);
   const [workingFile, setWorkingFile] = useState<File | null>(null);
   const [workingPreview, setWorkingPreview] = useState<string | null>(null);
+  const [maskDataUrl, setMaskDataUrl] = useState<string | null>(null);
   const [roomType, setRoomType] = useState<RoomType | null>(null);
   const [styles, setStyles] = useState<FurnitureStyle[]>([]);
   const [propertyId, setPropertyId] = useState<string | null>(propertyIdParam);
@@ -145,12 +146,18 @@ export default function StagePage() {
     setPreview(null);
     setWorkingFile(null);
     setWorkingPreview(null);
+    setMaskDataUrl(null);
     setError(null);
   };
 
   const handlePreprocessedImageUpdate = (file: File, previewUrl: string) => {
     setWorkingFile(file);
     setWorkingPreview(previewUrl);
+  };
+
+  const handleMaskUpdate = (mask: string | null) => {
+    setMaskDataUrl(mask);
+    console.log("[Stage] Mask updated:", mask ? "mask set" : "mask cleared");
   };
 
   const handleStage = async () => {
@@ -205,6 +212,15 @@ export default function StagePage() {
       );
 
       try {
+        // Extract mask base64 if present
+        let maskBase64: string | undefined;
+        if (maskDataUrl) {
+          const maskMatch = maskDataUrl.match(/^data:[^;]+;base64,(.+)$/);
+          if (maskMatch) {
+            maskBase64 = maskMatch[1];
+          }
+        }
+
         const response = await fetch("/api/staging", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -214,6 +230,7 @@ export default function StagePage() {
             roomType,
             style: styles[i],
             propertyId: propertyId || undefined,
+            mask: maskBase64,
           }),
         });
 
@@ -296,6 +313,7 @@ export default function StagePage() {
     setPreview(null);
     setWorkingFile(null);
     setWorkingPreview(null);
+    setMaskDataUrl(null);
     setRoomType(null);
     setStyles([]);
     setVariations([]);
@@ -559,6 +577,7 @@ export default function StagePage() {
                     imageUrl={workingPreview || preview}
                     imageFile={workingFile || selectedFile!}
                     onImageUpdate={handlePreprocessedImageUpdate}
+                    onMaskUpdate={handleMaskUpdate}
                     disabled={isProcessing}
                   />
                 </div>

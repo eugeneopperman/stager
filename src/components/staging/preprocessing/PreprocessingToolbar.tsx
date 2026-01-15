@@ -20,6 +20,7 @@ interface PreprocessingToolbarProps {
   imageUrl: string;
   imageFile: File;
   onImageUpdate: (file: File, previewUrl: string) => void;
+  onMaskUpdate?: (maskDataUrl: string | null) => void;
   disabled?: boolean;
 }
 
@@ -34,12 +35,14 @@ export function PreprocessingToolbar({
   imageUrl,
   imageFile,
   onImageUpdate,
+  onMaskUpdate,
   disabled = false,
 }: PreprocessingToolbarProps) {
   const [activeTool, setActiveTool] = useState<PreprocessingTool | null>(null);
   const [workingImageUrl, setWorkingImageUrl] = useState<string | null>(null);
   const [adjustments, setAdjustments] = useState<ImageAdjustments>(DEFAULT_ADJUSTMENTS);
   const [history, setHistory] = useState<string[]>([]);
+  const [currentMask, setCurrentMask] = useState<string | null>(null);
 
   // The current display image (working or original)
   const currentImageUrl = workingImageUrl || imageUrl;
@@ -79,10 +82,11 @@ export function PreprocessingToolbar({
         type: "image/png",
       });
 
-      // Log mask if provided (for future API integration)
+      // Store and propagate mask if provided
       if (maskDataUrl) {
-        console.log("[PreprocessingToolbar] Mask generated for staging");
-        // TODO: Store mask for use in staging API
+        console.log("[PreprocessingToolbar] Mask applied for staging");
+        setCurrentMask(maskDataUrl);
+        onMaskUpdate?.(maskDataUrl);
       }
 
       // Update working image
@@ -93,7 +97,7 @@ export function PreprocessingToolbar({
       // Notify parent
       onImageUpdate(newFile, dataUrl);
     },
-    [currentImageUrl, onImageUpdate]
+    [currentImageUrl, onImageUpdate, onMaskUpdate]
   );
 
   const handleCancel = useCallback(() => {
@@ -106,8 +110,10 @@ export function PreprocessingToolbar({
     setActiveTool(null);
     setAdjustments(DEFAULT_ADJUSTMENTS);
     setHistory([]);
+    setCurrentMask(null);
+    onMaskUpdate?.(null);
     onImageUpdate(imageFile, imageUrl);
-  }, [imageFile, imageUrl, onImageUpdate]);
+  }, [imageFile, imageUrl, onImageUpdate, onMaskUpdate]);
 
   const handleUndo = useCallback(() => {
     if (history.length === 0) return;

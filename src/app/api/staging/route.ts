@@ -52,6 +52,7 @@ export async function POST(request: NextRequest) {
       style,
       propertyId,
       declutterFirst = false, // If true, remove furniture before staging
+      mask, // Optional B/W mask image (base64) - white = areas to stage, black = preserve
     } = body as {
       image: string;
       mimeType: string;
@@ -59,6 +60,7 @@ export async function POST(request: NextRequest) {
       style: FurnitureStyle;
       propertyId?: string;
       declutterFirst?: boolean;
+      mask?: string;
     };
 
     if (!image || !mimeType || !roomType || !style) {
@@ -68,7 +70,7 @@ export async function POST(request: NextRequest) {
         { status: 400 }
       );
     }
-    console.log("[Staging API] Room:", roomType, "Style:", style, "Image size:", image.length);
+    console.log("[Staging API] Room:", roomType, "Style:", style, "Image size:", image.length, "Mask:", mask ? "yes" : "no");
 
     // Generate a unique job ID
     const jobId = crypto.randomUUID();
@@ -165,6 +167,7 @@ export async function POST(request: NextRequest) {
           roomType,
           furnitureStyle: style,
           jobId,
+          maskBase64: mask,
         });
       }
       console.log("[Staging API] Staging returned, success:", result.success);

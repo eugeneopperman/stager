@@ -52,14 +52,35 @@ export class Decor8Provider extends BaseStagingProvider {
 
     // Decor8 needs a URL - we'll use base64 data URL
     const imageUrl = input.imageUrl || `data:${input.mimeType};base64,${input.imageBase64}`;
+    const maskUrl = input.maskBase64 ? `data:image/png;base64,${input.maskBase64}` : undefined;
 
-    console.log("[Decor8Provider] Staging room:", roomType, "style:", designStyle);
+    console.log("[Decor8Provider] Staging room:", roomType, "style:", designStyle, "mask:", maskUrl ? "yes" : "no");
 
     // Custom prompt emphasizing furniture addition only - explicitly mention keeping windows
     const customPrompt = `Add ${styleLabel} style furniture to this empty ${roomLabel}. Professional real estate virtual staging. Only add furniture and decor. Keep all windows exactly as they are. Preserve all existing architectural features including windows, doors, walls, flooring.`;
 
     // Negative prompt to prevent structural changes - emphasize window preservation
     const negativePrompt = "removing windows, covering windows, blocking windows, no windows, window removed, changing windows, removing doors, changing walls, changing floor, changing ceiling, altering room structure, construction, renovation, different wall color, different flooring, boarded up windows";
+
+    // Build request body
+    const requestBody: Record<string, unknown> = {
+      input_image_url: imageUrl,
+      room_type: roomType,
+      design_style: designStyle,
+      num_images: 1,
+      keep_original_dimensions: true,
+      prompt: customPrompt,
+      negative_prompt: negativePrompt,
+      guidance_scale: 7.5,  // Default, balanced
+      num_inference_steps: 50,  // Higher quality
+    };
+
+    // Add mask for inpainting if provided
+    // White areas = stage with furniture, Black areas = preserve original
+    if (maskUrl) {
+      requestBody.mask_info = maskUrl;
+      console.log("[Decor8Provider] Using mask for selective inpainting");
+    }
 
     try {
       const response = await fetch(`${this.baseUrl}/generate_designs_for_room`, {
@@ -68,17 +89,7 @@ export class Decor8Provider extends BaseStagingProvider {
           "Content-Type": "application/json",
           "Authorization": `Bearer ${this.apiKey}`,
         },
-        body: JSON.stringify({
-          input_image_url: imageUrl,
-          room_type: roomType,
-          design_style: designStyle,
-          num_images: 1,
-          keep_original_dimensions: true,
-          prompt: customPrompt,
-          negative_prompt: negativePrompt,
-          guidance_scale: 7.5,  // Default, balanced
-          num_inference_steps: 50,  // Higher quality
-        }),
+        body: JSON.stringify(requestBody),
       });
 
       const responseText = await response.text();
