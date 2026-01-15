@@ -376,7 +376,10 @@ export function CropRotateTool({
                     right: corner.includes("e") ? -8 : "auto",
                     cursor: `${corner}-resize`,
                   }}
-                  onMouseDown={(e) => handleMouseDown(e, corner)}
+                  onMouseDown={(e) => {
+                    e.stopPropagation();
+                    handleMouseDown(e, corner);
+                  }}
                 />
               ))}
 
@@ -395,7 +398,10 @@ export function CropRotateTool({
                     ...(edge === "e" && { right: -2 }),
                     cursor: edge === "n" || edge === "s" ? "ns-resize" : "ew-resize",
                   }}
-                  onMouseDown={(e) => handleMouseDown(e, edge)}
+                  onMouseDown={(e) => {
+                    e.stopPropagation();
+                    handleMouseDown(e, edge);
+                  }}
                 />
               ))}
             </div>
