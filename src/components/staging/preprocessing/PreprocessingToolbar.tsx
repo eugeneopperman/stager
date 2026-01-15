@@ -13,6 +13,7 @@ import {
 import { type PreprocessingTool, type ImageAdjustments, DEFAULT_ADJUSTMENTS } from "./types";
 import { AdjustmentsTool } from "./tools/AdjustmentsTool";
 import { CropRotateTool } from "./tools/CropRotateTool";
+import { DeclutterTool } from "./tools/DeclutterTool";
 
 interface PreprocessingToolbarProps {
   imageUrl: string;
@@ -24,7 +25,7 @@ interface PreprocessingToolbarProps {
 const TOOLS: { id: PreprocessingTool; label: string; icon: React.ElementType; implemented: boolean }[] = [
   { id: "crop-rotate", label: "Crop", icon: Crop, implemented: true },
   { id: "adjustments", label: "Adjust", icon: SunMedium, implemented: true },
-  { id: "declutter", label: "Declutter", icon: Eraser, implemented: false },
+  { id: "declutter", label: "Declutter", icon: Eraser, implemented: true },
   { id: "masking", label: "Mask", icon: PaintBucket, implemented: false },
 ];
 
@@ -207,10 +208,14 @@ export function PreprocessingToolbar({
           disabled={disabled}
         />
       )}
+      {/* Declutter Tool */}
       {activeTool === "declutter" && (
-        <div className="p-4 bg-muted/30 rounded-lg border text-center text-sm text-muted-foreground">
-          Declutter tool coming soon
-        </div>
+        <DeclutterTool
+          imageUrl={currentImageUrl}
+          onApply={handleApply}
+          onCancel={handleCancel}
+          disabled={disabled}
+        />
       )}
       {activeTool === "masking" && (
         <div className="p-4 bg-muted/30 rounded-lg border text-center text-sm text-muted-foreground">
