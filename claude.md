@@ -53,7 +53,7 @@ Stager is a web application designed for real estate agents to virtually stage p
 │   │
 │   ├── components/
 │   │   ├── ui/                # shadcn/ui components
-│   │   ├── layout/            # Header (with search), Sidebar
+│   │   ├── layout/            # FloatingControls, Sidebar (with user avatar)
 │   │   ├── staging/           # Staging components (uploaders, selectors)
 │   │   ├── properties/        # Property management components
 │   │   └── dashboard/         # Dashboard widgets
@@ -192,8 +192,8 @@ NEXT_PUBLIC_APP_URL=http://localhost:3000
 | `src/middleware.ts` | Auth protection middleware |
 | `src/contexts/SidebarContext.tsx` | Sidebar collapse/auto-hide state management |
 | `src/components/providers/ThemeProvider.tsx` | next-themes wrapper for dark/light mode |
-| `src/components/layout/Header.tsx` | Header with search (max-w-7xl aligned with content) |
-| `src/components/layout/Sidebar.tsx` | Collapsible navigation sidebar with tooltips |
+| `src/components/layout/FloatingControls.tsx` | Floating search icon + notification bell with expandable search |
+| `src/components/layout/Sidebar.tsx` | Collapsible navigation sidebar with tooltips and user avatar dropdown |
 | `src/components/ui/tooltip.tsx` | Tooltip component for collapsed UI elements |
 | `src/components/staging/ImageUploader.tsx` | Single image drag-drop upload |
 | `src/components/staging/BatchImageUploader.tsx` | Multi-image upload component |

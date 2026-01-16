@@ -151,6 +151,10 @@ Full monetization with Stripe.
 | Dark/Light theme toggle | Medium | ✅ Complete |
 | Collapsible sidebar | Medium | ✅ Complete |
 | Auto-hide sidebar | Low | ✅ Complete |
+| Glassmorphism UI redesign | Medium | ✅ Complete |
+| Custom typography (Outfit/Lato) | Low | ✅ Complete |
+| Floating search & notifications | Medium | ✅ Complete |
+| Personalized dashboard greeting | Low | ✅ Complete |
 | Payment integration | Low | Planned |
 | Team accounts | Low | Future |
 
@@ -362,6 +366,14 @@ staging_jobs:
 | 0.9.10 | 2025-01-12 | Stage page redesign: two-panel layout, room type dropdown, style image gallery |
 | 0.9.11 | 2025-01-12 | Container width standardization: max-w-7xl centered layout across all pages |
 | 0.9.12 | 2025-01-12 | Header alignment: constrained to match content width, fixed sidebar double-spacing bug |
+| 1.067 | 2025-01-16 | Enhanced glassmorphism: 65%/50% card opacity, stronger mesh gradient |
+| 1.068 | 2025-01-16 | Increased card transparency to 50% |
+| 1.069 | 2025-01-16 | Dark mode contrast: darker background, lighter cards |
+| 1.070 | 2025-01-16 | Light mode card border fix (black/8 instead of white/30) |
+| 1.071 | 2025-01-16 | Header transparency 30%, added Outfit/Lato Google Fonts |
+| 1.072 | 2025-01-16 | Stronger glassmorphism (40% cards), personalized dashboard greeting |
+| 1.073 | 2025-01-16 | Layout restructure: removed header, floating controls, sidebar user avatar |
+| 1.074 | 2025-01-16 | 100px top padding, standardized heading sizes across all pages |
 | 1.0.0 | TBD | MVP release |
 
 ---
@@ -376,6 +388,10 @@ staging_jobs:
 - [x] Collapsible/auto-hide sidebar
 - [x] Stage page UX redesign (two-panel layout, visual style gallery)
 - [x] Consistent container width across all pages (max-w-7xl centered)
+- [x] Glassmorphism UI with enhanced transparency
+- [x] Custom typography (Outfit headings, Lato body)
+- [x] Layout restructure (floating controls, sidebar user avatar)
+- [x] Personalized dashboard greeting
 
 ### Medium Priority
 - [ ] Shareable links for properties/stagings

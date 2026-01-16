@@ -110,8 +110,8 @@ useEffect(() => {
 ### Layout Components (`/src/components/layout/`)
 | Component | Purpose |
 |-----------|---------|
-| `Header.tsx` | Top bar with global search, notifications, user menu |
-| `Sidebar.tsx` | Collapsible navigation sidebar with tooltips, credit display |
+| `FloatingControls.tsx` | Floating search icon + notification bell, expandable animated search bar |
+| `Sidebar.tsx` | Collapsible navigation sidebar with tooltips, credit display, user avatar dropdown |
 
 ### Settings Components (`/src/app/(dashboard)/settings/`)
 | Component | Purpose |
@@ -227,6 +227,32 @@ The sidebar has two modes controlled by `SidebarContext`:
 - `stager-sidebar-collapsed`: boolean
 - `stager-sidebar-autohide`: boolean
 
+### Sidebar User Avatar
+The sidebar footer contains a user avatar with dropdown menu (replaces old sign out button):
+
+**Expanded state:**
+```tsx
+<DropdownMenu>
+  <DropdownMenuTrigger>
+    <div className="flex items-center gap-3">
+      <Avatar />
+      <div className="flex flex-col">
+        <span>{name}</span>
+        <span className="text-xs">{email}</span>
+      </div>
+    </div>
+  </DropdownMenuTrigger>
+  <DropdownMenuContent>
+    <DropdownMenuItem>Settings</DropdownMenuItem>
+    <DropdownMenuItem>Billing</DropdownMenuItem>
+    <DropdownMenuSeparator />
+    <DropdownMenuItem>Sign out</DropdownMenuItem>
+  </DropdownMenuContent>
+</DropdownMenu>
+```
+
+**Collapsed state:** Avatar only with tooltip, same dropdown menu
+
 ### Tooltip Pattern for Collapsed UI
 When UI elements collapse to icons, use tooltips:
 ```tsx
@@ -245,12 +271,48 @@ When UI elements collapse to icons, use tooltips:
 ## Glassmorphism UI Pattern
 
 The app uses a premium glassmorphic design with:
-- **Glass cards**: `bg-card/80 backdrop-blur-xl border-white/[0.08]`
+- **Glass cards**: `bg-card/40 backdrop-blur-xl border-black/[0.08]` (light) / `border-white/[0.12]` (dark)
 - **Subtle shadows**: `shadow-xl shadow-black/5`
 - **Gradient overlays**: `bg-gradient-to-br from-white/5 via-transparent to-black/5`
 - **Hover states**: `hover:scale-[1.02]` with smooth transitions
+- **Mesh gradient background**: More prominent gradient for visual depth
 
 CSS variables are defined in `/src/app/globals.css` using OKLch color space for better color interpolation.
+
+### Typography
+- **Headings**: Outfit font (Google Fonts) - bold, impactful
+- **Body**: Lato font (Google Fonts) - clean, readable
+- Font variables defined in `layout.tsx`, applied via CSS custom properties in `globals.css`
+
+---
+
+## Floating Controls Pattern
+
+The app uses floating controls instead of a traditional header bar:
+
+**Location:** `/src/components/layout/FloatingControls.tsx`
+
+**Features:**
+- Fixed position top-right corner (`fixed top-4 right-6 z-50`)
+- Search icon expands to full search bar on click (300ms animation)
+- Notification bell with indicator dot
+- Click outside or ESC key collapses search
+
+**Animation pattern:**
+```tsx
+<div className={cn(
+  "transition-all duration-300 ease-out",
+  isSearchOpen ? "w-80 pl-4 pr-2" : "w-10"
+)}>
+  {/* Search content */}
+</div>
+```
+
+**Key behaviors:**
+- Search input auto-focuses on expand
+- Debounced search API calls (300ms)
+- Results dropdown appears below expanded search bar
+- Collapse on click outside, ESC key, or result selection
 
 ---
 
@@ -291,7 +353,7 @@ The Stage Photo page (`/stage`) uses a two-panel layout for better UX:
 All dashboard pages use a centralized container in `DashboardShell.tsx`:
 
 ```tsx
-<main className="flex-1 overflow-y-auto p-6 scroll-smooth">
+<main className="flex-1 overflow-y-auto px-6 pt-24 pb-6 scroll-smooth">
   <div className="max-w-7xl mx-auto w-full">
     {children}
   </div>
@@ -301,7 +363,8 @@ All dashboard pages use a centralized container in `DashboardShell.tsx`:
 **Key points:**
 - All pages inherit `max-w-7xl` (1280px) centered layout
 - Pages with narrower content (Settings: `max-w-3xl`, Billing: `max-w-4xl`) add their own constraint with `mx-auto`
-- Header content also uses `max-w-7xl mx-auto` to align with page content
+- Top padding `pt-24` (~100px) provides space for floating controls
+- No header bar - floating controls overlay content area
 
 ### Sidebar Spacing (Important Bug Fix)
 
@@ -317,22 +380,6 @@ All dashboard pages use a centralized container in `DashboardShell.tsx`:
 
 // WRONG - Don't add extra spacer
 {/* <div className={sidebarWidth} /> */}
-```
-
-### Header Alignment Pattern
-
-To align header content with main page content:
-
-```tsx
-<header className="sticky top-0 z-40 h-16 px-6 ...">
-  <div className="max-w-7xl mx-auto w-full h-full flex items-center gap-4">
-    {/* Left: Search */}
-    <div className="flex-1 max-w-md">...</div>
-
-    {/* Right: Actions - use ml-auto to push to far right */}
-    <div className="flex items-center gap-3 ml-auto">...</div>
-  </div>
-</header>
 ```
 
 ---
