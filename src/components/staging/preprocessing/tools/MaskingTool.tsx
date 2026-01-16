@@ -2,17 +2,16 @@
 
 import { useState, useRef, useCallback, useEffect } from "react";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { Slider } from "@/components/ui/slider";
 import {
   Brush,
-  MousePointer2,
+  Sparkles,
   RotateCcw,
   Circle,
   Loader2,
-  Plus,
-  Minus,
 } from "lucide-react";
-import { useMaskDrawing, type MaskMode } from "../hooks/useMaskDrawing";
+import { useMaskDrawing } from "../hooks/useMaskDrawing";
 
 interface MaskingToolProps {
   imageUrl: string;
@@ -21,14 +20,19 @@ interface MaskingToolProps {
   disabled?: boolean;
 }
 
-type ToolMode = "click" | "brush";
-type ClickMode = "include" | "exclude";
+type ToolMode = "ai" | "brush";
 
-interface ClickPoint {
-  x: number;
-  y: number;
-  label: number; // 1 = include, 0 = exclude
-}
+// Common furniture/object suggestions
+const QUICK_PROMPTS = [
+  "furniture",
+  "sofa",
+  "table",
+  "chairs",
+  "bed",
+  "rug",
+  "lamp",
+  "curtains",
+];
 
 export function MaskingTool({
   imageUrl,
@@ -37,15 +41,13 @@ export function MaskingTool({
   disabled = false,
 }: MaskingToolProps) {
   const containerRef = useRef<HTMLDivElement>(null);
-  const maskCanvasRef = useRef<HTMLCanvasElement>(null);
   const [containerSize, setContainerSize] = useState({ width: 0, height: 0 });
   const [imageSize, setImageSize] = useState({ width: 0, height: 0 });
   const [displaySize, setDisplaySize] = useState({ width: 0, height: 0, offsetX: 0, offsetY: 0 });
 
   // Tool state
-  const [toolMode, setToolMode] = useState<ToolMode>("click");
-  const [clickMode, setClickMode] = useState<ClickMode>("include");
-  const [clickPoints, setClickPoints] = useState<ClickPoint[]>([]);
+  const [toolMode, setToolMode] = useState<ToolMode>("ai");
+  const [prompt, setPrompt] = useState("");
   const [isSegmenting, setIsSegmenting] = useState(false);
   const [segmentError, setSegmentError] = useState<string | null>(null);
   const [samMaskUrl, setSamMaskUrl] = useState<string | null>(null);
@@ -116,30 +118,6 @@ export function MaskingTool({
     initialMode: "stage",
   });
 
-  // Convert screen coordinates to normalized image coordinates (0-1)
-  const getNormalizedCoords = useCallback(
-    (clientX: number, clientY: number) => {
-      if (!containerRef.current || !imageSize.width) return null;
-      const rect = containerRef.current.getBoundingClientRect();
-
-      // Get position relative to displayed image
-      const relX = clientX - rect.left - displaySize.offsetX;
-      const relY = clientY - rect.top - displaySize.offsetY;
-
-      // Check if within image bounds
-      if (relX < 0 || relX > displaySize.width || relY < 0 || relY > displaySize.height) {
-        return null;
-      }
-
-      // Normalize to 0-1 range based on actual image dimensions
-      const x = (relX / displaySize.width) * imageSize.width;
-      const y = (relY / displaySize.height) * imageSize.height;
-
-      return { x: Math.round(x), y: Math.round(y) };
-    },
-    [displaySize, imageSize]
-  );
-
   // Get canvas coordinates for brush mode
   const getCanvasCoords = useCallback(
     (clientX: number, clientY: number) => {
@@ -153,9 +131,9 @@ export function MaskingTool({
     [displaySize]
   );
 
-  // Call SAM API for segmentation
-  const runSegmentation = useCallback(async (points: ClickPoint[]) => {
-    if (points.length === 0) return;
+  // Run AI segmentation with text prompt
+  const runSegmentation = useCallback(async (textPrompt: string) => {
+    if (!textPrompt.trim()) return;
 
     setIsSegmenting(true);
     setSegmentError(null);
@@ -195,8 +173,7 @@ export function MaskingTool({
         body: JSON.stringify({
           image: base64,
           mimeType,
-          points: points.map(p => ({ x: p.x, y: p.y })),
-          labels: points.map(p => p.label),
+          prompt: textPrompt,
         }),
       });
 
@@ -217,26 +194,18 @@ export function MaskingTool({
     }
   }, [imageUrl]);
 
-  // Handle click in click mode
-  const handleImageClick = useCallback(
-    (e: React.MouseEvent) => {
-      if (disabled || toolMode !== "click" || isSegmenting) return;
+  // Handle prompt submission
+  const handleDetect = useCallback(() => {
+    if (prompt.trim()) {
+      runSegmentation(prompt.trim());
+    }
+  }, [prompt, runSegmentation]);
 
-      const coords = getNormalizedCoords(e.clientX, e.clientY);
-      if (!coords) return;
-
-      const newPoint: ClickPoint = {
-        x: coords.x,
-        y: coords.y,
-        label: clickMode === "include" ? 1 : 0,
-      };
-
-      const newPoints = [...clickPoints, newPoint];
-      setClickPoints(newPoints);
-      runSegmentation(newPoints);
-    },
-    [disabled, toolMode, isSegmenting, getNormalizedCoords, clickMode, clickPoints, runSegmentation]
-  );
+  // Handle quick prompt click
+  const handleQuickPrompt = useCallback((quickPrompt: string) => {
+    setPrompt(quickPrompt);
+    runSegmentation(quickPrompt);
+  }, [runSegmentation]);
 
   // Mouse handlers for brush mode
   const handleMouseDown = useCallback(
@@ -270,30 +239,15 @@ export function MaskingTool({
   // Touch handlers
   const handleTouchStart = useCallback(
     (e: React.TouchEvent) => {
-      if (disabled) return;
+      if (disabled || toolMode !== "brush") return;
       e.preventDefault();
       const touch = e.touches[0];
-
-      if (toolMode === "click" && !isSegmenting) {
-        const coords = getNormalizedCoords(touch.clientX, touch.clientY);
-        if (coords) {
-          const newPoint: ClickPoint = {
-            x: coords.x,
-            y: coords.y,
-            label: clickMode === "include" ? 1 : 0,
-          };
-          const newPoints = [...clickPoints, newPoint];
-          setClickPoints(newPoints);
-          runSegmentation(newPoints);
-        }
-      } else if (toolMode === "brush") {
-        const { x, y } = getCanvasCoords(touch.clientX, touch.clientY);
-        if (x >= 0 && x <= displaySize.width && y >= 0 && y <= displaySize.height) {
-          startDrawing(x, y);
-        }
+      const { x, y } = getCanvasCoords(touch.clientX, touch.clientY);
+      if (x >= 0 && x <= displaySize.width && y >= 0 && y <= displaySize.height) {
+        startDrawing(x, y);
       }
     },
-    [disabled, toolMode, isSegmenting, getNormalizedCoords, clickMode, clickPoints, runSegmentation, getCanvasCoords, displaySize, startDrawing]
+    [disabled, toolMode, getCanvasCoords, displaySize, startDrawing]
   );
 
   const handleTouchMove = useCallback(
@@ -313,19 +267,15 @@ export function MaskingTool({
 
   // Clear all
   const handleClear = useCallback(() => {
-    setClickPoints([]);
     setSamMaskUrl(null);
     setSegmentError(null);
+    setPrompt("");
     clearMask();
   }, [clearMask]);
 
-  // Handle apply - combine SAM mask with brush edits
+  // Handle apply
   const handleApply = useCallback(() => {
-    // If we have a SAM mask, use it; otherwise use brush mask
     if (samMaskUrl) {
-      // For SAM masks, the mask is white = selected object
-      // We need to invert it for staging: white = stage area
-      // Actually, let's just pass it as-is and handle in the staging
       onApply(imageUrl, samMaskUrl);
     } else {
       const brushMask = exportMaskForAI();
@@ -335,14 +285,6 @@ export function MaskingTool({
 
   const hasMask = samMaskUrl || hasDrawn;
 
-  // Convert click points to display coordinates for rendering
-  const getDisplayPoint = (point: ClickPoint) => {
-    return {
-      x: (point.x / imageSize.width) * displaySize.width + displaySize.offsetX,
-      y: (point.y / imageSize.height) * displaySize.height + displaySize.offsetY,
-    };
-  };
-
   return (
     <div className="space-y-3">
       {/* Canvas with image background */}
@@ -350,11 +292,10 @@ export function MaskingTool({
         ref={containerRef}
         className="relative aspect-video bg-black/90 rounded-lg overflow-hidden"
         style={{
-          cursor: toolMode === "click"
-            ? (isSegmenting ? "wait" : "crosshair")
-            : `url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" width="${brushSize}" height="${brushSize}" viewBox="0 0 ${brushSize} ${brushSize}"><circle cx="${brushSize/2}" cy="${brushSize/2}" r="${brushSize/2 - 1}" fill="none" stroke="${mode === 'stage' ? '%2300c800' : '%23c80000'}" stroke-width="2"/></svg>') ${brushSize/2} ${brushSize/2}, crosshair`
+          cursor: toolMode === "brush"
+            ? `url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" width="${brushSize}" height="${brushSize}" viewBox="0 0 ${brushSize} ${brushSize}"><circle cx="${brushSize/2}" cy="${brushSize/2}" r="${brushSize/2 - 1}" fill="none" stroke="${mode === 'stage' ? '%2300c800' : '%23c80000'}" stroke-width="2"/></svg>') ${brushSize/2} ${brushSize/2}, crosshair`
+            : "default"
         }}
-        onClick={toolMode === "click" ? handleImageClick : undefined}
         onMouseDown={handleMouseDown}
         onMouseMove={handleMouseMove}
         onMouseUp={handleMouseUp}
@@ -400,41 +341,26 @@ export function MaskingTool({
           />
         )}
 
-        {/* Click points visualization */}
-        {toolMode === "click" && clickPoints.map((point, i) => {
-          const displayPos = getDisplayPoint(point);
-          return (
-            <div
-              key={i}
-              className={`absolute w-4 h-4 -ml-2 -mt-2 rounded-full border-2 ${
-                point.label === 1
-                  ? "bg-green-500/50 border-green-400"
-                  : "bg-red-500/50 border-red-400"
-              }`}
-              style={{ left: displayPos.x, top: displayPos.y }}
-            />
-          );
-        })}
-
         {/* Segmenting overlay */}
         {isSegmenting && (
           <div className="absolute inset-0 bg-black/30 flex items-center justify-center">
             <div className="text-center text-white">
               <Loader2 className="h-8 w-8 mx-auto mb-2 animate-spin" />
-              <p className="text-sm">Detecting object...</p>
+              <p className="text-sm">Detecting "{prompt}"...</p>
+              <p className="text-xs opacity-70 mt-1">This may take 10-15 seconds</p>
             </div>
           </div>
         )}
 
         {/* Instructions overlay */}
-        {!hasMask && !isSegmenting && clickPoints.length === 0 && (
+        {!hasMask && !isSegmenting && (
           <div className="absolute inset-0 flex items-center justify-center bg-black/30 pointer-events-none">
             <div className="text-center text-white">
-              {toolMode === "click" ? (
+              {toolMode === "ai" ? (
                 <>
-                  <MousePointer2 className="h-8 w-8 mx-auto mb-2 opacity-70" />
-                  <p className="text-sm font-medium">Click on objects to select</p>
-                  <p className="text-xs opacity-70">AI will detect and mask them</p>
+                  <Sparkles className="h-8 w-8 mx-auto mb-2 opacity-70" />
+                  <p className="text-sm font-medium">Type what to select</p>
+                  <p className="text-xs opacity-70">e.g., "sofa, table, chairs"</p>
                 </>
               ) : (
                 <>
@@ -455,14 +381,14 @@ export function MaskingTool({
           <span className="text-xs text-muted-foreground w-16">Tool</span>
           <div className="flex gap-1 flex-1">
             <Button
-              variant={toolMode === "click" ? "default" : "outline"}
+              variant={toolMode === "ai" ? "default" : "outline"}
               size="sm"
-              onClick={() => setToolMode("click")}
+              onClick={() => setToolMode("ai")}
               disabled={disabled}
               className="flex-1 gap-1.5"
             >
-              <MousePointer2 className="h-4 w-4" />
-              Click
+              <Sparkles className="h-4 w-4" />
+              AI Detect
             </Button>
             <Button
               variant={toolMode === "brush" ? "default" : "outline"}
@@ -477,33 +403,44 @@ export function MaskingTool({
           </div>
         </div>
 
-        {/* Click mode controls */}
-        {toolMode === "click" && (
-          <div className="flex items-center gap-2">
-            <span className="text-xs text-muted-foreground w-16">Action</span>
-            <div className="flex gap-1 flex-1">
+        {/* AI mode controls */}
+        {toolMode === "ai" && (
+          <>
+            {/* Text prompt input */}
+            <div className="flex gap-2">
+              <Input
+                placeholder="Type objects to select (e.g., sofa, table)"
+                value={prompt}
+                onChange={(e) => setPrompt(e.target.value)}
+                onKeyDown={(e) => e.key === "Enter" && handleDetect()}
+                disabled={disabled || isSegmenting}
+                className="flex-1"
+              />
               <Button
-                variant={clickMode === "include" ? "default" : "outline"}
                 size="sm"
-                onClick={() => setClickMode("include")}
-                disabled={disabled}
-                className={`flex-1 gap-1.5 ${clickMode === "include" ? "bg-green-600 hover:bg-green-700" : ""}`}
+                onClick={handleDetect}
+                disabled={disabled || isSegmenting || !prompt.trim()}
               >
-                <Plus className="h-4 w-4" />
-                Include
-              </Button>
-              <Button
-                variant={clickMode === "exclude" ? "default" : "outline"}
-                size="sm"
-                onClick={() => setClickMode("exclude")}
-                disabled={disabled}
-                className={`flex-1 gap-1.5 ${clickMode === "exclude" ? "bg-red-600 hover:bg-red-700" : ""}`}
-              >
-                <Minus className="h-4 w-4" />
-                Exclude
+                Detect
               </Button>
             </div>
-          </div>
+
+            {/* Quick prompts */}
+            <div className="flex flex-wrap gap-1">
+              {QUICK_PROMPTS.map((qp) => (
+                <Button
+                  key={qp}
+                  variant="outline"
+                  size="sm"
+                  onClick={() => handleQuickPrompt(qp)}
+                  disabled={disabled || isSegmenting}
+                  className="text-xs h-7 px-2"
+                >
+                  {qp}
+                </Button>
+              ))}
+            </div>
+          </>
         )}
 
         {/* Brush mode controls */}
@@ -568,7 +505,7 @@ export function MaskingTool({
             variant="ghost"
             size="sm"
             onClick={handleClear}
-            disabled={disabled || (!hasMask && clickPoints.length === 0)}
+            disabled={disabled || !hasMask}
             className="gap-1"
           >
             <RotateCcw className="h-3 w-3" />
@@ -585,8 +522,8 @@ export function MaskingTool({
 
         {/* Help text */}
         <p className="text-xs text-muted-foreground text-center">
-          {toolMode === "click" ? (
-            <>Click objects to select them. Use <strong>Include</strong> to add, <strong>Exclude</strong> to remove.</>
+          {toolMode === "ai" ? (
+            <>Type object names and click <strong>Detect</strong> to auto-select them.</>
           ) : (
             <>
               <span className="text-green-600 font-medium">Green</span> areas will be staged.{" "}

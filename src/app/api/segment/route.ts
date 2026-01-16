@@ -4,8 +4,9 @@ import { createClient } from "@/lib/supabase/server";
 /**
  * POST /api/segment
  *
- * Use SAM (Segment Anything Model) to create masks from click points.
- * Calls Replicate's meta/sam-2-video model which supports point prompts.
+ * Use Grounded SAM to create masks from text prompts.
+ * Much faster and more intuitive than click-based segmentation.
+ * User types what to select (e.g., "sofa, table, chairs").
  */
 export async function POST(request: NextRequest) {
   console.log("[Segment API] Request received");
@@ -27,18 +28,18 @@ export async function POST(request: NextRequest) {
     const {
       image,
       mimeType,
-      points,
-      labels,
+      prompt,
+      negativePrompt,
     } = body as {
       image: string; // base64 image data
       mimeType: string;
-      points: Array<{ x: number; y: number }>; // click coordinates in pixels
-      labels: number[]; // 1 = foreground (include), 0 = background (exclude)
+      prompt: string; // What to select, e.g., "sofa, table, chairs"
+      negativePrompt?: string; // What to exclude
     };
 
-    if (!image || !mimeType || !points || points.length === 0) {
+    if (!image || !mimeType || !prompt) {
       return NextResponse.json(
-        { error: "Missing required fields: image, mimeType, points" },
+        { error: "Missing required fields: image, mimeType, prompt" },
         { status: 400 }
       );
     }
@@ -54,15 +55,12 @@ export async function POST(request: NextRequest) {
     // Convert to data URL for Replicate
     const imageUrl = `data:${mimeType};base64,${image}`;
 
-    // Format points for meta/sam-2-video: "[x,y],[x,y],..." as string
-    const clickCoordinates = points.map(p => `[${Math.round(p.x)},${Math.round(p.y)}]`).join(",");
-    // Format labels as comma-separated: "1,1,0,1"
-    const clickLabels = (labels || points.map(() => 1)).join(",");
+    console.log("[Segment API] Prompt:", prompt);
+    if (negativePrompt) {
+      console.log("[Segment API] Negative prompt:", negativePrompt);
+    }
 
-    console.log("[Segment API] Click coordinates:", clickCoordinates);
-    console.log("[Segment API] Click labels:", clickLabels);
-
-    // Call meta/sam-2-video on Replicate - supports point prompts
+    // Call Grounded SAM on Replicate
     const response = await fetch("https://api.replicate.com/v1/predictions", {
       method: "POST",
       headers: {
@@ -70,12 +68,13 @@ export async function POST(request: NextRequest) {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        // meta/sam-2-video - official Meta SAM 2 with point prompt support
-        version: "33432afdfc06a10da6b4018932893d39b0159f838b6d11dd1236dff85cc5ec1d",
+        // Grounded SAM - text-to-segment
+        version: "ee871c19efb1941f55f66a3d7d960428c8a5afcb77449547fe8e5a3ab9ebc21c",
         input: {
-          input_video: imageUrl, // Works with single images too
-          click_coordinates: clickCoordinates,
-          click_labels: clickLabels,
+          image: imageUrl,
+          mask_prompt: prompt,
+          negative_mask_prompt: negativePrompt || "",
+          adjustment_factor: 0, // No erosion/dilation
         },
       }),
     });
@@ -84,7 +83,7 @@ export async function POST(request: NextRequest) {
       const errorText = await response.text();
       console.error("[Segment API] Replicate error:", errorText);
       return NextResponse.json(
-        { error: `SAM API error: ${response.status}` },
+        { error: `Grounded SAM API error: ${response.status}` },
         { status: 500 }
       );
     }
@@ -92,8 +91,8 @@ export async function POST(request: NextRequest) {
     const prediction = await response.json();
     console.log("[Segment API] Prediction created:", prediction.id);
 
-    // Poll for completion - SAM 2 video takes ~49 seconds
-    const maxAttempts = 120; // 60 seconds max
+    // Poll for completion - Grounded SAM is usually fast (~10-15 seconds)
+    const maxAttempts = 60; // 30 seconds max
     let result = prediction;
 
     for (let i = 0; i < maxAttempts; i++) {
@@ -133,26 +132,15 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    console.log("[Segment API] Success! Output:", JSON.stringify(result.output).substring(0, 500));
+    console.log("[Segment API] Success! Output:", result.output);
 
-    // meta/sam-2-video returns output as a video/image URL or array
-    // For single image, it should return a mask
-    let maskUrl: string | null = null;
+    // Grounded SAM returns the mask image URL directly
+    const maskUrl = result.output;
 
-    if (typeof result.output === "string") {
-      maskUrl = result.output;
-    } else if (Array.isArray(result.output) && result.output.length > 0) {
-      maskUrl = result.output[0];
-    } else if (result.output?.combined_mask) {
-      maskUrl = result.output.combined_mask;
-    } else if (result.output?.masks?.[0]) {
-      maskUrl = result.output.masks[0];
-    }
-
-    if (!maskUrl) {
+    if (!maskUrl || typeof maskUrl !== "string") {
       console.error("[Segment API] No mask in output:", result.output);
       return NextResponse.json(
-        { error: "No mask returned from SAM" },
+        { error: "No mask returned" },
         { status: 500 }
       );
     }
