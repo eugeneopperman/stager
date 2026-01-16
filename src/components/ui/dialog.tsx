@@ -68,9 +68,9 @@ function DialogContent({
           // Glass effect
           "bg-background/95 backdrop-blur-xl",
           "dark:bg-background/90",
-          // Border and shadow
-          "border border-border/50 rounded-2xl shadow-2xl",
-          "dark:border-white/10 dark:shadow-black/40",
+          // Border and shadow - rounder for bespoke feel
+          "border border-border/40 rounded-3xl shadow-2xl",
+          "dark:border-white/8 dark:shadow-black/50",
           // Animations
           "duration-300 outline-none",
           "data-[state=open]:animate-in data-[state=closed]:animate-out",
@@ -87,9 +87,9 @@ function DialogContent({
           <DialogPrimitive.Close
             data-slot="dialog-close"
             className={cn(
-              "absolute top-4 right-4 rounded-lg p-1.5",
+              "absolute top-4 right-4 rounded-full p-2",
               "opacity-70 hover:opacity-100",
-              "hover:bg-muted transition-all duration-200",
+              "hover:bg-muted/60 transition-all duration-200",
               "focus:ring-2 focus:ring-ring focus:outline-none",
               "[&_svg]:size-4"
             )}

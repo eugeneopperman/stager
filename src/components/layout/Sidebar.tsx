@@ -93,14 +93,14 @@ export function Sidebar({ credits = 0 }: SidebarProps) {
               <Link
                 href="/billing"
                 className={cn(
-                  "flex flex-col items-center justify-center rounded-xl p-2 relative overflow-hidden",
+                  "flex flex-col items-center justify-center rounded-2xl p-2 relative overflow-hidden",
                   "transition-all duration-300 ease-out",
                   credits <= LOW_CREDITS_THRESHOLD
                     ? "bg-gradient-to-br from-amber-500/90 to-orange-600/90"
                     : "bg-gradient-to-br from-primary/90 to-violet-600/90",
                   credits <= LOW_CREDITS_THRESHOLD
-                    ? "shadow-md shadow-amber-500/20"
-                    : "shadow-md shadow-primary/20"
+                    ? "shadow-md shadow-amber-500/25"
+                    : "shadow-md shadow-primary/25"
                 )}
               >
                 <div className="absolute inset-0 bg-gradient-to-tr from-white/0 via-white/10 to-white/0" />
@@ -122,14 +122,14 @@ export function Sidebar({ credits = 0 }: SidebarProps) {
           // Expanded: Full credits badge
           <div
             className={cn(
-              "rounded-xl p-4 relative overflow-hidden",
+              "rounded-2xl p-4 relative overflow-hidden",
               "transition-all duration-300 ease-out",
               credits <= LOW_CREDITS_THRESHOLD
                 ? "bg-gradient-to-br from-amber-500/90 to-orange-600/90"
                 : "bg-gradient-to-br from-primary/90 to-violet-600/90",
               credits <= LOW_CREDITS_THRESHOLD
-                ? "shadow-lg shadow-amber-500/20"
-                : "shadow-lg shadow-primary/20"
+                ? "shadow-lg shadow-amber-500/25"
+                : "shadow-lg shadow-primary/25"
             )}
           >
             <div className="absolute inset-0 bg-gradient-to-tr from-white/0 via-white/10 to-white/0" />
@@ -183,21 +183,21 @@ export function Sidebar({ credits = 0 }: SidebarProps) {
               key={item.name}
               href={item.href}
               className={cn(
-                "group relative flex items-center rounded-lg py-2.5 text-sm font-medium",
+                "group relative flex items-center rounded-full py-2.5 text-sm font-medium",
                 "transition-all duration-200 ease-out",
-                isCollapsed ? "justify-center px-2" : "gap-3 px-3",
+                isCollapsed ? "justify-center px-2.5" : "gap-3 px-4",
                 isActive
-                  ? "bg-primary/10 text-primary dark:bg-primary/15"
-                  : "text-muted-foreground hover:bg-accent/50 hover:text-foreground dark:hover:bg-white/5"
+                  ? "bg-primary/10 text-primary dark:bg-primary/20"
+                  : "text-muted-foreground hover:bg-accent/30 hover:text-foreground dark:hover:bg-white/8"
               )}
             >
-              {/* Active indicator */}
-              {isActive && (
-                <div className="absolute left-0 top-1/2 -translate-y-1/2 w-[3px] h-5 bg-primary rounded-r-full" />
+              {/* Active indicator - pill dot */}
+              {isActive && !isCollapsed && (
+                <div className="absolute left-1.5 top-1/2 -translate-y-1/2 w-1 h-4 bg-primary rounded-full" />
               )}
               <item.icon className={cn(
                 "h-5 w-5 shrink-0 transition-transform duration-200",
-                "group-hover:scale-110",
+                "group-hover:scale-105",
                 isActive && "text-primary"
               )} />
               {!isCollapsed && <span>{item.name}</span>}
@@ -230,20 +230,20 @@ export function Sidebar({ credits = 0 }: SidebarProps) {
                 key={item.name}
                 href={item.href}
                 className={cn(
-                  "group relative flex items-center rounded-lg py-2.5 text-sm font-medium",
+                  "group relative flex items-center rounded-full py-2.5 text-sm font-medium",
                   "transition-all duration-200 ease-out",
-                  isCollapsed ? "justify-center px-2" : "gap-3 px-3",
+                  isCollapsed ? "justify-center px-2.5" : "gap-3 px-4",
                   isActive
-                    ? "bg-primary/10 text-primary dark:bg-primary/15"
-                    : "text-muted-foreground hover:bg-accent/50 hover:text-foreground dark:hover:bg-white/5"
+                    ? "bg-primary/10 text-primary dark:bg-primary/20"
+                    : "text-muted-foreground hover:bg-accent/30 hover:text-foreground dark:hover:bg-white/8"
                 )}
               >
-                {isActive && (
-                  <div className="absolute left-0 top-1/2 -translate-y-1/2 w-[3px] h-5 bg-primary rounded-r-full" />
+                {isActive && !isCollapsed && (
+                  <div className="absolute left-1.5 top-1/2 -translate-y-1/2 w-1 h-4 bg-primary rounded-full" />
                 )}
                 <item.icon className={cn(
                   "h-5 w-5 shrink-0 transition-transform duration-200",
-                  "group-hover:scale-110",
+                  "group-hover:scale-105",
                   isActive && "text-primary"
                 )} />
                 {!isCollapsed && <span>{item.name}</span>}

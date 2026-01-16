@@ -45,9 +45,9 @@ function DropdownMenuContent({
           // Glass effect
           "bg-popover/95 backdrop-blur-xl text-popover-foreground",
           "dark:bg-popover/90",
-          // Border and shadow
-          "border border-border/50 rounded-xl p-1.5 shadow-xl",
-          "dark:border-white/10 dark:shadow-black/40",
+          // Border and shadow - rounder
+          "border border-border/40 rounded-2xl p-1.5 shadow-xl",
+          "dark:border-white/8 dark:shadow-black/50",
           // Sizing
           "z-50 max-h-(--radix-dropdown-menu-content-available-height) min-w-[8rem]",
           "origin-(--radix-dropdown-menu-content-transform-origin)",
@@ -280,9 +280,9 @@ function DropdownMenuSubContent({
         // Glass effect
         "bg-popover/95 backdrop-blur-xl text-popover-foreground",
         "dark:bg-popover/90",
-        // Border and shadow
-        "border border-border/50 rounded-xl p-1.5 shadow-xl",
-        "dark:border-white/10 dark:shadow-black/40",
+        // Border and shadow - rounder
+        "border border-border/40 rounded-2xl p-1.5 shadow-xl",
+        "dark:border-white/8 dark:shadow-black/50",
         // Sizing
         "z-50 min-w-[8rem] origin-(--radix-dropdown-menu-content-transform-origin) overflow-hidden",
         // Animations

@@ -158,10 +158,10 @@ export function Header({ user, onMenuClick }: HeaderProps) {
         {/* Search */}
         <div className="flex-1 max-w-md" ref={searchRef}>
         <div className="relative">
-          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+          <Search className="absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
           <Input
             placeholder="Search properties, staging jobs..."
-            className="pl-10"
+            className="pl-11 rounded-full bg-secondary/50 border-border/30 hover:border-border/50 focus:border-primary/50"
             value={searchQuery}
             onChange={handleSearchChange}
             onFocus={() => searchQuery.length >= 2 && setShowResults(true)}
@@ -173,13 +173,13 @@ export function Header({ user, onMenuClick }: HeaderProps) {
           {/* Search Results Dropdown */}
           {showResults && searchQuery.length >= 2 && (
             <div className={cn(
-              "absolute top-full left-0 right-0 mt-2 overflow-hidden z-50",
+              "absolute top-full left-0 right-0 mt-3 overflow-hidden z-50",
               // Glass effect
               "bg-popover/95 backdrop-blur-xl",
               "dark:bg-popover/90",
-              // Border and shadow
-              "border border-border/50 dark:border-white/10",
-              "rounded-xl shadow-xl dark:shadow-black/40",
+              // Border and shadow - rounder
+              "border border-border/40 dark:border-white/8",
+              "rounded-2xl shadow-xl dark:shadow-black/40",
               // Animation
               "animate-in fade-in-0 slide-in-from-top-2 duration-200"
             )}>
@@ -242,7 +242,7 @@ export function Header({ user, onMenuClick }: HeaderProps) {
                             <img
                               src={job.staged_image_url}
                               alt=""
-                              className="h-8 w-8 rounded-lg object-cover shrink-0 ring-1 ring-border/50"
+                              className="h-8 w-8 rounded-xl object-cover shrink-0 ring-1 ring-border/40"
                             />
                           ) : (
                             <ImageIcon className="h-4 w-4 text-muted-foreground shrink-0" />
