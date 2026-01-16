@@ -26,6 +26,15 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { LOW_CREDITS_THRESHOLD } from "@/lib/constants";
 import { useSidebar } from "@/contexts/SidebarContext";
 
@@ -44,9 +53,13 @@ const secondaryNavigation = [
 
 interface SidebarProps {
   credits?: number;
+  user?: {
+    email?: string;
+    full_name?: string;
+  };
 }
 
-export function Sidebar({ credits = 0 }: SidebarProps) {
+export function Sidebar({ credits = 0, user }: SidebarProps) {
   const pathname = usePathname();
   const router = useRouter();
   const supabase = createClient();
@@ -57,6 +70,14 @@ export function Sidebar({ credits = 0 }: SidebarProps) {
     router.push("/");
     router.refresh();
   };
+
+  const initials = user?.full_name
+    ? user.full_name
+        .split(" ")
+        .map((n) => n[0])
+        .join("")
+        .toUpperCase()
+    : user?.email?.[0]?.toUpperCase() || "U";
 
   return (
     <div className={cn(
@@ -262,7 +283,7 @@ export function Sidebar({ credits = 0 }: SidebarProps) {
         </div>
       </nav>
 
-      {/* Collapse Toggle & Logout */}
+      {/* Collapse Toggle & User Avatar */}
       <div className={cn(
         "border-t border-border/50 dark:border-white/[0.08]",
         isCollapsed ? "p-2" : "p-4"
@@ -274,9 +295,9 @@ export function Sidebar({ credits = 0 }: SidebarProps) {
               variant="ghost"
               size={isCollapsed ? "icon" : "default"}
               className={cn(
-                isCollapsed ? "w-full h-10" : "w-full justify-start mb-2",
+                isCollapsed ? "w-full h-10" : "w-full justify-start mb-3",
                 "text-muted-foreground hover:text-foreground",
-                "hover:bg-accent/50 dark:hover:bg-white/5",
+                "hover:bg-accent/30 dark:hover:bg-white/5",
                 "transition-all duration-200"
               )}
               onClick={toggleCollapsed}
@@ -296,41 +317,96 @@ export function Sidebar({ credits = 0 }: SidebarProps) {
           )}
         </Tooltip>
 
-        {/* Logout button */}
-        {isCollapsed ? (
+        {/* User Avatar with Dropdown */}
+        <DropdownMenu>
           <Tooltip>
             <TooltipTrigger asChild>
-              <Button
-                variant="ghost"
-                size="icon"
-                className={cn(
-                  "w-full h-10 mt-1",
-                  "text-muted-foreground hover:text-foreground",
-                  "hover:bg-accent/50 dark:hover:bg-white/5",
-                  "transition-all duration-200"
+              <DropdownMenuTrigger asChild>
+                {isCollapsed ? (
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className={cn(
+                      "w-full h-10 mt-1",
+                      "hover:bg-accent/30 dark:hover:bg-white/5",
+                      "transition-all duration-200"
+                    )}
+                  >
+                    <Avatar className="h-8 w-8">
+                      <AvatarFallback className={cn(
+                        "bg-gradient-to-br from-primary to-violet-600",
+                        "text-white text-xs font-medium"
+                      )}>
+                        {initials}
+                      </AvatarFallback>
+                    </Avatar>
+                  </Button>
+                ) : (
+                  <button
+                    className={cn(
+                      "w-full flex items-center gap-3 p-2 rounded-full",
+                      "hover:bg-accent/30 dark:hover:bg-white/5",
+                      "transition-all duration-200",
+                      "text-left"
+                    )}
+                  >
+                    <Avatar className="h-9 w-9 shrink-0">
+                      <AvatarFallback className={cn(
+                        "bg-gradient-to-br from-primary to-violet-600",
+                        "text-white text-sm font-medium"
+                      )}>
+                        {initials}
+                      </AvatarFallback>
+                    </Avatar>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium text-foreground truncate">
+                        {user?.full_name || "User"}
+                      </p>
+                      <p className="text-xs text-muted-foreground truncate">
+                        {user?.email}
+                      </p>
+                    </div>
+                  </button>
                 )}
-                onClick={handleLogout}
-              >
-                <LogOut className="h-5 w-5" />
-              </Button>
+              </DropdownMenuTrigger>
             </TooltipTrigger>
-            <TooltipContent side="right">Sign out</TooltipContent>
-          </Tooltip>
-        ) : (
-          <Button
-            variant="ghost"
-            className={cn(
-              "w-full justify-start",
-              "text-muted-foreground hover:text-foreground",
-              "hover:bg-accent/50 dark:hover:bg-white/5",
-              "transition-all duration-200"
+            {isCollapsed && (
+              <TooltipContent side="right">
+                {user?.full_name || user?.email || "Account"}
+              </TooltipContent>
             )}
-            onClick={handleLogout}
+          </Tooltip>
+          <DropdownMenuContent
+            align={isCollapsed ? "center" : "start"}
+            side="top"
+            className="w-56 mb-2"
           >
-            <LogOut className="mr-3 h-5 w-5" />
-            Sign out
-          </Button>
-        )}
+            <DropdownMenuLabel>
+              <div className="flex flex-col space-y-1">
+                <p className="text-sm font-medium">{user?.full_name || "User"}</p>
+                <p className="text-xs text-muted-foreground">{user?.email}</p>
+              </div>
+            </DropdownMenuLabel>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem asChild>
+              <Link href="/settings">
+                <Settings className="mr-2 h-4 w-4" />
+                Settings
+              </Link>
+            </DropdownMenuItem>
+            <DropdownMenuItem asChild>
+              <Link href="/billing">
+                <CreditCard className="mr-2 h-4 w-4" />
+                Billing
+              </Link>
+            </DropdownMenuItem>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem onClick={handleLogout} variant="destructive">
+              <LogOut className="mr-2 h-4 w-4" />
+              Sign out
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
       </div>
     </div>
   );

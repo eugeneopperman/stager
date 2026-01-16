@@ -1,10 +1,12 @@
 "use client";
 
 import { useState } from "react";
+import { Menu } from "lucide-react";
 import { Sidebar } from "@/components/layout/Sidebar";
-import { Header } from "@/components/layout/Header";
+import { FloatingControls } from "@/components/layout/FloatingControls";
 import { DashboardProvider } from "@/contexts/DashboardContext";
 import { SidebarProvider, useSidebar } from "@/contexts/SidebarContext";
+import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
 interface DashboardShellProps {
@@ -56,7 +58,7 @@ function DashboardContent({ children, user, credits = 0 }: DashboardShellProps) 
         onMouseEnter={() => isAutoHide && setHovered(true)}
         onMouseLeave={() => isAutoHide && setHovered(false)}
       >
-        <Sidebar credits={credits} />
+        <Sidebar credits={credits} user={user} />
       </div>
 
       {/* Mobile Sidebar */}
@@ -82,15 +84,33 @@ function DashboardContent({ children, user, credits = 0 }: DashboardShellProps) 
           "transition-transform duration-300 ease-out",
           sidebarOpen ? "translate-x-0" : "-translate-x-full"
         )}>
-          <Sidebar credits={credits} />
+          <Sidebar credits={credits} user={user} />
         </div>
       </div>
 
+      {/* Floating Controls - Search & Notifications */}
+      <FloatingControls />
+
+      {/* Mobile Menu Button */}
+      <Button
+        variant="ghost"
+        size="icon"
+        className={cn(
+          "fixed top-4 left-4 z-50 lg:hidden",
+          "h-10 w-10 rounded-full",
+          "bg-card/80 backdrop-blur-xl",
+          "border border-black/[0.08] dark:border-white/[0.12]",
+          "shadow-lg"
+        )}
+        onClick={() => setSidebarOpen(true)}
+      >
+        <Menu className="h-5 w-5" />
+      </Button>
+
       {/* Main content */}
       <div className="flex flex-1 flex-col overflow-hidden">
-        <Header user={user} onMenuClick={() => setSidebarOpen(true)} />
         <main className={cn(
-          "flex-1 overflow-y-auto p-6",
+          "flex-1 overflow-y-auto p-6 pt-4",
           // Smooth scroll
           "scroll-smooth"
         )}>
