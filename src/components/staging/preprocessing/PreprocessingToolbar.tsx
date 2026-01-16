@@ -142,8 +142,8 @@ export function PreprocessingToolbar({
 
   return (
     <div className="space-y-3">
-      {/* Image Preview - hidden when crop or masking tools are active (they have their own preview) */}
-      {activeTool !== "crop-rotate" && activeTool !== "masking" && (
+      {/* Image Preview - hidden when crop, masking, or declutter tools are active (they have their own preview) */}
+      {activeTool !== "crop-rotate" && activeTool !== "masking" && activeTool !== "declutter" && (
         <div className="relative aspect-video rounded-lg overflow-hidden bg-muted">
           <img
             src={currentImageUrl}
