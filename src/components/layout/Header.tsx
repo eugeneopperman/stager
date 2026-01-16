@@ -138,11 +138,11 @@ export function Header({ user, onMenuClick }: HeaderProps) {
   return (
     <header className={cn(
       "sticky top-0 z-40 h-16 px-6",
-      // Glass effect
-      "bg-background/70 backdrop-blur-xl",
-      "dark:bg-background/60",
+      // Glass effect - more transparent
+      "bg-background/30 backdrop-blur-xl",
+      "dark:bg-background/25",
       // Border
-      "border-b border-border/50 dark:border-white/[0.08]"
+      "border-b border-border/30 dark:border-white/[0.06]"
     )}>
       <div className="max-w-7xl mx-auto w-full h-full flex items-center gap-4">
         {/* Mobile menu button */}
