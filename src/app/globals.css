@@ -53,7 +53,7 @@
   /* Light mode - Soft warm gray background with transparency */
   --background: oklch(0.965 0.003 80);
   --foreground: oklch(0.18 0.01 265);
-  --card: oklch(1 0 0 / 65%);
+  --card: oklch(1 0 0 / 50%);
   --card-foreground: oklch(0.18 0.01 265);
   --popover: oklch(1 0 0 / 85%);
   --popover-foreground: oklch(0.18 0.01 265);
@@ -127,7 +127,7 @@
   --foreground: oklch(0.95 0.008 265);
 
   /* Cards with strong transparency for glass effect */
-  --card: oklch(0.18 0.02 265 / 50%);
+  --card: oklch(0.18 0.02 265 / 40%);
   --card-foreground: oklch(0.95 0.008 265);
   --popover: oklch(0.16 0.02 265 / 90%);
   --popover-foreground: oklch(0.95 0.008 265);
