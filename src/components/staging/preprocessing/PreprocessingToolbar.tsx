@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useState } from "react";
 import { Button } from "@/components/ui/button";
 import {
   Crop,
@@ -43,6 +43,7 @@ export function PreprocessingToolbar({
   const [adjustments, setAdjustments] = useState<ImageAdjustments>(DEFAULT_ADJUSTMENTS);
   const [history, setHistory] = useState<string[]>([]);
   const [currentMask, setCurrentMask] = useState<string | null>(null);
+  const [showOriginal, setShowOriginal] = useState(false);
 
   // The current display image (working or original)
   const currentImageUrl = workingImageUrl || imageUrl;
@@ -140,26 +141,60 @@ export function PreprocessingToolbar({
   const canUndo = history.length > 0;
   const hasChanges = workingImageUrl !== null;
 
+  // Determine which image to display (for peek functionality)
+  const displayImageUrl = hasChanges && showOriginal ? imageUrl : currentImageUrl;
+
   return (
     <div className="space-y-3">
-      {/* Image Preview - hidden when crop, masking, or declutter tools are active (they have their own preview) */}
-      {activeTool !== "crop-rotate" && activeTool !== "masking" && activeTool !== "declutter" && (
+      {/* Preview Area - Tool-specific previews or main preview */}
+      {activeTool === "crop-rotate" ? (
+        <CropRotateTool
+          imageUrl={currentImageUrl}
+          onApply={handleApply}
+          onCancel={handleCancel}
+          disabled={disabled}
+        />
+      ) : activeTool === "masking" ? (
+        <MaskingTool
+          imageUrl={currentImageUrl}
+          onApply={handleApply}
+          onCancel={handleCancel}
+          disabled={disabled}
+        />
+      ) : activeTool === "declutter" ? (
+        <DeclutterTool
+          imageUrl={currentImageUrl}
+          onApply={handleApply}
+          onCancel={handleCancel}
+          disabled={disabled}
+        />
+      ) : (
+        /* Main Image Preview */
         <div className="relative aspect-video rounded-lg overflow-hidden bg-muted">
           <img
-            src={currentImageUrl}
+            src={displayImageUrl}
             alt="Preview"
             className="w-full h-full object-contain transition-all duration-150"
             style={previewStyle}
           />
           {hasChanges && (
-            <div className="absolute top-2 left-2 px-2 py-1 bg-primary/90 text-primary-foreground text-xs font-medium rounded">
-              Edited
-            </div>
+            <button
+              type="button"
+              className="absolute top-2 left-2 px-2 py-1 bg-primary/90 hover:bg-primary text-primary-foreground text-xs font-medium rounded cursor-pointer select-none transition-colors"
+              onMouseDown={() => setShowOriginal(true)}
+              onMouseUp={() => setShowOriginal(false)}
+              onMouseLeave={() => setShowOriginal(false)}
+              onTouchStart={() => setShowOriginal(true)}
+              onTouchEnd={() => setShowOriginal(false)}
+              title="Hold to see original"
+            >
+              {showOriginal ? "Original" : "Edited"}
+            </button>
           )}
         </div>
       )}
 
-      {/* Tool Buttons */}
+      {/* Tool Buttons - always in same position */}
       <div className="flex items-center gap-2">
         <div className="flex items-center gap-1 flex-1">
           {TOOLS.map((tool) => (
@@ -200,40 +235,12 @@ export function PreprocessingToolbar({
         </div>
       </div>
 
-      {/* Tool Panel */}
+      {/* Tool Control Panel (no preview, just controls) */}
       {activeTool === "adjustments" && (
         <AdjustmentsTool
           imageUrl={currentImageUrl}
           adjustments={adjustments}
           onAdjustmentsChange={setAdjustments}
-          onApply={handleApply}
-          onCancel={handleCancel}
-          disabled={disabled}
-        />
-      )}
-
-      {/* Crop & Rotate Tool */}
-      {activeTool === "crop-rotate" && (
-        <CropRotateTool
-          imageUrl={currentImageUrl}
-          onApply={handleApply}
-          onCancel={handleCancel}
-          disabled={disabled}
-        />
-      )}
-      {/* Declutter Tool */}
-      {activeTool === "declutter" && (
-        <DeclutterTool
-          imageUrl={currentImageUrl}
-          onApply={handleApply}
-          onCancel={handleCancel}
-          disabled={disabled}
-        />
-      )}
-      {/* Masking Tool */}
-      {activeTool === "masking" && (
-        <MaskingTool
-          imageUrl={currentImageUrl}
           onApply={handleApply}
           onCancel={handleCancel}
           disabled={disabled}
