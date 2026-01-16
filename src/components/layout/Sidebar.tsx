@@ -46,11 +46,6 @@ const navigation = [
   { name: "History", href: "/history", icon: History },
 ];
 
-const secondaryNavigation = [
-  { name: "Settings", href: "/settings", icon: Settings },
-  { name: "Billing", href: "/billing", icon: CreditCard },
-];
-
 interface SidebarProps {
   credits?: number;
   user?: {
@@ -105,10 +100,54 @@ export function Sidebar({ credits = 0, user }: SidebarProps) {
         )}
       </div>
 
-      {/* Credits Badge */}
-      <div className={cn("py-4", isCollapsed ? "px-2" : "px-4")}>
+      {/* Main Navigation */}
+      <nav className={cn(
+        "flex-1 space-y-1 py-4 overflow-y-auto",
+        isCollapsed ? "px-2" : "px-3"
+      )}>
+        {navigation.map((item) => {
+          const isActive = pathname === item.href;
+          const navLink = (
+            <Link
+              key={item.name}
+              href={item.href}
+              className={cn(
+                "group relative flex items-center rounded-full py-2.5 text-sm font-medium",
+                "transition-all duration-200 ease-out",
+                isCollapsed ? "justify-center px-2.5" : "gap-3 px-4",
+                isActive
+                  ? "bg-primary/10 text-primary dark:bg-primary/20"
+                  : "text-muted-foreground hover:bg-accent/30 hover:text-foreground dark:hover:bg-white/8"
+              )}
+            >
+              <item.icon className={cn(
+                "h-5 w-5 shrink-0 transition-transform duration-200",
+                "group-hover:scale-105",
+                isActive && "text-primary"
+              )} />
+              {!isCollapsed && <span>{item.name}</span>}
+            </Link>
+          );
+
+          return isCollapsed ? (
+            <Tooltip key={item.name}>
+              <TooltipTrigger asChild>{navLink}</TooltipTrigger>
+              <TooltipContent side="right">{item.name}</TooltipContent>
+            </Tooltip>
+          ) : (
+            navLink
+          );
+        })}
+      </nav>
+
+      {/* Bottom Section: Credits, Collapse, Avatar */}
+      <div className={cn(
+        "border-t border-border/50 dark:border-white/[0.08]",
+        isCollapsed ? "p-2" : "p-4",
+        "space-y-2"
+      )}>
+        {/* Credits Badge */}
         {isCollapsed ? (
-          // Collapsed: Icon-only credits badge
           <Tooltip>
             <TooltipTrigger asChild>
               <Link
@@ -140,7 +179,6 @@ export function Sidebar({ credits = 0, user }: SidebarProps) {
             </TooltipContent>
           </Tooltip>
         ) : (
-          // Expanded: Full credits badge
           <div
             className={cn(
               "rounded-2xl p-4 relative overflow-hidden",
@@ -185,109 +223,7 @@ export function Sidebar({ credits = 0, user }: SidebarProps) {
             </div>
           </div>
         )}
-      </div>
 
-      {/* Main Navigation */}
-      <nav className={cn(
-        "flex-1 space-y-1 py-4 overflow-y-auto",
-        isCollapsed ? "px-2" : "px-3"
-      )}>
-        {!isCollapsed && (
-          <p className="px-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">
-            Main
-          </p>
-        )}
-        {navigation.map((item) => {
-          const isActive = pathname === item.href;
-          const navLink = (
-            <Link
-              key={item.name}
-              href={item.href}
-              className={cn(
-                "group relative flex items-center rounded-full py-2.5 text-sm font-medium",
-                "transition-all duration-200 ease-out",
-                isCollapsed ? "justify-center px-2.5" : "gap-3 px-4",
-                isActive
-                  ? "bg-primary/10 text-primary dark:bg-primary/20"
-                  : "text-muted-foreground hover:bg-accent/30 hover:text-foreground dark:hover:bg-white/8"
-              )}
-            >
-              {/* Active indicator - pill dot */}
-              {isActive && !isCollapsed && (
-                <div className="absolute left-1.5 top-1/2 -translate-y-1/2 w-1 h-4 bg-primary rounded-full" />
-              )}
-              <item.icon className={cn(
-                "h-5 w-5 shrink-0 transition-transform duration-200",
-                "group-hover:scale-105",
-                isActive && "text-primary"
-              )} />
-              {!isCollapsed && <span>{item.name}</span>}
-            </Link>
-          );
-
-          return isCollapsed ? (
-            <Tooltip key={item.name}>
-              <TooltipTrigger asChild>{navLink}</TooltipTrigger>
-              <TooltipContent side="right">{item.name}</TooltipContent>
-            </Tooltip>
-          ) : (
-            navLink
-          );
-        })}
-
-        <div className={cn("pt-6", isCollapsed && "pt-4")}>
-          {!isCollapsed && (
-            <p className="px-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">
-              Account
-            </p>
-          )}
-          {isCollapsed && (
-            <div className="border-t border-border/50 dark:border-white/[0.08] mb-4" />
-          )}
-          {secondaryNavigation.map((item) => {
-            const isActive = pathname === item.href;
-            const navLink = (
-              <Link
-                key={item.name}
-                href={item.href}
-                className={cn(
-                  "group relative flex items-center rounded-full py-2.5 text-sm font-medium",
-                  "transition-all duration-200 ease-out",
-                  isCollapsed ? "justify-center px-2.5" : "gap-3 px-4",
-                  isActive
-                    ? "bg-primary/10 text-primary dark:bg-primary/20"
-                    : "text-muted-foreground hover:bg-accent/30 hover:text-foreground dark:hover:bg-white/8"
-                )}
-              >
-                {isActive && !isCollapsed && (
-                  <div className="absolute left-1.5 top-1/2 -translate-y-1/2 w-1 h-4 bg-primary rounded-full" />
-                )}
-                <item.icon className={cn(
-                  "h-5 w-5 shrink-0 transition-transform duration-200",
-                  "group-hover:scale-105",
-                  isActive && "text-primary"
-                )} />
-                {!isCollapsed && <span>{item.name}</span>}
-              </Link>
-            );
-
-            return isCollapsed ? (
-              <Tooltip key={item.name}>
-                <TooltipTrigger asChild>{navLink}</TooltipTrigger>
-                <TooltipContent side="right">{item.name}</TooltipContent>
-              </Tooltip>
-            ) : (
-              navLink
-            );
-          })}
-        </div>
-      </nav>
-
-      {/* Collapse Toggle & User Avatar */}
-      <div className={cn(
-        "border-t border-border/50 dark:border-white/[0.08]",
-        isCollapsed ? "p-2" : "p-4"
-      )}>
         {/* Collapse toggle button */}
         <Tooltip>
           <TooltipTrigger asChild>
@@ -295,7 +231,7 @@ export function Sidebar({ credits = 0, user }: SidebarProps) {
               variant="ghost"
               size={isCollapsed ? "icon" : "default"}
               className={cn(
-                isCollapsed ? "w-full h-10" : "w-full justify-start mb-3",
+                isCollapsed ? "w-full h-10" : "w-full justify-start",
                 "text-muted-foreground hover:text-foreground",
                 "hover:bg-accent/30 dark:hover:bg-white/5",
                 "transition-all duration-200"
@@ -322,52 +258,27 @@ export function Sidebar({ credits = 0, user }: SidebarProps) {
           <Tooltip>
             <TooltipTrigger asChild>
               <DropdownMenuTrigger asChild>
-                {isCollapsed ? (
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className={cn(
-                      "w-full h-10 mt-1",
-                      "hover:bg-accent/30 dark:hover:bg-white/5",
-                      "transition-all duration-200"
-                    )}
-                  >
-                    <Avatar className="h-8 w-8">
-                      <AvatarFallback className={cn(
-                        "bg-gradient-to-br from-primary to-violet-600",
-                        "text-white text-xs font-medium"
-                      )}>
-                        {initials}
-                      </AvatarFallback>
-                    </Avatar>
-                  </Button>
-                ) : (
-                  <button
-                    className={cn(
-                      "w-full flex items-center gap-3 p-2 rounded-full",
-                      "hover:bg-accent/30 dark:hover:bg-white/5",
-                      "transition-all duration-200",
-                      "text-left"
-                    )}
-                  >
-                    <Avatar className="h-9 w-9 shrink-0">
-                      <AvatarFallback className={cn(
-                        "bg-gradient-to-br from-primary to-violet-600",
-                        "text-white text-sm font-medium"
-                      )}>
-                        {initials}
-                      </AvatarFallback>
-                    </Avatar>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium text-foreground truncate">
-                        {user?.full_name || "User"}
-                      </p>
-                      <p className="text-xs text-muted-foreground truncate">
-                        {user?.email}
-                      </p>
-                    </div>
-                  </button>
-                )}
+                <Button
+                  variant="ghost"
+                  size={isCollapsed ? "icon" : "default"}
+                  className={cn(
+                    isCollapsed ? "w-full h-10" : "w-full justify-start",
+                    "hover:bg-accent/30 dark:hover:bg-white/5",
+                    "transition-all duration-200"
+                  )}
+                >
+                  <Avatar className={cn(isCollapsed ? "h-8 w-8" : "h-8 w-8 mr-3")}>
+                    <AvatarFallback className={cn(
+                      "bg-gradient-to-br from-primary to-violet-600",
+                      "text-white text-xs font-medium"
+                    )}>
+                      {initials}
+                    </AvatarFallback>
+                  </Avatar>
+                  {!isCollapsed && (
+                    <span className="text-muted-foreground">Account</span>
+                  )}
+                </Button>
               </DropdownMenuTrigger>
             </TooltipTrigger>
             {isCollapsed && (
