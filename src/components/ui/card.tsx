@@ -11,14 +11,14 @@ function Card({ className, ...props }: React.ComponentProps<"div">) {
         "bg-card text-card-foreground flex flex-col gap-6 rounded-2xl py-6",
         // Strong glass effect with heavy blur
         "glass-heavy",
-        // Soft border and diffuse shadow
-        "border border-white/30 shadow-lg",
+        // Light mode: subtle dark border for definition
+        "border border-black/[0.08] shadow-lg",
         // Hover state with smooth transition
         "transition-all duration-200 ease-out",
-        "hover:shadow-xl hover:border-white/40 hover:bg-card/80",
-        // Dark mode enhancements - stronger glass
-        "dark:border-white/[0.10] dark:shadow-xl dark:shadow-black/30",
-        "dark:hover:border-white/[0.15] dark:hover:shadow-2xl dark:hover:shadow-black/40",
+        "hover:shadow-xl hover:border-black/[0.12]",
+        // Dark mode: white border for glass edge
+        "dark:border-white/[0.12] dark:shadow-xl dark:shadow-black/30",
+        "dark:hover:border-white/[0.18] dark:hover:shadow-2xl dark:hover:shadow-black/40",
         className
       )}
       {...props}
