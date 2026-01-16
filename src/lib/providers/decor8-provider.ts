@@ -267,8 +267,9 @@ export class Decor8Provider extends BaseStagingProvider {
       // Parse response - structure may vary by endpoint
       const data = JSON.parse(responseText) as Record<string, unknown>;
 
-      // Check for error
-      if (data.error) {
+      // Check for error - Decor8 may return error in 'error' field (empty string = no error)
+      // or indicate failure via 'message' field
+      if (data.error && String(data.error).length > 0) {
         console.error("[Decor8Provider] Declutter API error:", data.error);
         return {
           success: false,
@@ -276,23 +277,58 @@ export class Decor8Provider extends BaseStagingProvider {
         };
       }
 
+      // Also check message field for error indicators when error field is empty
+      const message = String(data.message || "");
+      if (message.toLowerCase().includes("error") ||
+          message.toLowerCase().includes("failed") ||
+          message.toLowerCase().includes("invalid")) {
+        console.error("[Decor8Provider] Declutter failed via message:", message);
+        return {
+          success: false,
+          error: message,
+        };
+      }
+
+      // Log info structure for debugging
+      console.log("[Decor8Provider] Info field type:", typeof data.info);
+      console.log("[Decor8Provider] Info field contents:", JSON.stringify(data.info, null, 2)?.substring(0, 500));
+
       // Try to find the output image in various possible locations
       let outputImageUrl: string | null = null;
 
       // Check info.images (standard staging response format)
-      const info = data.info as { images?: Array<{ url: string; width?: number; height?: number }> } | undefined;
-      if (info?.images?.length) {
-        outputImageUrl = info.images[0].url;
+      const info = data.info as Record<string, unknown> | undefined;
+      const infoImages = info?.images as Array<{ url: string; width?: number; height?: number }> | undefined;
+      if (infoImages?.length) {
+        outputImageUrl = infoImages[0].url;
         console.log("[Decor8Provider] Found image in info.images");
       }
 
-      // Check for direct image_url field
+      // Check info.output_image_url
+      if (!outputImageUrl && typeof info?.output_image_url === "string") {
+        outputImageUrl = info.output_image_url;
+        console.log("[Decor8Provider] Found image in info.output_image_url");
+      }
+
+      // Check info.image_url
+      if (!outputImageUrl && typeof info?.image_url === "string") {
+        outputImageUrl = info.image_url;
+        console.log("[Decor8Provider] Found image in info.image_url");
+      }
+
+      // Check info.url
+      if (!outputImageUrl && typeof info?.url === "string") {
+        outputImageUrl = info.url;
+        console.log("[Decor8Provider] Found image in info.url");
+      }
+
+      // Check for direct image_url field at root
       if (!outputImageUrl && typeof data.image_url === "string") {
         outputImageUrl = data.image_url;
         console.log("[Decor8Provider] Found image in image_url field");
       }
 
-      // Check for output_image_url field
+      // Check for output_image_url field at root
       if (!outputImageUrl && typeof data.output_image_url === "string") {
         outputImageUrl = data.output_image_url;
         console.log("[Decor8Provider] Found image in output_image_url field");
@@ -305,11 +341,20 @@ export class Decor8Provider extends BaseStagingProvider {
         console.log("[Decor8Provider] Found image in root images array");
       }
 
+      // Check for result field (sometimes APIs use this)
+      if (!outputImageUrl && typeof data.result === "string" && data.result.startsWith("http")) {
+        outputImageUrl = data.result;
+        console.log("[Decor8Provider] Found image in result field");
+      }
+
       if (!outputImageUrl) {
         console.error("[Decor8Provider] Could not find output image in response. Keys:", Object.keys(data));
+        console.error("[Decor8Provider] Info keys:", info ? Object.keys(info) : "no info");
+        // Include the message from API in the error for better debugging
+        const apiMessage = String(data.message || "");
         return {
           success: false,
-          error: "No decluttered image in response",
+          error: apiMessage ? `Declutter failed: ${apiMessage}` : "No decluttered image in response",
         };
       }
 
