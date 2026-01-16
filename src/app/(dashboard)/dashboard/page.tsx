@@ -7,12 +7,45 @@ import Link from "next/link";
 import { LOW_CREDITS_THRESHOLD, CREDITS_PER_STAGING } from "@/lib/constants";
 import { cn } from "@/lib/utils";
 
+function getGreeting(name: string): string {
+  const hour = new Date().getHours();
+  const greetings = [
+    `Good morning, ${name}`,
+    `Good afternoon, ${name}`,
+    `Good evening, ${name}`,
+  ];
+  const casualGreetings = [
+    `Welcome back, ${name}`,
+    `Ready to stage, ${name}?`,
+    `Hey ${name}, let's create something beautiful`,
+    `Great to see you, ${name}`,
+  ];
+
+  // Mix time-based and casual greetings
+  const timeGreeting = hour < 12 ? greetings[0] : hour < 17 ? greetings[1] : greetings[2];
+  const allGreetings = [timeGreeting, ...casualGreetings];
+
+  // Use the day of month to pick a consistent greeting for the day
+  const dayIndex = new Date().getDate() % allGreetings.length;
+  return allGreetings[dayIndex];
+}
+
 export default async function DashboardPage() {
   const supabase = await createClient();
 
   const {
     data: { user },
   } = await supabase.auth.getUser();
+
+  // Fetch user profile for name
+  const { data: userProfile } = await supabase
+    .from("profiles")
+    .select("full_name")
+    .eq("id", user?.id)
+    .single();
+
+  const firstName = userProfile?.full_name?.split(" ")[0] || "there";
+  const greeting = getGreeting(firstName);
 
   // Fetch recent staging jobs
   const { data: recentJobs } = await supabase
@@ -91,10 +124,10 @@ export default async function DashboardPage() {
     <div className="space-y-8">
       {/* Welcome Section */}
       <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
-        <h1 className="text-3xl font-bold text-foreground">
-          Welcome back!
+        <h1 className="text-foreground">
+          {greeting}
         </h1>
-        <p className="text-muted-foreground mt-1">
+        <p className="text-muted-foreground mt-2 text-lg">
           Here&apos;s an overview of your staging activity
         </p>
       </div>
