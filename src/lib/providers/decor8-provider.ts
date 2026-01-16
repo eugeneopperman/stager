@@ -296,10 +296,17 @@ export class Decor8Provider extends BaseStagingProvider {
       // Try to find the output image in various possible locations
       let outputImageUrl: string | null = null;
 
-      // Check info.images (standard staging response format)
+      // Check info.image (declutter response format - singular)
       const info = data.info as Record<string, unknown> | undefined;
+      const infoImage = info?.image as { url?: string } | undefined;
+      if (infoImage?.url) {
+        outputImageUrl = infoImage.url;
+        console.log("[Decor8Provider] Found image in info.image");
+      }
+
+      // Check info.images (staging response format - array)
       const infoImages = info?.images as Array<{ url: string; width?: number; height?: number }> | undefined;
-      if (infoImages?.length) {
+      if (!outputImageUrl && infoImages?.length) {
         outputImageUrl = infoImages[0].url;
         console.log("[Decor8Provider] Found image in info.images");
       }
