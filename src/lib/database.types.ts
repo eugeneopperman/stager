@@ -116,6 +116,8 @@ export interface Database {
           controlnet_inputs: ControlNetInputsJson | null;
           generation_params: GenerationParamsJson | null;
           processing_time_ms: number | null;
+          // Favorite feature
+          is_favorite: boolean;
         };
         Insert: {
           id?: string;
@@ -136,6 +138,7 @@ export interface Database {
           controlnet_inputs?: ControlNetInputsJson | null;
           generation_params?: GenerationParamsJson | null;
           processing_time_ms?: number | null;
+          is_favorite?: boolean;
         };
         Update: {
           id?: string;
@@ -156,6 +159,7 @@ export interface Database {
           controlnet_inputs?: ControlNetInputsJson | null;
           generation_params?: GenerationParamsJson | null;
           processing_time_ms?: number | null;
+          is_favorite?: boolean;
         };
       };
     };

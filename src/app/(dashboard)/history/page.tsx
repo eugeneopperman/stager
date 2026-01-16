@@ -117,7 +117,7 @@ export default async function HistoryPage() {
           <h2 className="text-lg font-semibold text-foreground">
             All Staging Jobs
           </h2>
-          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+          <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
             {jobs.map((job) => (
               <HistoryJobCard key={job.id} job={job} properties={properties || []} />
             ))}

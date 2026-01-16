@@ -2,9 +2,6 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Card, CardContent } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
 import {
   Dialog,
   DialogContent,
@@ -20,8 +17,13 @@ import {
   DropdownMenuLabel,
 } from "@/components/ui/dropdown-menu";
 import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
+import { Button } from "@/components/ui/button";
+import {
   Download,
-  Eye,
   Clock,
   CheckCircle2,
   XCircle,
@@ -30,12 +32,13 @@ import {
   Building2,
   Plus,
   Check,
-  MapPin,
   Trash2,
+  Star,
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import type { StagingJob } from "@/lib/database.types";
 import Link from "next/link";
+import { cn } from "@/lib/utils";
 
 interface PropertyOption {
   id: string;
@@ -54,40 +57,27 @@ export function HistoryJobCard({ job, properties }: HistoryJobCardProps) {
   const [sliderPosition, setSliderPosition] = useState(50);
   const [isAssigning, setIsAssigning] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [isTogglingFavorite, setIsTogglingFavorite] = useState(false);
   const [currentPropertyId, setCurrentPropertyId] = useState<string | null>(job.property_id);
+  const [isFavorite, setIsFavorite] = useState(job.is_favorite || false);
+  const [showOriginal, setShowOriginal] = useState(false);
 
-  const getStatusBadge = (status: string) => {
-    switch (status) {
-      case "completed":
-        return (
-          <Badge className="bg-green-100 text-green-700 dark:bg-green-950 dark:text-green-400">
-            <CheckCircle2 className="h-3 w-3 mr-1" />
-            Completed
-          </Badge>
-        );
-      case "processing":
-        return (
-          <Badge className="bg-yellow-100 text-yellow-700 dark:bg-yellow-950 dark:text-yellow-400">
-            <Loader2 className="h-3 w-3 mr-1 animate-spin" />
-            Processing
-          </Badge>
-        );
-      case "failed":
-        return (
-          <Badge className="bg-red-100 text-red-700 dark:bg-red-950 dark:text-red-400">
-            <XCircle className="h-3 w-3 mr-1" />
-            Failed
-          </Badge>
-        );
-      default:
-        return (
-          <Badge className="bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-400">
-            <Clock className="h-3 w-3 mr-1" />
-            Pending
-          </Badge>
-        );
-    }
-  };
+  const currentProperty = properties.find((p) => p.id === currentPropertyId);
+  const hasOriginalImage = job.original_image_url && !job.original_image_url.includes("...");
+  const isCompleted = job.status === "completed";
+  const isProcessing = job.status === "processing";
+  const isFailed = job.status === "failed";
+  const isPending = job.status === "pending";
+
+  const roomTypeLabel = job.room_type
+    .split("-")
+    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+    .join(" ");
+
+  const styleLabel = job.style
+    .split("-")
+    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+    .join(" ");
 
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
@@ -100,7 +90,8 @@ export function HistoryJobCard({ job, properties }: HistoryJobCardProps) {
     });
   };
 
-  const handleDownload = () => {
+  const handleDownload = (e: React.MouseEvent) => {
+    e.stopPropagation();
     if (job.staged_image_url) {
       const link = document.createElement("a");
       link.href = job.staged_image_url;
@@ -137,7 +128,33 @@ export function HistoryJobCard({ job, properties }: HistoryJobCardProps) {
     setIsAssigning(false);
   };
 
-  const handleDelete = async () => {
+  const handleToggleFavorite = async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setIsTogglingFavorite(true);
+    const supabase = createClient();
+
+    const newValue = !isFavorite;
+    const { error } = await supabase
+      .from("staging_jobs")
+      .update({ is_favorite: newValue })
+      .eq("id", job.id);
+
+    if (error) {
+      console.error("Failed to toggle favorite:", error);
+    } else {
+      setIsFavorite(newValue);
+    }
+
+    setIsTogglingFavorite(false);
+  };
+
+  const handleToggleCompare = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setShowOriginal(!showOriginal);
+  };
+
+  const handleDelete = async (e: React.MouseEvent) => {
+    e.stopPropagation();
     if (!confirm("Are you sure you want to delete this staging job? This action cannot be undone.")) {
       return;
     }
@@ -159,198 +176,231 @@ export function HistoryJobCard({ job, properties }: HistoryJobCardProps) {
     }
   };
 
-  const currentProperty = properties.find((p) => p.id === currentPropertyId);
-  const hasOriginalImage = job.original_image_url && !job.original_image_url.includes("...");
-
-  const roomTypeLabel = job.room_type
-    .split("-")
-    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
-    .join(" ");
-
-  const styleLabel = job.style
-    .split("-")
-    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
-    .join(" ");
+  // Determine which image to display
+  const displayImageUrl = showOriginal && hasOriginalImage
+    ? job.original_image_url
+    : job.staged_image_url;
 
   return (
     <>
-      <Card className="overflow-hidden hover:shadow-lg transition-shadow">
-        {/* Image Preview - Clickable */}
+      {/* Card */}
+      <div
+        className={cn(
+          "group relative aspect-[4/3] rounded-2xl overflow-hidden",
+          "transition-all duration-300 ease-out",
+          "hover:scale-[1.02] hover:shadow-xl",
+          isCompleted && job.staged_image_url && "cursor-pointer"
+        )}
+        onClick={() => isCompleted && job.staged_image_url && setShowDetail(true)}
+      >
+        {/* Background Image */}
+        {displayImageUrl ? (
+          <img
+            src={displayImageUrl}
+            alt={`${roomTypeLabel} - ${styleLabel}`}
+            className="absolute inset-0 w-full h-full object-cover transition-opacity duration-300"
+          />
+        ) : (
+          <div className="absolute inset-0 bg-muted" />
+        )}
+
+        {/* Original Badge (when comparing) */}
+        {showOriginal && hasOriginalImage && (
+          <div className="absolute top-3 left-3 px-2 py-1 bg-black/70 backdrop-blur-sm rounded text-white text-xs font-medium z-10">
+            Original
+          </div>
+        )}
+
+        {/* Processing Overlay */}
+        {isProcessing && (
+          <div className="absolute inset-0 bg-black/50 backdrop-blur-[2px] flex flex-col items-center justify-center z-10">
+            <Loader2 className="h-8 w-8 text-white animate-spin mb-2" />
+            <span className="text-white text-sm font-medium">Processing...</span>
+          </div>
+        )}
+
+        {/* Failed Overlay */}
+        {isFailed && (
+          <div className="absolute inset-0 bg-red-500/30 backdrop-blur-[2px] flex flex-col items-center justify-center z-10">
+            <XCircle className="h-8 w-8 text-white mb-2" />
+            <span className="text-white text-sm font-medium">Failed</span>
+            {job.error_message && (
+              <span className="text-white/70 text-xs mt-1 px-4 text-center truncate max-w-full">
+                {job.error_message}
+              </span>
+            )}
+          </div>
+        )}
+
+        {/* Pending Overlay */}
+        {isPending && (
+          <div className="absolute inset-0 bg-black/40 backdrop-blur-[2px] flex flex-col items-center justify-center z-10">
+            <Clock className="h-8 w-8 text-white mb-2" />
+            <span className="text-white text-sm font-medium">Pending...</span>
+          </div>
+        )}
+
+        {/* Hover Action Bar */}
         <div
-          className={`relative aspect-video bg-slate-100 dark:bg-slate-900 ${
-            job.staged_image_url ? "cursor-pointer" : ""
-          }`}
-          onClick={() => job.staged_image_url && setShowDetail(true)}
+          className={cn(
+            "absolute top-3 right-3 z-20",
+            "opacity-0 group-hover:opacity-100",
+            "translate-y-1 group-hover:translate-y-0",
+            "transition-all duration-200",
+            "flex items-center gap-1 px-2 py-1.5 rounded-full",
+            "bg-black/60 backdrop-blur-xl"
+          )}
+          onClick={(e) => e.stopPropagation()}
         >
-          {job.staged_image_url ? (
-            <img
-              src={job.staged_image_url}
-              alt="Staged room"
-              className="w-full h-full object-cover hover:opacity-90 transition-opacity"
-            />
-          ) : (
-            <div className="flex items-center justify-center h-full">
-              {job.status === "processing" ? (
-                <Loader2 className="h-8 w-8 text-slate-400 animate-spin" />
-              ) : (
-                <XCircle className="h-8 w-8 text-slate-300" />
-              )}
-            </div>
-          )}
-          {/* Status Badge Overlay */}
-          <div className="absolute top-2 right-2">
-            {getStatusBadge(job.status)}
-          </div>
-          {/* Click to view hint */}
-          {job.staged_image_url && (
-            <div className="absolute inset-0 flex items-center justify-center bg-black/0 hover:bg-black/20 transition-colors">
-              <div className="opacity-0 hover:opacity-100 transition-opacity">
-                <div className="bg-white/90 dark:bg-slate-800/90 rounded-full p-2">
-                  <Eye className="h-5 w-5 text-slate-700 dark:text-slate-200" />
-                </div>
-              </div>
-            </div>
-          )}
-        </div>
-
-        <CardContent className="p-4">
-          {/* Room Type & Style */}
-          <div className="mb-2">
-            <h3 className="font-semibold text-slate-900 dark:text-white">
-              {roomTypeLabel}
-            </h3>
-            <p className="text-sm text-slate-500">{styleLabel} style</p>
-          </div>
-
-          {/* Property Badge */}
-          {currentProperty && (
-            <Link
-              href={`/properties/${currentProperty.id}`}
-              className="inline-flex items-center gap-1 text-xs text-blue-600 hover:text-blue-800 mb-2"
-            >
-              <MapPin className="h-3 w-3" />
-              {currentProperty.address.length > 30
-                ? currentProperty.address.substring(0, 30) + "..."
-                : currentProperty.address}
-            </Link>
+          {/* Favorite */}
+          {isCompleted && (
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <button
+                  onClick={handleToggleFavorite}
+                  disabled={isTogglingFavorite}
+                  className={cn(
+                    "p-1.5 rounded-full transition-colors",
+                    "hover:bg-white/20",
+                    isFavorite ? "text-yellow-400" : "text-white"
+                  )}
+                >
+                  <Star className={cn("h-4 w-4", isFavorite && "fill-current")} />
+                </button>
+              </TooltipTrigger>
+              <TooltipContent>
+                {isFavorite ? "Remove from Favorites" : "Add to Favorites"}
+              </TooltipContent>
+            </Tooltip>
           )}
 
-          {/* Date */}
-          <p className="text-xs text-slate-400 mb-4">
-            {formatDate(job.created_at)}
-          </p>
+          {/* Compare (only if original exists) */}
+          {isCompleted && hasOriginalImage && (
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <button
+                  onClick={handleToggleCompare}
+                  className={cn(
+                    "p-1.5 rounded-full transition-colors",
+                    "hover:bg-white/20 text-white",
+                    showOriginal && "bg-white/20"
+                  )}
+                >
+                  <ArrowLeftRight className="h-4 w-4" />
+                </button>
+              </TooltipTrigger>
+              <TooltipContent>Compare Before/After</TooltipContent>
+            </Tooltip>
+          )}
 
-          {/* Actions */}
-          {job.status === "completed" && job.staged_image_url && (
-            <div className="flex gap-2">
-              <Button
-                variant="outline"
-                size="sm"
-                className="flex-1"
-                onClick={handleDownload}
-              >
-                <Download className="h-4 w-4 mr-1" />
-                Download
-              </Button>
-              {/* Add to Property Dropdown */}
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    disabled={isAssigning}
-                  >
-                    {isAssigning ? (
-                      <Loader2 className="h-4 w-4 animate-spin" />
-                    ) : (
+          {/* Download */}
+          {isCompleted && job.staged_image_url && (
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <button
+                  onClick={handleDownload}
+                  className="p-1.5 rounded-full transition-colors hover:bg-white/20 text-white"
+                >
+                  <Download className="h-4 w-4" />
+                </button>
+              </TooltipTrigger>
+              <TooltipContent>Download</TooltipContent>
+            </Tooltip>
+          )}
+
+          {/* Property Dropdown */}
+          {isCompleted && (
+            <DropdownMenu>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <DropdownMenuTrigger asChild>
+                    <button
+                      disabled={isAssigning}
+                      className={cn(
+                        "p-1.5 rounded-full transition-colors",
+                        "hover:bg-white/20 text-white",
+                        currentPropertyId && "text-blue-400"
+                      )}
+                    >
+                      {isAssigning ? (
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                      ) : (
+                        <Building2 className="h-4 w-4" />
+                      )}
+                    </button>
+                  </DropdownMenuTrigger>
+                </TooltipTrigger>
+                <TooltipContent>Add to Property</TooltipContent>
+              </Tooltip>
+              <DropdownMenuContent align="end" className="w-56">
+                <DropdownMenuLabel>Add to Property</DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                {properties.length > 0 ? (
+                  <>
+                    {properties.map((property) => (
+                      <DropdownMenuItem
+                        key={property.id}
+                        onClick={() => handleAssignToProperty(property.id)}
+                        className="flex items-center justify-between"
+                      >
+                        <span className="truncate">{property.address}</span>
+                        {currentPropertyId === property.id && (
+                          <Check className="h-4 w-4 text-green-600 shrink-0 ml-2" />
+                        )}
+                      </DropdownMenuItem>
+                    ))}
+                    {currentPropertyId && (
                       <>
-                        <Building2 className="h-4 w-4 mr-1" />
-                        Property
+                        <DropdownMenuSeparator />
+                        <DropdownMenuItem
+                          onClick={() => handleAssignToProperty(null)}
+                          className="text-muted-foreground"
+                        >
+                          Remove from property
+                        </DropdownMenuItem>
                       </>
                     )}
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="w-56">
-                  <DropdownMenuLabel>Add to Property</DropdownMenuLabel>
-                  <DropdownMenuSeparator />
-                  {properties.length > 0 ? (
-                    <>
-                      {properties.map((property) => (
-                        <DropdownMenuItem
-                          key={property.id}
-                          onClick={() => handleAssignToProperty(property.id)}
-                          className="flex items-center justify-between"
-                        >
-                          <span className="truncate">{property.address}</span>
-                          {currentPropertyId === property.id && (
-                            <Check className="h-4 w-4 text-green-600 shrink-0 ml-2" />
-                          )}
-                        </DropdownMenuItem>
-                      ))}
-                      {currentPropertyId && (
-                        <>
-                          <DropdownMenuSeparator />
-                          <DropdownMenuItem
-                            onClick={() => handleAssignToProperty(null)}
-                            className="text-slate-500"
-                          >
-                            Remove from property
-                          </DropdownMenuItem>
-                        </>
-                      )}
-                    </>
-                  ) : (
-                    <DropdownMenuItem asChild>
-                      <Link href="/properties" className="flex items-center">
-                        <Plus className="h-4 w-4 mr-2" />
-                        Create a property first
-                      </Link>
-                    </DropdownMenuItem>
-                  )}
-                </DropdownMenuContent>
-              </DropdownMenu>
-              {/* Delete Button */}
-              <Button
-                variant="outline"
-                size="sm"
+                  </>
+                ) : (
+                  <DropdownMenuItem asChild>
+                    <Link href="/properties" className="flex items-center">
+                      <Plus className="h-4 w-4 mr-2" />
+                      Create a property first
+                    </Link>
+                  </DropdownMenuItem>
+                )}
+              </DropdownMenuContent>
+            </DropdownMenu>
+          )}
+
+          {/* Delete */}
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <button
                 onClick={handleDelete}
                 disabled={isDeleting}
-                className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                className="p-1.5 rounded-full transition-colors hover:bg-red-500/50 text-white"
               >
                 {isDeleting ? (
                   <Loader2 className="h-4 w-4 animate-spin" />
                 ) : (
                   <Trash2 className="h-4 w-4" />
                 )}
-              </Button>
-            </div>
-          )}
+              </button>
+            </TooltipTrigger>
+            <TooltipContent>Delete</TooltipContent>
+          </Tooltip>
+        </div>
 
-          {job.status === "failed" && job.error_message && (
-            <p className="text-xs text-red-500 truncate mb-2" title={job.error_message}>
-              {job.error_message}
-            </p>
-          )}
-
-          {/* Delete button for failed/pending jobs */}
-          {(job.status === "failed" || job.status === "pending" || job.status === "processing") && (
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={handleDelete}
-              disabled={isDeleting}
-              className="w-full text-red-600 hover:text-red-700 hover:bg-red-50"
-            >
-              {isDeleting ? (
-                <Loader2 className="h-4 w-4 mr-1 animate-spin" />
-              ) : (
-                <Trash2 className="h-4 w-4 mr-1" />
-              )}
-              Delete
-            </Button>
-          )}
-        </CardContent>
-      </Card>
+        {/* Bottom Gradient + Info */}
+        <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent p-4 pt-12">
+          <h3 className="text-white font-semibold text-sm">{roomTypeLabel}</h3>
+          <p className="text-white/70 text-xs truncate">
+            {styleLabel}
+            {currentProperty && ` • ${currentProperty.address}`}
+          </p>
+        </div>
+      </div>
 
       {/* Detail Dialog */}
       <Dialog open={showDetail} onOpenChange={setShowDetail}>
@@ -385,7 +435,7 @@ export function HistoryJobCard({ job, properties }: HistoryJobCardProps) {
                 <img
                   src={job.original_image_url}
                   alt="Original"
-                  className="absolute inset-0 w-full h-full object-contain bg-slate-100 dark:bg-slate-900"
+                  className="absolute inset-0 w-full h-full object-contain bg-muted"
                 />
                 <div
                   className="absolute inset-0 overflow-hidden"
@@ -394,7 +444,7 @@ export function HistoryJobCard({ job, properties }: HistoryJobCardProps) {
                   <img
                     src={job.staged_image_url || ""}
                     alt="Staged"
-                    className="absolute inset-0 w-full h-full object-contain bg-slate-100 dark:bg-slate-900"
+                    className="absolute inset-0 w-full h-full object-contain bg-muted"
                     style={{ width: `${100 / (sliderPosition / 100)}%`, maxWidth: "none" }}
                   />
                 </div>
@@ -414,7 +464,7 @@ export function HistoryJobCard({ job, properties }: HistoryJobCardProps) {
                 </div>
               </div>
             ) : (
-              <div className="rounded-lg overflow-hidden bg-slate-100 dark:bg-slate-900">
+              <div className="rounded-lg overflow-hidden bg-muted">
                 <img
                   src={job.staged_image_url || ""}
                   alt="Staged room"
@@ -425,8 +475,19 @@ export function HistoryJobCard({ job, properties }: HistoryJobCardProps) {
 
             {/* Info & Actions */}
             <div className="flex items-center justify-between pt-4 border-t">
-              <div className="text-sm text-slate-500">
+              <div className="text-sm text-muted-foreground">
                 Created {formatDate(job.created_at)}
+                {currentProperty && (
+                  <span className="ml-2">
+                    •{" "}
+                    <Link
+                      href={`/properties/${currentProperty.id}`}
+                      className="text-primary hover:underline"
+                    >
+                      {currentProperty.address}
+                    </Link>
+                  </span>
+                )}
               </div>
               <Button onClick={handleDownload}>
                 <Download className="h-4 w-4 mr-2" />
