@@ -123,11 +123,11 @@
 
 .dark {
   /* Dark mode - Deep navy with blue undertones */
-  --background: oklch(0.12 0.025 265);
+  --background: oklch(0.10 0.035 265);
   --foreground: oklch(0.95 0.008 265);
 
-  /* Cards with strong transparency for glass effect */
-  --card: oklch(0.18 0.02 265 / 40%);
+  /* Cards - lighter for contrast against dark bg */
+  --card: oklch(0.28 0.02 265 / 45%);
   --card-foreground: oklch(0.95 0.008 265);
   --popover: oklch(0.16 0.02 265 / 90%);
   --popover-foreground: oklch(0.95 0.008 265);
@@ -285,10 +285,10 @@
 
   .dark .bg-mesh {
     background-image:
-      radial-gradient(at 0% 0%, oklch(0.40 0.18 265 / 30%) 0px, transparent 50%),
-      radial-gradient(at 100% 0%, oklch(0.45 0.15 280 / 25%) 0px, transparent 50%),
-      radial-gradient(at 100% 100%, oklch(0.50 0.12 200 / 20%) 0px, transparent 50%),
-      radial-gradient(at 0% 100%, oklch(0.40 0.15 265 / 28%) 0px, transparent 50%);
+      radial-gradient(at 0% 0%, oklch(0.45 0.22 265 / 40%) 0px, transparent 50%),
+      radial-gradient(at 100% 0%, oklch(0.50 0.18 280 / 35%) 0px, transparent 50%),
+      radial-gradient(at 100% 100%, oklch(0.55 0.15 200 / 30%) 0px, transparent 50%),
+      radial-gradient(at 0% 100%, oklch(0.45 0.20 265 / 38%) 0px, transparent 50%);
   }
 
   /* Animation utilities */
