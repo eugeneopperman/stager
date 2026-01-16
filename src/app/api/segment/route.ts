@@ -4,8 +4,8 @@ import { createClient } from "@/lib/supabase/server";
 /**
  * POST /api/segment
  *
- * Use Grounded SAM to create masks from text prompts.
- * Much faster and more intuitive than click-based segmentation.
+ * Use FastSAM to create masks from text prompts.
+ * 50x faster than regular SAM (~2-5 seconds).
  * User types what to select (e.g., "sofa, table, chairs").
  */
 export async function POST(request: NextRequest) {
@@ -56,11 +56,8 @@ export async function POST(request: NextRequest) {
     const imageUrl = `data:${mimeType};base64,${image}`;
 
     console.log("[Segment API] Prompt:", prompt);
-    if (negativePrompt) {
-      console.log("[Segment API] Negative prompt:", negativePrompt);
-    }
 
-    // Call Grounded SAM on Replicate
+    // Call FastSAM on Replicate - 50x faster than regular SAM
     const response = await fetch("https://api.replicate.com/v1/predictions", {
       method: "POST",
       headers: {
@@ -68,13 +65,14 @@ export async function POST(request: NextRequest) {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        // Grounded SAM - text-to-segment
-        version: "ee871c19efb1941f55f66a3d7d960428c8a5afcb77449547fe8e5a3ab9ebc21c",
+        // FastSAM - fast segment anything with text prompts
+        version: "371aeee1ce0c5efd25bbef7a4527ec9e59188b963ebae1eeb851ddc145685c17",
         input: {
-          image: imageUrl,
-          mask_prompt: prompt,
-          negative_mask_prompt: negativePrompt || "",
-          adjustment_factor: 0, // No erosion/dilation
+          input_image: imageUrl,
+          text_prompt: prompt,
+          iou: 0.7,
+          conf: 0.25,
+          retina: true, // High-res masks
         },
       }),
     });
@@ -83,7 +81,7 @@ export async function POST(request: NextRequest) {
       const errorText = await response.text();
       console.error("[Segment API] Replicate error:", errorText);
       return NextResponse.json(
-        { error: `Grounded SAM API error: ${response.status}` },
+        { error: `FastSAM API error: ${response.status}` },
         { status: 500 }
       );
     }
@@ -91,8 +89,8 @@ export async function POST(request: NextRequest) {
     const prediction = await response.json();
     console.log("[Segment API] Prediction created:", prediction.id);
 
-    // Poll for completion - Grounded SAM is usually fast (~10-15 seconds)
-    const maxAttempts = 60; // 30 seconds max
+    // Poll for completion - FastSAM is very fast (~2-5 seconds)
+    const maxAttempts = 40; // 20 seconds max
     let result = prediction;
 
     for (let i = 0; i < maxAttempts; i++) {
@@ -132,15 +130,22 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    console.log("[Segment API] Success! Output:", result.output);
+    console.log("[Segment API] Success! Output:", JSON.stringify(result.output).substring(0, 500));
 
-    // Grounded SAM returns the mask image URL directly
-    const maskUrl = result.output;
+    // FastSAM returns output as a string URL or array of URLs
+    let maskUrl: string | null = null;
 
-    if (!maskUrl || typeof maskUrl !== "string") {
+    if (typeof result.output === "string") {
+      maskUrl = result.output;
+    } else if (Array.isArray(result.output) && result.output.length > 0) {
+      // Take the first mask if multiple returned
+      maskUrl = result.output[0];
+    }
+
+    if (!maskUrl) {
       console.error("[Segment API] No mask in output:", result.output);
       return NextResponse.json(
-        { error: "No mask returned" },
+        { error: "No objects found matching your prompt" },
         { status: 500 }
       );
     }

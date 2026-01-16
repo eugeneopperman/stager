@@ -347,7 +347,7 @@ export function MaskingTool({
             <div className="text-center text-white">
               <Loader2 className="h-8 w-8 mx-auto mb-2 animate-spin" />
               <p className="text-sm">Detecting "{prompt}"...</p>
-              <p className="text-xs opacity-70 mt-1">This may take 10-15 seconds</p>
+              <p className="text-xs opacity-70 mt-1">This may take a few seconds</p>
             </div>
           </div>
         )}
