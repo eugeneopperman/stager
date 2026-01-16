@@ -34,10 +34,10 @@ export default async function SettingsPage() {
     <div className="space-y-6 max-w-3xl mx-auto">
       {/* Header */}
       <div>
-        <h1 className="text-3xl font-bold text-foreground">
+        <h1 className="text-foreground">
           Settings
         </h1>
-        <p className="text-muted-foreground mt-1">
+        <p className="text-muted-foreground mt-2">
           Manage your account settings and preferences
         </p>
       </div>

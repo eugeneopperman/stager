@@ -78,10 +78,10 @@ export default async function BillingPage() {
     <div className="space-y-6 max-w-4xl mx-auto">
       {/* Header */}
       <div>
-        <h1 className="text-3xl font-bold text-slate-900 dark:text-white">
+        <h1 className="text-foreground">
           Billing & Credits
         </h1>
-        <p className="text-slate-600 dark:text-slate-400 mt-1">
+        <p className="text-muted-foreground mt-2">
           Manage your credits and view usage history
         </p>
       </div>

@@ -257,10 +257,10 @@ export default function BatchStagePage() {
       {/* Header */}
       <div className="flex items-start justify-between">
         <div>
-          <h1 className="text-3xl font-bold text-slate-900 dark:text-white">
+          <h1 className="text-foreground">
             Batch Staging
           </h1>
-          <p className="text-slate-600 dark:text-slate-400 mt-1">
+          <p className="text-muted-foreground mt-2">
             Stage multiple rooms at once with a single style
           </p>
         </div>

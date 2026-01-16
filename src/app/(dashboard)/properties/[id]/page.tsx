@@ -123,11 +123,11 @@ export default async function PropertyDetailPage({ params }: PropertyDetailPageP
               <MapPin className="h-6 w-6 text-blue-600" />
             </div>
             <div>
-              <h1 className="text-2xl font-bold text-slate-900 dark:text-white">
+              <h1 className="text-foreground">
                 {property.address}
               </h1>
               {property.description && (
-                <p className="text-slate-600 dark:text-slate-400 mt-1">
+                <p className="text-muted-foreground mt-2">
                   {property.description}
                 </p>
               )}

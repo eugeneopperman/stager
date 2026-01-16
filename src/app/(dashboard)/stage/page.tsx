@@ -358,10 +358,10 @@ export default function StagePage() {
       <div className="max-w-5xl mx-auto space-y-6">
         <div className="flex items-start justify-between">
           <div>
-            <h1 className="text-3xl font-bold text-foreground">
+            <h1 className="text-foreground">
               Staging Complete!
             </h1>
-            <p className="text-muted-foreground mt-1">
+            <p className="text-muted-foreground mt-2">
               {completedVariations.length} style variation{completedVariations.length !== 1 ? "s" : ""} generated
             </p>
           </div>
@@ -514,8 +514,8 @@ export default function StagePage() {
       {/* Header */}
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h1 className="text-2xl font-bold text-foreground">Stage a Photo</h1>
-          <p className="text-sm text-muted-foreground">
+          <h1 className="text-foreground">Stage a Photo</h1>
+          <p className="text-muted-foreground mt-2">
             Transform empty rooms with AI-powered virtual staging
           </p>
         </div>

@@ -110,7 +110,7 @@ function DashboardContent({ children, user, credits = 0 }: DashboardShellProps) 
       {/* Main content */}
       <div className="flex flex-1 flex-col overflow-hidden">
         <main className={cn(
-          "flex-1 overflow-y-auto p-6 pt-4",
+          "flex-1 overflow-y-auto px-6 pt-24 pb-6",
           // Smooth scroll
           "scroll-smooth"
         )}>

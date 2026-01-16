@@ -44,10 +44,10 @@ export default async function HistoryPage() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 animate-in fade-in slide-in-from-bottom-4 duration-500">
         <div>
-          <h1 className="text-3xl font-bold text-foreground">
+          <h1 className="text-foreground">
             Staging History
           </h1>
-          <p className="text-muted-foreground mt-1">
+          <p className="text-muted-foreground mt-2">
             View and download your past staging jobs
           </p>
         </div>

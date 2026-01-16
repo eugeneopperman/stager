@@ -43,10 +43,10 @@ export default async function PropertiesPage() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 animate-in fade-in slide-in-from-bottom-4 duration-500">
         <div>
-          <h1 className="text-3xl font-bold text-foreground">
+          <h1 className="text-foreground">
             Properties
           </h1>
-          <p className="text-muted-foreground mt-1">
+          <p className="text-muted-foreground mt-2">
             Manage your real estate listings and staged photos
           </p>
         </div>
