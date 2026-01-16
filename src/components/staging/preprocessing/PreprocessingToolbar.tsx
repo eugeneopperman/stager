@@ -3,6 +3,11 @@
 import { useCallback, useState } from "react";
 import { Button } from "@/components/ui/button";
 import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
+import {
   Crop,
   SunMedium,
   Eraser,
@@ -214,24 +219,32 @@ export function PreprocessingToolbar({
         </div>
 
         <div className="flex items-center gap-1">
-          <Button
-            variant="ghost"
-            size="icon-sm"
-            onClick={handleUndo}
-            disabled={disabled || !canUndo}
-            title="Undo"
-          >
-            <Undo2 className="h-4 w-4" />
-          </Button>
-          <Button
-            variant="ghost"
-            size="icon-sm"
-            onClick={handleReset}
-            disabled={disabled || !hasChanges}
-            title="Reset to original"
-          >
-            <RotateCcw className="h-4 w-4" />
-          </Button>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                variant="ghost"
+                size="icon-sm"
+                onClick={handleUndo}
+                disabled={disabled || !canUndo}
+              >
+                <Undo2 className="h-4 w-4" />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>Undo</TooltipContent>
+          </Tooltip>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                variant="ghost"
+                size="icon-sm"
+                onClick={handleReset}
+                disabled={disabled || !hasChanges}
+              >
+                <RotateCcw className="h-4 w-4" />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>Reset Image</TooltipContent>
+          </Tooltip>
         </div>
       </div>
 
