@@ -5,7 +5,7 @@ import { createClient } from "@/lib/supabase/server";
  * POST /api/segment
  *
  * Use SAM (Segment Anything Model) to create masks from click points.
- * Calls Replicate's SAM 2 model.
+ * Calls Replicate's meta/sam-2-video model which supports point prompts.
  */
 export async function POST(request: NextRequest) {
   console.log("[Segment API] Request received");
@@ -32,7 +32,7 @@ export async function POST(request: NextRequest) {
     } = body as {
       image: string; // base64 image data
       mimeType: string;
-      points: Array<{ x: number; y: number }>; // click coordinates (normalized 0-1)
+      points: Array<{ x: number; y: number }>; // click coordinates in pixels
       labels: number[]; // 1 = foreground (include), 0 = background (exclude)
     };
 
@@ -54,14 +54,15 @@ export async function POST(request: NextRequest) {
     // Convert to data URL for Replicate
     const imageUrl = `data:${mimeType};base64,${image}`;
 
-    // Format points for SAM - it expects [[x1,y1], [x2,y2], ...]
-    const pointCoords = points.map(p => [p.x, p.y]);
-    const pointLabels = labels || points.map(() => 1); // Default all to foreground
+    // Format points for meta/sam-2-video: "[x,y],[x,y],..." as string
+    const clickCoordinates = points.map(p => `[${Math.round(p.x)},${Math.round(p.y)}]`).join(",");
+    // Format labels as comma-separated: "1,1,0,1"
+    const clickLabels = (labels || points.map(() => 1)).join(",");
 
-    console.log("[Segment API] Points:", pointCoords.length, "Labels:", pointLabels);
+    console.log("[Segment API] Click coordinates:", clickCoordinates);
+    console.log("[Segment API] Click labels:", clickLabels);
 
-    // Call SAM 2 on Replicate
-    // Model: meta/sam-2-base - the official Meta SAM 2 model
+    // Call meta/sam-2-video on Replicate - supports point prompts
     const response = await fetch("https://api.replicate.com/v1/predictions", {
       method: "POST",
       headers: {
@@ -69,13 +70,12 @@ export async function POST(request: NextRequest) {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        // SAM 2 base model
-        version: "fe97b453a6455861e3bac769b441ca1f1086110da7466dbb65cf1eecfd60dc83",
+        // meta/sam-2-video - official Meta SAM 2 with point prompt support
+        version: "33432afdfc06a10da6b4018932893d39b0159f838b6d11dd1236dff85cc5ec1d",
         input: {
-          image: imageUrl,
-          point_coords: pointCoords,
-          point_labels: pointLabels,
-          multimask_output: false, // Single best mask
+          input_video: imageUrl, // Works with single images too
+          click_coordinates: clickCoordinates,
+          click_labels: clickLabels,
         },
       }),
     });
@@ -92,15 +92,15 @@ export async function POST(request: NextRequest) {
     const prediction = await response.json();
     console.log("[Segment API] Prediction created:", prediction.id);
 
-    // Poll for completion (SAM is fast, usually < 5 seconds)
-    const maxAttempts = 30;
+    // Poll for completion - SAM 2 video takes ~49 seconds
+    const maxAttempts = 120; // 60 seconds max
     let result = prediction;
 
     for (let i = 0; i < maxAttempts; i++) {
       if (result.status === "succeeded") {
         break;
       }
-      if (result.status === "failed") {
+      if (result.status === "failed" || result.status === "canceled") {
         console.error("[Segment API] Prediction failed:", result.error);
         return NextResponse.json(
           { error: result.error || "Segmentation failed" },
@@ -118,17 +118,36 @@ export async function POST(request: NextRequest) {
         }
       );
       result = await pollResponse.json();
+
+      // Log progress every 10 attempts
+      if (i % 10 === 0) {
+        console.log("[Segment API] Polling attempt", i, "status:", result.status);
+      }
     }
 
     if (result.status !== "succeeded") {
+      console.error("[Segment API] Timed out. Final status:", result.status);
       return NextResponse.json(
         { error: "Segmentation timed out" },
         { status: 500 }
       );
     }
 
-    // SAM 2 returns combined_mask as a URL to the mask image
-    const maskUrl = result.output?.combined_mask || result.output?.masks?.[0];
+    console.log("[Segment API] Success! Output:", JSON.stringify(result.output).substring(0, 500));
+
+    // meta/sam-2-video returns output as a video/image URL or array
+    // For single image, it should return a mask
+    let maskUrl: string | null = null;
+
+    if (typeof result.output === "string") {
+      maskUrl = result.output;
+    } else if (Array.isArray(result.output) && result.output.length > 0) {
+      maskUrl = result.output[0];
+    } else if (result.output?.combined_mask) {
+      maskUrl = result.output.combined_mask;
+    } else if (result.output?.masks?.[0]) {
+      maskUrl = result.output.masks[0];
+    }
 
     if (!maskUrl) {
       console.error("[Segment API] No mask in output:", result.output);
@@ -145,9 +164,15 @@ export async function POST(request: NextRequest) {
     const maskBuffer = await maskResponse.arrayBuffer();
     const maskBase64 = Buffer.from(maskBuffer).toString("base64");
 
+    // Determine content type
+    const contentType = maskResponse.headers.get("content-type") || "image/png";
+    const imageType = contentType.includes("jpeg") || contentType.includes("jpg")
+      ? "image/jpeg"
+      : "image/png";
+
     return NextResponse.json({
       success: true,
-      maskDataUrl: `data:image/png;base64,${maskBase64}`,
+      maskDataUrl: `data:${imageType};base64,${maskBase64}`,
     });
   } catch (error) {
     console.error("[Segment API] Error:", error);
