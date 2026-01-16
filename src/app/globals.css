@@ -53,9 +53,9 @@
   /* Light mode - Soft warm gray background with transparency */
   --background: oklch(0.965 0.003 80);
   --foreground: oklch(0.18 0.01 265);
-  --card: oklch(1 0 0 / 85%);
+  --card: oklch(1 0 0 / 65%);
   --card-foreground: oklch(0.18 0.01 265);
-  --popover: oklch(1 0 0 / 95%);
+  --popover: oklch(1 0 0 / 85%);
   --popover-foreground: oklch(0.18 0.01 265);
 
   /* Primary - Vibrant blue */
@@ -99,10 +99,10 @@
   --sidebar-border: oklch(0.90 0.004 80 / 50%);
   --sidebar-ring: oklch(0.55 0.2 265);
 
-  /* Glassmorphism variables - enhanced blur */
-  --glass-blur: 16px;
-  --glass-blur-heavy: 24px;
-  --glass-saturation: 1.3;
+  /* Glassmorphism variables - strong blur for frosted effect */
+  --glass-blur: 20px;
+  --glass-blur-heavy: 32px;
+  --glass-saturation: 1.4;
 
   /* Shadows - softer and more diffuse */
   --shadow-color: 265;
@@ -123,11 +123,11 @@
 
 .dark {
   /* Dark mode - Deep navy with blue undertones */
-  --background: oklch(0.13 0.02 265);
+  --background: oklch(0.12 0.025 265);
   --foreground: oklch(0.95 0.008 265);
 
-  /* Cards with transparency for glass effect */
-  --card: oklch(0.18 0.015 265 / 70%);
+  /* Cards with strong transparency for glass effect */
+  --card: oklch(0.18 0.02 265 / 50%);
   --card-foreground: oklch(0.95 0.008 265);
   --popover: oklch(0.16 0.02 265 / 90%);
   --popover-foreground: oklch(0.95 0.008 265);
@@ -274,21 +274,21 @@
     background: linear-gradient(135deg, oklch(0.60 0.18 280), oklch(0.55 0.20 300));
   }
 
-  /* Mesh gradient background for dashboard */
+  /* Mesh gradient background for dashboard - prominent */
   .bg-mesh {
     background-image:
-      radial-gradient(at 0% 0%, oklch(0.55 0.12 265 / 8%) 0px, transparent 50%),
-      radial-gradient(at 100% 0%, oklch(0.60 0.10 280 / 6%) 0px, transparent 50%),
-      radial-gradient(at 100% 100%, oklch(0.65 0.08 200 / 5%) 0px, transparent 50%),
-      radial-gradient(at 0% 100%, oklch(0.55 0.10 265 / 7%) 0px, transparent 50%);
+      radial-gradient(at 0% 0%, oklch(0.55 0.15 265 / 18%) 0px, transparent 50%),
+      radial-gradient(at 100% 0%, oklch(0.60 0.12 280 / 14%) 0px, transparent 50%),
+      radial-gradient(at 100% 100%, oklch(0.65 0.10 200 / 12%) 0px, transparent 50%),
+      radial-gradient(at 0% 100%, oklch(0.55 0.12 265 / 16%) 0px, transparent 50%);
   }
 
   .dark .bg-mesh {
     background-image:
-      radial-gradient(at 0% 0%, oklch(0.35 0.12 265 / 15%) 0px, transparent 50%),
-      radial-gradient(at 100% 0%, oklch(0.40 0.10 280 / 12%) 0px, transparent 50%),
-      radial-gradient(at 100% 100%, oklch(0.45 0.08 200 / 10%) 0px, transparent 50%),
-      radial-gradient(at 0% 100%, oklch(0.35 0.10 265 / 14%) 0px, transparent 50%);
+      radial-gradient(at 0% 0%, oklch(0.40 0.18 265 / 30%) 0px, transparent 50%),
+      radial-gradient(at 100% 0%, oklch(0.45 0.15 280 / 25%) 0px, transparent 50%),
+      radial-gradient(at 100% 100%, oklch(0.50 0.12 200 / 20%) 0px, transparent 50%),
+      radial-gradient(at 0% 100%, oklch(0.40 0.15 265 / 28%) 0px, transparent 50%);
   }
 
   /* Animation utilities */

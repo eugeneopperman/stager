@@ -9,16 +9,16 @@ function Card({ className, ...props }: React.ComponentProps<"div">) {
       className={cn(
         // Base styles - rounder corners for modern feel
         "bg-card text-card-foreground flex flex-col gap-6 rounded-2xl py-6",
-        // Enhanced glass effect
-        "glass",
+        // Strong glass effect with heavy blur
+        "glass-heavy",
         // Soft border and diffuse shadow
-        "border border-border/40 shadow-md",
+        "border border-white/30 shadow-lg",
         // Hover state with smooth transition
         "transition-all duration-200 ease-out",
-        "hover:shadow-lg hover:border-border/60",
-        // Dark mode enhancements
-        "dark:border-white/[0.06] dark:shadow-xl dark:shadow-black/20",
-        "dark:hover:border-white/[0.10] dark:hover:shadow-2xl dark:hover:shadow-black/30",
+        "hover:shadow-xl hover:border-white/40 hover:bg-card/80",
+        // Dark mode enhancements - stronger glass
+        "dark:border-white/[0.10] dark:shadow-xl dark:shadow-black/30",
+        "dark:hover:border-white/[0.15] dark:hover:shadow-2xl dark:hover:shadow-black/40",
         className
       )}
       {...props}
