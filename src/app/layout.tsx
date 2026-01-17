@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Outfit, Lato } from "next/font/google";
 import { ThemeProvider } from "@/components/providers/ThemeProvider";
+import { Toaster } from "@/components/ui/sonner";
 import { VersionBadge } from "@/components/layout/VersionBadge";
 import "./globals.css";
 
@@ -38,6 +39,7 @@ export default function RootLayout({
           disableTransitionOnChange
         >
           {children}
+          <Toaster position="bottom-right" />
           <VersionBadge />
         </ThemeProvider>
       </body>

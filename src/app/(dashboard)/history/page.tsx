@@ -11,7 +11,7 @@ import {
   Sparkles
 } from "lucide-react";
 import Link from "next/link";
-import { HistoryJobCard } from "./HistoryJobCard";
+import { HistoryGrid } from "./HistoryGrid";
 import { cn } from "@/lib/utils";
 
 export default async function HistoryPage() {
@@ -117,11 +117,7 @@ export default async function HistoryPage() {
           <h2 className="text-lg font-semibold text-foreground">
             All Staging Jobs
           </h2>
-          <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
-            {jobs.map((job) => (
-              <HistoryJobCard key={job.id} job={job} properties={properties || []} />
-            ))}
-          </div>
+          <HistoryGrid jobs={jobs} properties={properties || []} />
         </div>
       ) : (
         <Card className="animate-in fade-in slide-in-from-bottom-4 duration-500 delay-250">
