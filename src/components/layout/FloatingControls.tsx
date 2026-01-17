@@ -131,7 +131,7 @@ export function FloatingControls() {
     (searchResults.properties.length > 0 || searchResults.stagingJobs.length > 0);
 
   return (
-    <div className="fixed top-4 right-6 z-50 flex items-center gap-2">
+    <div className="fixed top-3 right-3 sm:top-4 sm:right-6 z-50 flex items-center gap-2">
       {/* Search */}
       <div ref={searchRef} className="relative">
         <div
@@ -141,7 +141,7 @@ export function FloatingControls() {
             "border border-black/[0.08] dark:border-white/[0.12]",
             "shadow-lg rounded-full",
             "transition-all duration-300 ease-out",
-            isSearchOpen ? "w-80 pl-4 pr-2" : "w-10"
+            isSearchOpen ? "w-[calc(100vw-6rem)] sm:w-80 pl-4 pr-2" : "w-10"
           )}
         >
           {isSearchOpen ? (
@@ -183,7 +183,7 @@ export function FloatingControls() {
         {/* Search Results Dropdown */}
         {isSearchOpen && showResults && searchQuery.length >= 2 && (
           <div className={cn(
-            "absolute top-full right-0 w-80 mt-2 overflow-hidden z-50",
+            "absolute top-full right-0 w-[calc(100vw-6rem)] sm:w-80 mt-2 overflow-hidden z-50",
             "bg-popover/95 backdrop-blur-xl",
             "dark:bg-popover/90",
             "border border-border/40 dark:border-white/8",

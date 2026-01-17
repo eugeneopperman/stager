@@ -134,26 +134,26 @@ export function PropertyCard({ property }: PropertyCardProps) {
             </div>
           </div>
 
-          {/* Hover Action Bar */}
+          {/* Hover Action Bar - visible on mobile, hover on desktop */}
           <div
             className={cn(
               "absolute top-3 right-3 z-20",
-              "opacity-0 group-hover:opacity-100",
-              "translate-y-1 group-hover:translate-y-0",
+              "opacity-100 lg:opacity-0 lg:group-hover:opacity-100",
+              "translate-y-0 lg:translate-y-1 lg:group-hover:translate-y-0",
               "transition-all duration-200",
               "flex items-center gap-1 px-2 py-1.5 rounded-full",
               "bg-black/60 backdrop-blur-xl"
             )}
             onClick={(e) => e.preventDefault()}
           >
-            {/* Favorite */}
+            {/* Favorite - larger touch target on mobile */}
             <Tooltip>
               <TooltipTrigger asChild>
                 <button
                   onClick={handleToggleFavorite}
                   disabled={isTogglingFavorite}
                   className={cn(
-                    "p-1.5 rounded-full transition-colors",
+                    "p-2.5 sm:p-1.5 rounded-full transition-colors",
                     "hover:bg-white/20",
                     isFavorite ? "text-yellow-400" : "text-white"
                   )}
@@ -170,12 +170,12 @@ export function PropertyCard({ property }: PropertyCardProps) {
               </TooltipContent>
             </Tooltip>
 
-            {/* Edit */}
+            {/* Edit - larger touch target on mobile */}
             <Tooltip>
               <TooltipTrigger asChild>
                 <button
                   onClick={handleEdit}
-                  className="p-1.5 rounded-full transition-colors hover:bg-white/20 text-white"
+                  className="p-2.5 sm:p-1.5 rounded-full transition-colors hover:bg-white/20 text-white"
                 >
                   <Pencil className="h-4 w-4" />
                 </button>
@@ -183,13 +183,13 @@ export function PropertyCard({ property }: PropertyCardProps) {
               <TooltipContent>Edit</TooltipContent>
             </Tooltip>
 
-            {/* Stage Photo */}
+            {/* Stage Photo - larger touch target on mobile */}
             <Tooltip>
               <TooltipTrigger asChild>
                 <Link
                   href={`/stage?property=${property.id}`}
                   onClick={(e) => e.stopPropagation()}
-                  className="p-1.5 rounded-full transition-colors hover:bg-white/20 text-white"
+                  className="p-2.5 sm:p-1.5 rounded-full transition-colors hover:bg-white/20 text-white"
                 >
                   <Camera className="h-4 w-4" />
                 </Link>
@@ -197,13 +197,13 @@ export function PropertyCard({ property }: PropertyCardProps) {
               <TooltipContent>Stage Photo</TooltipContent>
             </Tooltip>
 
-            {/* Delete */}
+            {/* Delete - larger touch target on mobile */}
             <Tooltip>
               <TooltipTrigger asChild>
                 <button
                   onClick={handleDelete}
                   disabled={isDeleting}
-                  className="p-1.5 rounded-full transition-colors hover:bg-red-500/50 text-white"
+                  className="p-2.5 sm:p-1.5 rounded-full transition-colors hover:bg-red-500/50 text-white"
                 >
                   {isDeleting ? (
                     <Loader2 className="h-4 w-4 animate-spin" />
@@ -226,9 +226,9 @@ export function PropertyCard({ property }: PropertyCardProps) {
             </p>
           </div>
 
-          {/* Favorite indicator (always visible when favorited) */}
+          {/* Favorite indicator (always visible when favorited - hidden on mobile since action bar is visible) */}
           {isFavorite && (
-            <div className="absolute top-3 right-3 z-10 group-hover:opacity-0 transition-opacity duration-200">
+            <div className="absolute top-3 right-3 z-10 hidden lg:block lg:group-hover:opacity-0 transition-opacity duration-200">
               <Star className="h-5 w-5 text-yellow-400 fill-yellow-400 drop-shadow-md" />
             </div>
           )}
