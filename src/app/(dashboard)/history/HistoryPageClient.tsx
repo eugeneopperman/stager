@@ -95,7 +95,7 @@ export function HistoryPageClient({ jobs, properties }: HistoryPageClientProps) 
   return (
     <div className="space-y-6">
       {/* Stats Cards */}
-      <div className="grid grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
         {/* Completed */}
         <Card
           onClick={() => handleCardClick("completed")}
@@ -164,14 +164,14 @@ export function HistoryPageClient({ jobs, properties }: HistoryPageClientProps) 
       <div className="space-y-4 animate-in fade-in slide-in-from-bottom-4 duration-500 delay-250">
         <h2 className="text-lg font-semibold text-foreground">All Staging Jobs</h2>
 
-        {/* Filter Bar */}
-        <div className="flex flex-wrap items-center gap-3">
+        {/* Filter Bar - stacks on mobile, row on desktop */}
+        <div className="flex flex-col sm:flex-row sm:flex-wrap sm:items-center gap-3">
           {/* Status Filter */}
           <Select
             value={statusFilter}
             onValueChange={(value) => setStatusFilter(value as StatusFilter)}
           >
-            <SelectTrigger className="w-[180px] bg-card/60 backdrop-blur-sm">
+            <SelectTrigger className="w-full sm:w-[180px] bg-card/60 backdrop-blur-sm">
               <Filter className="h-4 w-4 mr-2 text-muted-foreground" />
               <SelectValue placeholder="Status" />
             </SelectTrigger>
@@ -217,15 +217,18 @@ export function HistoryPageClient({ jobs, properties }: HistoryPageClientProps) 
             Favorites
           </Button>
 
-          {/* Spacer */}
-          <div className="flex-1" />
+          {/* Spacer - hidden on mobile */}
+          <div className="hidden sm:block sm:flex-1" />
+
+          {/* Sort and View Mode row on mobile */}
+          <div className="flex items-center gap-3 w-full sm:w-auto">
 
           {/* Sort */}
           <Select
             value={sortOrder}
             onValueChange={(value) => setSortOrder(value as SortOrder)}
           >
-            <SelectTrigger className="w-[165px] bg-card/60 backdrop-blur-sm">
+            <SelectTrigger className="w-full sm:w-[165px] bg-card/60 backdrop-blur-sm">
               <ArrowUpDown className="h-4 w-4 mr-2 text-muted-foreground" />
               <SelectValue placeholder="Sort" />
             </SelectTrigger>
@@ -242,7 +245,7 @@ export function HistoryPageClient({ jobs, properties }: HistoryPageClientProps) 
               size="sm"
               onClick={() => setViewMode("grid")}
               className={cn(
-                "h-8 w-8 p-0",
+                "h-9 w-9 sm:h-8 sm:w-8 p-0",
                 viewMode === "grid" &&
                   "bg-primary text-primary-foreground hover:bg-primary hover:text-primary-foreground"
               )}
@@ -254,13 +257,14 @@ export function HistoryPageClient({ jobs, properties }: HistoryPageClientProps) 
               size="sm"
               onClick={() => setViewMode("list")}
               className={cn(
-                "h-8 w-8 p-0",
+                "h-9 w-9 sm:h-8 sm:w-8 p-0",
                 viewMode === "list" &&
                   "bg-primary text-primary-foreground hover:bg-primary hover:text-primary-foreground"
               )}
             >
               <List className="h-4 w-4" />
             </Button>
+          </div>
           </div>
         </div>
 

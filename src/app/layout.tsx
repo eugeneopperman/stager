@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Outfit, Lato } from "next/font/google";
 import { ThemeProvider } from "@/components/providers/ThemeProvider";
 import { Toaster } from "@/components/ui/sonner";
@@ -20,6 +20,13 @@ const lato = Lato({
 export const metadata: Metadata = {
   title: "Stager - AI Virtual Staging",
   description: "Transform empty rooms into beautifully staged spaces with AI",
+};
+
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  maximumScale: 5,
+  viewportFit: "cover",
 };
 
 export default function RootLayout({

@@ -91,13 +91,13 @@ function DashboardContent({ children, user, credits = 0 }: DashboardShellProps) 
       {/* Floating Controls - Search & Notifications */}
       <FloatingControls />
 
-      {/* Mobile Menu Button */}
+      {/* Mobile Menu Button - 44px touch target for accessibility */}
       <Button
         variant="ghost"
         size="icon"
         className={cn(
-          "fixed top-4 left-4 z-50 lg:hidden",
-          "h-10 w-10 rounded-full",
+          "fixed top-3 left-3 sm:top-4 sm:left-4 z-50 lg:hidden",
+          "h-11 w-11 rounded-full",
           "bg-card/80 backdrop-blur-xl",
           "border border-black/[0.08] dark:border-white/[0.12]",
           "shadow-lg"
@@ -110,7 +110,9 @@ function DashboardContent({ children, user, credits = 0 }: DashboardShellProps) 
       {/* Main content */}
       <div className="flex flex-1 flex-col overflow-hidden">
         <main className={cn(
-          "flex-1 overflow-y-auto px-6 pt-24 pb-6",
+          "flex-1 overflow-y-auto",
+          // Responsive padding - tighter on mobile
+          "px-4 sm:px-6 pt-16 sm:pt-24 pb-4 sm:pb-6",
           // Smooth scroll
           "scroll-smooth"
         )}>

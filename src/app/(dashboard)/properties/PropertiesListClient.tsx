@@ -87,9 +87,9 @@ export function PropertiesListClient({ properties }: PropertiesListClientProps) 
     <div className="space-y-4">
       {/* Search and Filter Controls */}
       {properties.length > 0 && (
-        <div className="flex flex-wrap items-center gap-3">
+        <div className="flex flex-col sm:flex-row sm:flex-wrap sm:items-center gap-3">
           {/* Search */}
-          <div className="relative flex-1 min-w-[200px]">
+          <div className="relative flex-1 min-w-0 sm:min-w-[200px]">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input
               placeholder="Search properties..."
@@ -113,12 +113,15 @@ export function PropertiesListClient({ properties }: PropertiesListClientProps) 
             Favorites
           </Button>
 
-          {/* Spacer */}
-          <div className="flex-1 min-w-0" />
+          {/* Spacer - hidden on mobile */}
+          <div className="hidden sm:block sm:flex-1 min-w-0" />
+
+          {/* Sort and View Mode row on mobile */}
+          <div className="flex items-center gap-3 w-full sm:w-auto">
 
           {/* Sort */}
           <Select value={sortBy} onValueChange={(value) => setSortBy(value as SortOption)}>
-            <SelectTrigger className="w-[165px] bg-card/60 backdrop-blur-sm">
+            <SelectTrigger className="w-full sm:w-[165px] bg-card/60 backdrop-blur-sm">
               <ArrowUpDown className="h-4 w-4 mr-2 text-muted-foreground" />
               <SelectValue placeholder="Sort by" />
             </SelectTrigger>
@@ -138,7 +141,7 @@ export function PropertiesListClient({ properties }: PropertiesListClientProps) 
               size="sm"
               onClick={() => setViewMode("grid")}
               className={cn(
-                "h-8 w-8 p-0",
+                "h-9 w-9 sm:h-8 sm:w-8 p-0",
                 viewMode === "grid" && "bg-primary text-primary-foreground hover:bg-primary hover:text-primary-foreground"
               )}
             >
@@ -149,12 +152,13 @@ export function PropertiesListClient({ properties }: PropertiesListClientProps) 
               size="sm"
               onClick={() => setViewMode("list")}
               className={cn(
-                "h-8 w-8 p-0",
+                "h-9 w-9 sm:h-8 sm:w-8 p-0",
                 viewMode === "list" && "bg-primary text-primary-foreground hover:bg-primary hover:text-primary-foreground"
               )}
             >
               <List className="h-4 w-4" />
             </Button>
+          </div>
           </div>
         </div>
       )}

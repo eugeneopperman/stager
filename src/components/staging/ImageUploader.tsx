@@ -136,7 +136,7 @@ export function ImageUploader({
     <div>
       <label
         className={cn(
-          "flex flex-col items-center justify-center w-full h-80 rounded-xl cursor-pointer",
+          "flex flex-col items-center justify-center w-full h-64 sm:h-80 rounded-xl cursor-pointer",
           // Border
           "border-2 border-dashed",
           // Transitions
