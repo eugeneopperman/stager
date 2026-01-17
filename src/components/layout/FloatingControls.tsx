@@ -150,7 +150,7 @@ export function FloatingControls() {
               <Input
                 ref={inputRef}
                 placeholder="Search properties, staging jobs..."
-                className="border-0 bg-transparent shadow-none focus-visible:ring-0 px-0 h-10"
+                className="border-0 bg-transparent shadow-none focus-visible:ring-0 focus-visible:border-0 px-0 h-10 dark:bg-transparent hover:bg-transparent dark:hover:bg-transparent"
                 value={searchQuery}
                 onChange={handleSearchChange}
                 onFocus={() => searchQuery.length >= 2 && setShowResults(true)}
