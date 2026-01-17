@@ -19,6 +19,9 @@ export type StagingJobStatus =
 // AI provider types
 export type StagingProvider = "gemini" | "stable-diffusion";
 
+// Notification types
+export type NotificationType = "staging_complete" | "staging_failed" | "low_credits";
+
 // ControlNet inputs stored as JSON
 export interface ControlNetInputsJson {
   depth_map_url?: string;
@@ -96,6 +99,38 @@ export interface Database {
           created_at?: string;
           updated_at?: string;
           is_favorite?: boolean;
+        };
+      };
+      notifications: {
+        Row: {
+          id: string;
+          user_id: string;
+          type: NotificationType;
+          title: string;
+          message: string;
+          link: string | null;
+          is_read: boolean;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          user_id: string;
+          type: NotificationType;
+          title: string;
+          message: string;
+          link?: string | null;
+          is_read?: boolean;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          user_id?: string;
+          type?: NotificationType;
+          title?: string;
+          message?: string;
+          link?: string | null;
+          is_read?: boolean;
+          created_at?: string;
         };
       };
       staging_jobs: {
@@ -181,3 +216,4 @@ export interface Database {
 export type Profile = Database["public"]["Tables"]["profiles"]["Row"];
 export type Property = Database["public"]["Tables"]["properties"]["Row"];
 export type StagingJob = Database["public"]["Tables"]["staging_jobs"]["Row"];
+export type Notification = Database["public"]["Tables"]["notifications"]["Row"];

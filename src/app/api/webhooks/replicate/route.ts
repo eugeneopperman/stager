@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import crypto from "crypto";
-import { CREDITS_PER_STAGING } from "@/lib/constants";
+import { CREDITS_PER_STAGING, ROOM_TYPES } from "@/lib/constants";
+import { createNotification } from "@/lib/notifications";
 
 /**
  * Replicate webhook payload structure
@@ -158,13 +159,38 @@ export async function POST(request: NextRequest) {
         .eq("id", job.user_id)
         .single();
 
+      let newCredits = 0;
       if (profile) {
+        newCredits = Math.max(0, profile.credits_remaining - CREDITS_PER_STAGING);
         await supabase
           .from("profiles")
           .update({
-            credits_remaining: Math.max(0, profile.credits_remaining - CREDITS_PER_STAGING),
+            credits_remaining: newCredits,
           })
           .eq("id", job.user_id);
+      }
+
+      // Create staging completion notification
+      const roomLabel = ROOM_TYPES.find((r) => r.id === job.room_type)?.label || job.room_type;
+      await createNotification(
+        supabase,
+        job.user_id,
+        "staging_complete",
+        "Staging Complete",
+        `Your ${roomLabel} staging is ready to view!`,
+        "/history"
+      );
+
+      // Check for low credits warning (3 or fewer)
+      if (newCredits <= 3 && newCredits > 0) {
+        await createNotification(
+          supabase,
+          job.user_id,
+          "low_credits",
+          "Low Credits",
+          `You have ${newCredits} credit${newCredits !== 1 ? "s" : ""} remaining. Consider adding more to continue staging.`,
+          "/billing"
+        );
       }
 
       console.log(`Job ${job.id} completed successfully in ${processingTimeMs}ms`);
@@ -193,6 +219,17 @@ export async function POST(request: NextRequest) {
         processing_time_ms: Date.now() - new Date(job.created_at).getTime(),
       })
       .eq("id", job.id);
+
+    // Create staging failure notification
+    const roomLabel = ROOM_TYPES.find((r) => r.id === job.room_type)?.label || job.room_type;
+    await createNotification(
+      supabase,
+      job.user_id,
+      "staging_failed",
+      "Staging Failed",
+      `Your ${roomLabel} staging could not be completed. Please try again.`,
+      "/history"
+    );
 
     console.log(`Job ${job.id} failed: ${payload.error || payload.status}`);
   }

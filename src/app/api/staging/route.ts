@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { getProviderRouter, getReplicateProvider, getDecor8Provider, Decor8Provider } from "@/lib/providers";
-import { type RoomType, type FurnitureStyle, CREDITS_PER_STAGING } from "@/lib/constants";
+import { type RoomType, type FurnitureStyle, CREDITS_PER_STAGING, ROOM_TYPES } from "@/lib/constants";
+import { createNotification } from "@/lib/notifications";
 
 /**
  * POST /api/staging
@@ -183,6 +184,17 @@ export async function POST(request: NextRequest) {
           })
           .eq("id", job.id);
 
+        // Create staging failure notification
+        const roomLabel = ROOM_TYPES.find((r) => r.id === roomType)?.label || roomType;
+        await createNotification(
+          supabase,
+          user.id,
+          "staging_failed",
+          "Staging Failed",
+          `Your ${roomLabel} staging could not be completed. Please try again.`,
+          "/history"
+        );
+
         return NextResponse.json(
           { error: result.error || "Failed to stage image" },
           { status: 500 }
@@ -221,12 +233,36 @@ export async function POST(request: NextRequest) {
         .eq("id", job.id);
 
       // Deduct credits
+      const newCredits = profile.credits_remaining - CREDITS_PER_STAGING;
       await supabase
         .from("profiles")
         .update({
-          credits_remaining: profile.credits_remaining - CREDITS_PER_STAGING,
+          credits_remaining: newCredits,
         })
         .eq("id", user.id);
+
+      // Create staging completion notification
+      const roomLabel = ROOM_TYPES.find((r) => r.id === roomType)?.label || roomType;
+      await createNotification(
+        supabase,
+        user.id,
+        "staging_complete",
+        "Staging Complete",
+        `Your ${roomLabel} staging is ready to view!`,
+        "/history"
+      );
+
+      // Check for low credits warning (3 or fewer)
+      if (newCredits <= 3 && newCredits > 0) {
+        await createNotification(
+          supabase,
+          user.id,
+          "low_credits",
+          "Low Credits",
+          `You have ${newCredits} credit${newCredits !== 1 ? "s" : ""} remaining. Consider adding more to continue staging.`,
+          "/billing"
+        );
+      }
 
       console.log("[Staging API] Success! Processing time:", Date.now() - startTime, "ms");
       return NextResponse.json({

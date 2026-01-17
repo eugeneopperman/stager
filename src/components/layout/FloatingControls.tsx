@@ -1,12 +1,13 @@
 "use client";
 
 import { useState, useEffect, useRef, useCallback } from "react";
-import { Bell, Search, Building2, ImageIcon, Loader2, X } from "lucide-react";
+import { Search, Building2, ImageIcon, Loader2, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useRouter } from "next/navigation";
 import { ROOM_TYPES, FURNITURE_STYLES } from "@/lib/constants";
+import { NotificationDropdown } from "./NotificationDropdown";
 
 interface SearchResult {
   properties: Array<{
@@ -278,24 +279,7 @@ export function FloatingControls() {
       </div>
 
       {/* Notifications */}
-      <Button
-        variant="ghost"
-        size="icon"
-        className={cn(
-          "relative h-10 w-10 rounded-full",
-          "bg-card/80 backdrop-blur-xl",
-          "border border-black/[0.08] dark:border-white/[0.12]",
-          "shadow-lg"
-        )}
-      >
-        <Bell className="h-5 w-5" />
-        <span className={cn(
-          "absolute top-1.5 right-1.5 h-2 w-2 rounded-full",
-          "bg-primary",
-          "ring-2 ring-card",
-          "animate-pulse"
-        )} />
-      </Button>
+      <NotificationDropdown />
     </div>
   );
 }

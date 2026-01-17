@@ -1,0 +1,246 @@
+"use client";
+
+import { useState, useEffect, useCallback } from "react";
+import { Bell, Check, CheckCheck, ImageIcon, CreditCard, X, Loader2 } from "lucide-react";
+import { cn } from "@/lib/utils";
+import { Button } from "@/components/ui/button";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { createClient } from "@/lib/supabase/client";
+import {
+  getNotifications,
+  getUnreadCount,
+  markAsRead,
+  markAllAsRead,
+  formatRelativeTime,
+} from "@/lib/notifications";
+import type { Notification, NotificationType } from "@/lib/database.types";
+import { useRouter } from "next/navigation";
+
+const notificationIcons: Record<NotificationType, typeof ImageIcon> = {
+  staging_complete: ImageIcon,
+  staging_failed: X,
+  low_credits: CreditCard,
+};
+
+const notificationColors: Record<NotificationType, string> = {
+  staging_complete: "text-emerald-500",
+  staging_failed: "text-red-500",
+  low_credits: "text-amber-500",
+};
+
+export function NotificationDropdown() {
+  const router = useRouter();
+  const [open, setOpen] = useState(false);
+  const [notifications, setNotifications] = useState<Notification[]>([]);
+  const [unreadCount, setUnreadCount] = useState(0);
+  const [isLoading, setIsLoading] = useState(false);
+  const [userId, setUserId] = useState<string | null>(null);
+
+  const supabase = createClient();
+
+  // Get user ID on mount
+  useEffect(() => {
+    const getUser = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        setUserId(user.id);
+      }
+    };
+    getUser();
+  }, [supabase.auth]);
+
+  // Fetch unread count periodically
+  const fetchUnreadCount = useCallback(async () => {
+    if (!userId) return;
+    const count = await getUnreadCount(supabase, userId);
+    setUnreadCount(count);
+  }, [supabase, userId]);
+
+  useEffect(() => {
+    if (userId) {
+      fetchUnreadCount();
+      // Poll every 30 seconds
+      const interval = setInterval(fetchUnreadCount, 30000);
+      return () => clearInterval(interval);
+    }
+  }, [userId, fetchUnreadCount]);
+
+  // Fetch notifications when opening
+  const handleOpenChange = async (isOpen: boolean) => {
+    setOpen(isOpen);
+    if (isOpen && userId) {
+      setIsLoading(true);
+      const data = await getNotifications(supabase, userId);
+      setNotifications(data);
+      setIsLoading(false);
+    }
+  };
+
+  // Handle notification click
+  const handleNotificationClick = async (notification: Notification) => {
+    // Mark as read
+    if (!notification.is_read) {
+      await markAsRead(supabase, notification.id);
+      setNotifications((prev) =>
+        prev.map((n) =>
+          n.id === notification.id ? { ...n, is_read: true } : n
+        )
+      );
+      setUnreadCount((prev) => Math.max(0, prev - 1));
+    }
+
+    // Navigate if link exists
+    if (notification.link) {
+      setOpen(false);
+      router.push(notification.link);
+    }
+  };
+
+  // Mark all as read
+  const handleMarkAllAsRead = async () => {
+    if (!userId) return;
+    await markAllAsRead(supabase, userId);
+    setNotifications((prev) =>
+      prev.map((n) => ({ ...n, is_read: true }))
+    );
+    setUnreadCount(0);
+  };
+
+  return (
+    <Popover open={open} onOpenChange={handleOpenChange}>
+      <PopoverTrigger asChild>
+        <Button
+          variant="ghost"
+          size="icon"
+          className={cn(
+            "relative h-10 w-10 rounded-full",
+            "bg-card/80 backdrop-blur-xl",
+            "border border-black/[0.08] dark:border-white/[0.12]",
+            "shadow-lg",
+            "hover:bg-card"
+          )}
+        >
+          <Bell className="h-5 w-5" />
+          {unreadCount > 0 && (
+            <span
+              className={cn(
+                "absolute -top-0.5 -right-0.5 flex items-center justify-center",
+                "min-w-5 h-5 px-1 rounded-full",
+                "bg-primary text-primary-foreground",
+                "text-xs font-semibold",
+                "ring-2 ring-card"
+              )}
+            >
+              {unreadCount > 9 ? "9+" : unreadCount}
+            </span>
+          )}
+        </Button>
+      </PopoverTrigger>
+
+      <PopoverContent
+        align="end"
+        sideOffset={8}
+        className="w-80 p-0"
+      >
+        {/* Header */}
+        <div className="flex items-center justify-between px-4 py-3 border-b border-border/40">
+          <div className="flex items-center gap-2">
+            <Bell className="h-4 w-4 text-muted-foreground" />
+            <span className="font-semibold">Notifications</span>
+          </div>
+          {unreadCount > 0 && (
+            <Button
+              variant="ghost"
+              size="sm"
+              className="h-7 text-xs text-muted-foreground hover:text-foreground"
+              onClick={handleMarkAllAsRead}
+            >
+              <CheckCheck className="h-3.5 w-3.5 mr-1" />
+              Mark all read
+            </Button>
+          )}
+        </div>
+
+        {/* Content */}
+        <ScrollArea className="max-h-80">
+          {isLoading ? (
+            <div className="flex items-center justify-center py-8">
+              <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+            </div>
+          ) : notifications.length === 0 ? (
+            <div className="flex flex-col items-center justify-center py-8 px-4 text-center">
+              <div className="p-3 rounded-full bg-muted/50 mb-3">
+                <Bell className="h-5 w-5 text-muted-foreground" />
+              </div>
+              <p className="text-sm font-medium text-muted-foreground">
+                No notifications yet
+              </p>
+              <p className="text-xs text-muted-foreground/70 mt-1">
+                We&apos;ll notify you when something happens
+              </p>
+            </div>
+          ) : (
+            <div className="divide-y divide-border/40">
+              {notifications.map((notification) => {
+                const Icon = notificationIcons[notification.type];
+                const iconColor = notificationColors[notification.type];
+
+                return (
+                  <button
+                    key={notification.id}
+                    onClick={() => handleNotificationClick(notification)}
+                    className={cn(
+                      "w-full flex items-start gap-3 px-4 py-3 text-left",
+                      "transition-colors duration-150",
+                      "hover:bg-accent/50 dark:hover:bg-white/5",
+                      !notification.is_read && "bg-primary/5"
+                    )}
+                  >
+                    {/* Unread indicator */}
+                    <div className="mt-1.5 shrink-0">
+                      {!notification.is_read ? (
+                        <div className="h-2 w-2 rounded-full bg-primary" />
+                      ) : (
+                        <div className="h-2 w-2" />
+                      )}
+                    </div>
+
+                    {/* Icon */}
+                    <div className={cn("p-2 rounded-full bg-muted/50 shrink-0", iconColor)}>
+                      <Icon className="h-4 w-4" />
+                    </div>
+
+                    {/* Content */}
+                    <div className="min-w-0 flex-1">
+                      <p
+                        className={cn(
+                          "text-sm",
+                          !notification.is_read
+                            ? "font-medium text-foreground"
+                            : "text-muted-foreground"
+                        )}
+                      >
+                        {notification.title}
+                      </p>
+                      <p className="text-xs text-muted-foreground mt-0.5 line-clamp-2">
+                        {notification.message}
+                      </p>
+                      <p className="text-xs text-muted-foreground/70 mt-1">
+                        {formatRelativeTime(notification.created_at)}
+                      </p>
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
+          )}
+        </ScrollArea>
+      </PopoverContent>
+    </Popover>
+  );
+}
