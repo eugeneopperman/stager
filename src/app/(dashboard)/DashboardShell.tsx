@@ -84,7 +84,7 @@ function DashboardContent({ children, user, credits = 0 }: DashboardShellProps) 
           "transition-transform duration-300 ease-out",
           sidebarOpen ? "translate-x-0" : "-translate-x-full"
         )}>
-          <Sidebar credits={credits} user={user} />
+          <Sidebar credits={credits} user={user} onNavigate={() => setSidebarOpen(false)} />
         </div>
       </div>
 

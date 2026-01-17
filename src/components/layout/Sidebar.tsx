@@ -52,9 +52,10 @@ interface SidebarProps {
     email?: string;
     full_name?: string;
   };
+  onNavigate?: () => void;
 }
 
-export function Sidebar({ credits = 0, user }: SidebarProps) {
+export function Sidebar({ credits = 0, user, onNavigate }: SidebarProps) {
   const pathname = usePathname();
   const router = useRouter();
   const supabase = createClient();
@@ -122,6 +123,7 @@ export function Sidebar({ credits = 0, user }: SidebarProps) {
             <Link
               key={item.name}
               href={item.href}
+              onClick={onNavigate}
               className={cn(
                 "group relative flex items-center rounded-full py-2.5 text-sm font-medium",
                 "transition-all duration-200 ease-out",
