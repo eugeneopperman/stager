@@ -254,10 +254,10 @@ export function HistoryListItem({ job, properties }: HistoryListItemProps) {
         {/* Info */}
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2">
-            <h3 className="font-medium text-foreground truncate">
+            <h3 className="text-sm font-medium text-foreground truncate">
               {roomTypeLabel}
             </h3>
-            <span className="text-muted-foreground">•</span>
+            <span className="text-muted-foreground text-sm">•</span>
             <span className="text-sm text-muted-foreground truncate">
               {styleLabel}
             </span>

@@ -90,7 +90,7 @@ export function HistoryGrid({ jobs, properties }: HistoryGridProps) {
           value={statusFilter}
           onValueChange={(value) => setStatusFilter(value as StatusFilter)}
         >
-          <SelectTrigger className="w-[140px] bg-card/60 backdrop-blur-sm">
+          <SelectTrigger className="w-[160px] bg-card/60 backdrop-blur-sm">
             <Filter className="h-4 w-4 mr-2 text-muted-foreground" />
             <SelectValue placeholder="Status" />
           </SelectTrigger>
@@ -144,7 +144,7 @@ export function HistoryGrid({ jobs, properties }: HistoryGridProps) {
           value={sortOrder}
           onValueChange={(value) => setSortOrder(value as SortOrder)}
         >
-          <SelectTrigger className="w-[150px] bg-card/60 backdrop-blur-sm">
+          <SelectTrigger className="w-[165px] bg-card/60 backdrop-blur-sm">
             <ArrowUpDown className="h-4 w-4 mr-2 text-muted-foreground" />
             <SelectValue placeholder="Sort" />
           </SelectTrigger>
