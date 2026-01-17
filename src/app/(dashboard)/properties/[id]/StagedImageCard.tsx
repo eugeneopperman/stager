@@ -8,8 +8,14 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { Download, Eye, ArrowLeftRight } from "lucide-react";
 import type { StagingJob } from "@/lib/database.types";
+import { cn } from "@/lib/utils";
 
 interface StagedImageCardProps {
   job: StagingJob;
@@ -20,9 +26,17 @@ export function StagedImageCard({ job, propertyAddress }: StagedImageCardProps) 
   const [showDetail, setShowDetail] = useState(false);
   const [showComparison, setShowComparison] = useState(false);
   const [sliderPosition, setSliderPosition] = useState(50);
+  const [showOriginal, setShowOriginal] = useState(false);
 
   const formatRoomType = (roomType: string) => {
     return roomType
+      .split("-")
+      .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+      .join(" ");
+  };
+
+  const formatStyle = (style: string) => {
+    return style
       .split("-")
       .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
       .join(" ");
@@ -42,7 +56,8 @@ export function StagedImageCard({ job, propertyAddress }: StagedImageCardProps) 
     setSliderPosition(Math.max(0, Math.min(100, percentage)));
   };
 
-  const handleDownload = () => {
+  const handleDownload = (e?: React.MouseEvent) => {
+    e?.stopPropagation();
     if (job.staged_image_url) {
       const link = document.createElement("a");
       link.href = job.staged_image_url;
@@ -53,45 +68,107 @@ export function StagedImageCard({ job, propertyAddress }: StagedImageCardProps) 
     }
   };
 
+  const handleToggleCompare = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setShowOriginal(!showOriginal);
+  };
+
   const hasOriginalImage = job.original_image_url && !job.original_image_url.includes("...");
+  const displayImageUrl = showOriginal && hasOriginalImage
+    ? job.original_image_url
+    : job.staged_image_url;
 
   return (
     <>
       <div
-        className="group relative aspect-video rounded-lg overflow-hidden bg-slate-100 dark:bg-slate-900 cursor-pointer"
+        className={cn(
+          "group relative aspect-[4/3] rounded-2xl overflow-hidden",
+          "transition-all duration-300 ease-out",
+          "hover:scale-[1.02] hover:shadow-xl cursor-pointer"
+        )}
         onClick={() => setShowDetail(true)}
       >
-        {job.staged_image_url && (
+        {/* Background Image */}
+        {displayImageUrl && (
           <img
-            src={job.staged_image_url}
+            src={displayImageUrl}
             alt={`${formatRoomType(job.room_type)} - ${job.style}`}
-            className="w-full h-full object-cover"
+            className="absolute inset-0 w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
           />
         )}
-        {/* Overlay */}
-        <div className="absolute inset-0 bg-black/0 group-hover:bg-black/50 transition-colors">
-          <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-            <div className="flex gap-2">
-              <Button size="sm" variant="secondary">
-                <Eye className="h-4 w-4 mr-1" />
-                View
-              </Button>
-              {hasOriginalImage && (
-                <Button size="sm" variant="secondary">
-                  <ArrowLeftRight className="h-4 w-4 mr-1" />
-                  Compare
-                </Button>
-              )}
-            </div>
+
+        {/* Original Badge (when comparing) */}
+        {showOriginal && hasOriginalImage && (
+          <div className="absolute top-3 left-3 px-2 py-1 bg-black/70 backdrop-blur-sm rounded text-white text-xs font-medium z-10">
+            Original
           </div>
+        )}
+
+        {/* Hover Action Bar */}
+        <div
+          className={cn(
+            "absolute top-3 right-3 z-20",
+            "opacity-0 group-hover:opacity-100",
+            "translate-y-1 group-hover:translate-y-0",
+            "transition-all duration-200",
+            "flex items-center gap-1 px-2 py-1.5 rounded-full",
+            "bg-black/60 backdrop-blur-xl"
+          )}
+          onClick={(e) => e.stopPropagation()}
+        >
+          {/* Compare (only if original exists) */}
+          {hasOriginalImage && (
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <button
+                  onClick={handleToggleCompare}
+                  className={cn(
+                    "p-1.5 rounded-full transition-colors",
+                    "hover:bg-white/20 text-white",
+                    showOriginal && "bg-white/20"
+                  )}
+                >
+                  <ArrowLeftRight className="h-4 w-4" />
+                </button>
+              </TooltipTrigger>
+              <TooltipContent>Compare Before/After</TooltipContent>
+            </Tooltip>
+          )}
+
+          {/* View */}
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <button
+                onClick={() => setShowDetail(true)}
+                className="p-1.5 rounded-full transition-colors hover:bg-white/20 text-white"
+              >
+                <Eye className="h-4 w-4" />
+              </button>
+            </TooltipTrigger>
+            <TooltipContent>View</TooltipContent>
+          </Tooltip>
+
+          {/* Download */}
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <button
+                onClick={handleDownload}
+                className="p-1.5 rounded-full transition-colors hover:bg-white/20 text-white"
+              >
+                <Download className="h-4 w-4" />
+              </button>
+            </TooltipTrigger>
+            <TooltipContent>Download</TooltipContent>
+          </Tooltip>
         </div>
-        {/* Info overlay */}
-        <div className="absolute bottom-0 left-0 right-0 p-2 bg-gradient-to-t from-black/70 to-transparent">
-          <p className="text-white text-sm font-medium">
+
+        {/* Bottom Gradient + Info */}
+        <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent p-4 pt-12">
+          <h3 className="text-white font-semibold text-sm">
             {formatRoomType(job.room_type)}
-          </p>
+          </h3>
           <p className="text-white/70 text-xs">
-            {job.style} • {formatShortDate(job.created_at)}
+            {formatStyle(job.style)} • {formatShortDate(job.created_at)}
           </p>
         </div>
       </div>
@@ -101,7 +178,7 @@ export function StagedImageCard({ job, propertyAddress }: StagedImageCardProps) 
         <DialogContent className="max-w-4xl">
           <DialogHeader>
             <DialogTitle>
-              {formatRoomType(job.room_type)} - {job.style}
+              {formatRoomType(job.room_type)} - {formatStyle(job.style)}
             </DialogTitle>
           </DialogHeader>
 
@@ -129,7 +206,7 @@ export function StagedImageCard({ job, propertyAddress }: StagedImageCardProps) 
                 <img
                   src={job.original_image_url}
                   alt="Original"
-                  className="absolute inset-0 w-full h-full object-contain bg-slate-100 dark:bg-slate-900"
+                  className="absolute inset-0 w-full h-full object-contain bg-muted"
                 />
                 <div
                   className="absolute inset-0 overflow-hidden"
@@ -138,7 +215,7 @@ export function StagedImageCard({ job, propertyAddress }: StagedImageCardProps) 
                   <img
                     src={job.staged_image_url || ""}
                     alt="Staged"
-                    className="absolute inset-0 w-full h-full object-contain bg-slate-100 dark:bg-slate-900"
+                    className="absolute inset-0 w-full h-full object-contain bg-muted"
                     style={{ width: `${100 / (sliderPosition / 100)}%`, maxWidth: "none" }}
                   />
                 </div>
@@ -158,7 +235,7 @@ export function StagedImageCard({ job, propertyAddress }: StagedImageCardProps) 
                 </div>
               </div>
             ) : (
-              <div className="rounded-lg overflow-hidden bg-slate-100 dark:bg-slate-900">
+              <div className="rounded-lg overflow-hidden bg-muted">
                 <img
                   src={job.staged_image_url || ""}
                   alt="Staged room"
@@ -169,10 +246,10 @@ export function StagedImageCard({ job, propertyAddress }: StagedImageCardProps) 
 
             {/* Info & Actions */}
             <div className="flex items-center justify-between pt-4 border-t">
-              <div className="text-sm text-slate-500">
-                {job.style} style • {formatShortDate(job.created_at)}
+              <div className="text-sm text-muted-foreground">
+                {formatStyle(job.style)} style • {formatShortDate(job.created_at)}
               </div>
-              <Button onClick={handleDownload}>
+              <Button onClick={() => handleDownload()}>
                 <Download className="h-4 w-4 mr-2" />
                 Download
               </Button>

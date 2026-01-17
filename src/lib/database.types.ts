@@ -77,6 +77,7 @@ export interface Database {
           description: string | null;
           created_at: string;
           updated_at: string;
+          is_favorite: boolean;
         };
         Insert: {
           id?: string;
@@ -85,6 +86,7 @@ export interface Database {
           description?: string | null;
           created_at?: string;
           updated_at?: string;
+          is_favorite?: boolean;
         };
         Update: {
           id?: string;
@@ -93,6 +95,7 @@ export interface Database {
           description?: string | null;
           created_at?: string;
           updated_at?: string;
+          is_favorite?: boolean;
         };
       };
       staging_jobs: {

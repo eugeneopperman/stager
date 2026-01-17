@@ -2,6 +2,7 @@
 
 import { useState, useMemo } from "react";
 import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
 import {
   Select,
   SelectContent,
@@ -10,15 +11,26 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Card, CardContent } from "@/components/ui/card";
-import { Building2, Search } from "lucide-react";
+import {
+  Building2,
+  Search,
+  Star,
+  ArrowUpDown,
+  LayoutGrid,
+  List,
+} from "lucide-react";
 import { PropertyCard } from "./PropertyCard";
+import { PropertyListItem } from "./PropertyListItem";
 import { CreatePropertyButton } from "./CreatePropertyButton";
 import type { Property } from "@/lib/database.types";
+import { cn } from "@/lib/utils";
 
 type SortOption = "newest" | "oldest" | "name-asc" | "name-desc" | "stagings";
+type ViewMode = "grid" | "list";
 
 interface PropertyWithCount extends Property {
   stagingCount: number;
+  previewImageUrl?: string | null;
 }
 
 interface PropertiesListClientProps {
@@ -28,6 +40,8 @@ interface PropertiesListClientProps {
 export function PropertiesListClient({ properties }: PropertiesListClientProps) {
   const [searchQuery, setSearchQuery] = useState("");
   const [sortBy, setSortBy] = useState<SortOption>("newest");
+  const [showFavoritesOnly, setShowFavoritesOnly] = useState(false);
+  const [viewMode, setViewMode] = useState<ViewMode>("grid");
 
   const filteredAndSortedProperties = useMemo(() => {
     let result = [...properties];
@@ -40,6 +54,11 @@ export function PropertiesListClient({ properties }: PropertiesListClientProps) 
           property.address.toLowerCase().includes(query) ||
           property.description?.toLowerCase().includes(query)
       );
+    }
+
+    // Filter by favorites
+    if (showFavoritesOnly) {
+      result = result.filter((property) => property.is_favorite);
     }
 
     // Sort
@@ -62,24 +81,45 @@ export function PropertiesListClient({ properties }: PropertiesListClientProps) 
     }
 
     return result;
-  }, [properties, searchQuery, sortBy]);
+  }, [properties, searchQuery, sortBy, showFavoritesOnly]);
 
   return (
     <div className="space-y-4">
-      {/* Search and Sort Controls */}
+      {/* Search and Filter Controls */}
       {properties.length > 0 && (
-        <div className="flex flex-col sm:flex-row gap-3">
-          <div className="relative flex-1">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+        <div className="flex flex-wrap items-center gap-3">
+          {/* Search */}
+          <div className="relative flex-1 min-w-[200px]">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input
               placeholder="Search properties..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-9"
+              className="pl-9 bg-card/60 backdrop-blur-sm"
             />
           </div>
+
+          {/* Favorites Toggle */}
+          <Button
+            variant={showFavoritesOnly ? "default" : "outline"}
+            size="sm"
+            onClick={() => setShowFavoritesOnly(!showFavoritesOnly)}
+            className={cn(
+              "gap-2",
+              showFavoritesOnly && "bg-yellow-500/90 hover:bg-yellow-500 text-white"
+            )}
+          >
+            <Star className={cn("h-4 w-4", showFavoritesOnly && "fill-current")} />
+            Favorites
+          </Button>
+
+          {/* Spacer */}
+          <div className="flex-1 min-w-0" />
+
+          {/* Sort */}
           <Select value={sortBy} onValueChange={(value) => setSortBy(value as SortOption)}>
-            <SelectTrigger className="w-full sm:w-48">
+            <SelectTrigger className="w-[165px] bg-card/60 backdrop-blur-sm">
+              <ArrowUpDown className="h-4 w-4 mr-2 text-muted-foreground" />
               <SelectValue placeholder="Sort by" />
             </SelectTrigger>
             <SelectContent>
@@ -90,43 +130,81 @@ export function PropertiesListClient({ properties }: PropertiesListClientProps) 
               <SelectItem value="stagings">Most Stagings</SelectItem>
             </SelectContent>
           </Select>
+
+          {/* View Mode Toggle */}
+          <div className="flex items-center rounded-lg border bg-card/60 backdrop-blur-sm p-1">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setViewMode("grid")}
+              className={cn(
+                "h-8 w-8 p-0",
+                viewMode === "grid" && "bg-primary text-primary-foreground hover:bg-primary hover:text-primary-foreground"
+              )}
+            >
+              <LayoutGrid className="h-4 w-4" />
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setViewMode("list")}
+              className={cn(
+                "h-8 w-8 p-0",
+                viewMode === "list" && "bg-primary text-primary-foreground hover:bg-primary hover:text-primary-foreground"
+              )}
+            >
+              <List className="h-4 w-4" />
+            </Button>
+          </div>
         </div>
       )}
 
-      {/* Results count when searching */}
-      {searchQuery && (
-        <p className="text-sm text-slate-500">
-          {filteredAndSortedProperties.length} of {properties.length} properties
+      {/* Results count */}
+      {properties.length > 0 && (
+        <p className="text-sm text-muted-foreground">
+          Showing {filteredAndSortedProperties.length} of {properties.length} properties
+          {showFavoritesOnly && " (favorites)"}
         </p>
       )}
 
-      {/* Properties Grid */}
+      {/* Properties Grid or List */}
       {filteredAndSortedProperties.length > 0 ? (
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-          {filteredAndSortedProperties.map((property) => (
-            <PropertyCard key={property.id} property={property} />
-          ))}
-        </div>
+        viewMode === "grid" ? (
+          <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
+            {filteredAndSortedProperties.map((property) => (
+              <PropertyCard key={property.id} property={property} />
+            ))}
+          </div>
+        ) : (
+          <div className="space-y-2">
+            {filteredAndSortedProperties.map((property) => (
+              <PropertyListItem key={property.id} property={property} />
+            ))}
+          </div>
+        )
       ) : properties.length > 0 ? (
-        <Card>
-          <CardContent className="flex flex-col items-center justify-center py-12">
-            <Search className="h-12 w-12 text-slate-300 mb-4" />
-            <h3 className="text-lg font-medium text-slate-900 dark:text-white mb-2">
-              No properties found
-            </h3>
-            <p className="text-slate-500 text-center">
-              Try a different search term
-            </p>
-          </CardContent>
-        </Card>
+        <div className="text-center py-12">
+          <p className="text-muted-foreground">
+            No properties match your filters.{" "}
+            <button
+              onClick={() => {
+                setSearchQuery("");
+                setShowFavoritesOnly(false);
+              }}
+              className="text-primary hover:underline"
+            >
+              Clear filters
+            </button>
+          </p>
+        </div>
       ) : (
         <Card>
           <CardContent className="flex flex-col items-center justify-center py-16">
-            <Building2 className="h-12 w-12 text-slate-300 mb-4" />
-            <h3 className="text-lg font-medium text-slate-900 dark:text-white mb-2">
+            <Building2 className="h-12 w-12 text-muted-foreground/50 mb-4" />
+            <h3 className="text-lg font-medium text-foreground mb-2">
               No properties yet
             </h3>
-            <p className="text-slate-500 text-center mb-6 max-w-sm">
+            <p className="text-muted-foreground text-center mb-6 max-w-sm">
               Add your first property to organize your staging projects
             </p>
             <CreatePropertyButton />

@@ -22,18 +22,30 @@ export default async function PropertiesPage() {
     .eq("user_id", user?.id)
     .order("created_at", { ascending: false });
 
-  // Get staging counts for each property
+  // Get staging counts and preview images for each property
   const propertiesWithCounts = await Promise.all(
     (properties || []).map(async (property) => {
+      // Get count of completed stagings
       const { count } = await supabase
         .from("staging_jobs")
         .select("*", { count: "exact", head: true })
         .eq("property_id", property.id)
         .eq("status", "completed");
 
+      // Get the most recent staged image as preview
+      const { data: previewJob } = await supabase
+        .from("staging_jobs")
+        .select("staged_image_url")
+        .eq("property_id", property.id)
+        .eq("status", "completed")
+        .order("created_at", { ascending: false })
+        .limit(1)
+        .single();
+
       return {
         ...property,
         stagingCount: count || 0,
+        previewImageUrl: previewJob?.staged_image_url || null,
       };
     })
   );
