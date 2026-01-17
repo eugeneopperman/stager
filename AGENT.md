@@ -105,7 +105,9 @@ useEffect(() => {
 ### History Components (`/src/app/(dashboard)/history/`)
 | Component | Purpose |
 |-----------|---------|
+| `HistoryPageClient.tsx` | Client wrapper with clickable stats cards and grid/list view |
 | `HistoryJobCard.tsx` | Staging job card with delete, comparison, property assignment |
+| `HistoryListItem.tsx` | List view row for staging jobs |
 
 ### Layout Components (`/src/components/layout/`)
 | Component | Purpose |
@@ -426,6 +428,39 @@ The app has a persistent notification system stored in the database:
 - Fetches full notification list when dropdown opens
 - Click notification → marks as read + navigates to link
 - Glass effect styling consistent with app design
+
+---
+
+## Debugging Tips
+
+### DropdownMenuLabel Uppercase Issue
+The shadcn/ui `DropdownMenuLabel` component has `uppercase` in its default className. To display text in normal case, add `className="normal-case"`:
+
+```tsx
+<DropdownMenuLabel className="normal-case">
+  <p>{userName}</p>
+</DropdownMenuLabel>
+```
+
+### Clickable Stats Cards as Filters
+Pattern for making stats cards act as toggle filters (used on History page):
+
+```tsx
+const [statusFilter, setStatusFilter] = useState<"all" | "completed" | "processing">("all");
+
+const handleCardClick = (filter: string) => {
+  // Toggle off if already selected
+  setStatusFilter(statusFilter === filter ? "all" : filter);
+};
+
+<Card
+  onClick={() => handleCardClick("completed")}
+  className={cn(
+    "cursor-pointer",
+    statusFilter === "completed" && "ring-2 ring-emerald-500 ring-offset-2"
+  )}
+>
+```
 
 ---
 

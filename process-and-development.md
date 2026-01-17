@@ -378,6 +378,9 @@ staging_jobs:
 | 1.074 | 2025-01-16 | 100px top padding, standardized heading sizes across all pages |
 | 1.085 | 2025-01-16 | Persistent notification system: database, dropdown UI, staging/credits triggers |
 | 1.086 | 2025-01-16 | Fixed search bar input overlay styling |
+| 1.087 | 2025-01-16 | History page stats cards clickable as filters with visual indicator |
+| 1.088 | 2025-01-16 | User avatar dropdown: Title Case name, lowercase email, wider popup |
+| 1.089 | 2025-01-16 | Fixed dropdown label CSS uppercase override |
 | 1.0.0 | TBD | MVP release |
 
 ---

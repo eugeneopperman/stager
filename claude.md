@@ -210,6 +210,7 @@ NEXT_PUBLIC_APP_URL=http://localhost:3000
 | `src/app/(dashboard)/stage/batch/page.tsx` | Batch staging workflow |
 | `src/app/(dashboard)/settings/ThemeSelector.tsx` | Light/dark/system theme picker |
 | `src/app/(dashboard)/settings/SidebarSettings.tsx` | Sidebar behavior settings |
+| `src/app/(dashboard)/history/HistoryPageClient.tsx` | Client wrapper with clickable stats cards as filters |
 | `src/app/(dashboard)/history/HistoryJobCard.tsx` | History card with delete & comparison |
 | `src/app/(dashboard)/properties/[id]/StagedImageCard.tsx` | Property image with comparison slider |
 | `src/app/(dashboard)/properties/[id]/PropertyActions.tsx` | Property edit/delete actions |
