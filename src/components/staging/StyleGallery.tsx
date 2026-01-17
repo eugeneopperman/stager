@@ -59,68 +59,60 @@ export function StyleGallery({
               onClick={() => handleToggle(style.id)}
               disabled={isDisabled}
               className={cn(
-                "group relative flex flex-col overflow-hidden rounded-lg",
-                "border-2 transition-all duration-200",
+                "group relative aspect-[4/3] overflow-hidden rounded-xl",
+                "border-2 transition-all duration-300",
                 "focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2",
                 isSelected
-                  ? "border-primary ring-1 ring-primary shadow-md"
-                  : "border-border/50 hover:border-border",
+                  ? "border-primary ring-1 ring-primary shadow-lg scale-[1.02]"
+                  : "border-transparent hover:border-border/50 hover:shadow-md",
                 isDisabled && !isSelected && "opacity-40 cursor-not-allowed"
               )}
             >
-              {/* Image container */}
-              <div className="relative aspect-[4/3] w-full bg-muted overflow-hidden">
-                {!hasImageError ? (
-                  <Image
-                    src={style.image}
-                    alt={style.label}
-                    fill
-                    sizes="(max-width: 768px) 33vw, 150px"
-                    className={cn(
-                      "object-cover transition-transform duration-300",
-                      !isDisabled && "group-hover:scale-105"
-                    )}
-                    onError={() => setImageErrors((prev) => ({ ...prev, [style.id]: true }))}
-                  />
-                ) : (
-                  <div className="absolute inset-0 flex items-center justify-center bg-muted">
-                    <ImageIcon className="h-8 w-8 text-muted-foreground/50" />
-                  </div>
-                )}
-
-                {/* Selection indicator */}
-                {isSelected && (
-                  <div className="absolute top-1.5 right-1.5 h-5 w-5 rounded-full bg-primary flex items-center justify-center shadow-sm">
-                    <Check className="h-3 w-3 text-primary-foreground" />
-                  </div>
-                )}
-
-                {/* Hover overlay */}
-                <div
+              {/* Full cover image */}
+              {!hasImageError ? (
+                <Image
+                  src={style.image}
+                  alt={style.label}
+                  fill
+                  sizes="(max-width: 768px) 33vw, 150px"
                   className={cn(
-                    "absolute inset-0 bg-black/0 transition-colors duration-200",
-                    !isDisabled && "group-hover:bg-black/10",
-                    isSelected && "bg-primary/10"
+                    "object-cover transition-transform duration-300",
+                    !isDisabled && "group-hover:scale-110"
                   )}
+                  onError={() => setImageErrors((prev) => ({ ...prev, [style.id]: true }))}
                 />
-              </div>
+              ) : (
+                <div className="absolute inset-0 flex items-center justify-center bg-muted">
+                  <ImageIcon className="h-8 w-8 text-muted-foreground/50" />
+                </div>
+              )}
 
-              {/* Label */}
+              {/* Selection indicator */}
+              {isSelected && (
+                <div className="absolute top-2 right-2 h-5 w-5 rounded-full bg-primary flex items-center justify-center shadow-md z-10">
+                  <Check className="h-3 w-3 text-primary-foreground" />
+                </div>
+              )}
+
+              {/* Gradient overlay with label */}
               <div className={cn(
-                "px-2 py-1.5 text-center transition-colors",
-                isSelected
-                  ? "bg-primary/10 dark:bg-primary/20"
-                  : "bg-card"
+                "absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent",
+                "p-2 pt-8 transition-opacity duration-200"
               )}>
                 <span
                   className={cn(
-                    "text-xs font-medium leading-tight",
-                    isSelected ? "text-primary" : "text-foreground"
+                    "text-xs font-medium text-white drop-shadow-sm",
+                    isSelected && "text-white"
                   )}
                 >
                   {style.label}
                 </span>
               </div>
+
+              {/* Selected overlay */}
+              {isSelected && (
+                <div className="absolute inset-0 bg-primary/20 pointer-events-none" />
+              )}
             </button>
           );
         })}
