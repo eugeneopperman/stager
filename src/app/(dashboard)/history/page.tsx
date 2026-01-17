@@ -1,18 +1,9 @@
 import { createClient } from "@/lib/supabase/server";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
+import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import {
-  ImagePlus,
-  Clock,
-  Download,
-  Eye,
-  Calendar,
-  Sparkles
-} from "lucide-react";
+import { ImagePlus } from "lucide-react";
 import Link from "next/link";
-import { HistoryGrid } from "./HistoryGrid";
-import { cn } from "@/lib/utils";
+import { HistoryPageClient } from "./HistoryPageClient";
 
 export default async function HistoryPage() {
   const supabase = await createClient();
@@ -35,10 +26,6 @@ export default async function HistoryPage() {
     .eq("user_id", user?.id)
     .order("address", { ascending: true });
 
-  const completedJobs = jobs?.filter((job) => job.status === "completed") || [];
-  const pendingJobs = jobs?.filter((job) => job.status === "processing" || job.status === "pending") || [];
-  const failedJobs = jobs?.filter((job) => job.status === "failed") || [];
-
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -59,66 +46,9 @@ export default async function HistoryPage() {
         </Button>
       </div>
 
-      {/* Stats */}
-      <div className="grid grid-cols-3 gap-4">
-        <Card className={cn(
-          "transition-all duration-200 hover:-translate-y-0.5 hover:shadow-lg",
-          "animate-in fade-in slide-in-from-bottom-4 duration-500 delay-100"
-        )}>
-          <CardContent className="p-4 flex items-center gap-3">
-            <div className="p-2.5 rounded-xl bg-emerald-500/10 dark:bg-emerald-500/15">
-              <Sparkles className="h-5 w-5 text-emerald-600 dark:text-emerald-400" />
-            </div>
-            <div>
-              <p className="text-2xl font-bold text-foreground">
-                {completedJobs.length}
-              </p>
-              <p className="text-sm text-muted-foreground">Completed</p>
-            </div>
-          </CardContent>
-        </Card>
-        <Card className={cn(
-          "transition-all duration-200 hover:-translate-y-0.5 hover:shadow-lg",
-          "animate-in fade-in slide-in-from-bottom-4 duration-500 delay-150"
-        )}>
-          <CardContent className="p-4 flex items-center gap-3">
-            <div className="p-2.5 rounded-xl bg-amber-500/10 dark:bg-amber-500/15">
-              <Clock className="h-5 w-5 text-amber-600 dark:text-amber-400" />
-            </div>
-            <div>
-              <p className="text-2xl font-bold text-foreground">
-                {pendingJobs.length}
-              </p>
-              <p className="text-sm text-muted-foreground">Processing</p>
-            </div>
-          </CardContent>
-        </Card>
-        <Card className={cn(
-          "transition-all duration-200 hover:-translate-y-0.5 hover:shadow-lg",
-          "animate-in fade-in slide-in-from-bottom-4 duration-500 delay-200"
-        )}>
-          <CardContent className="p-4 flex items-center gap-3">
-            <div className="p-2.5 rounded-xl bg-muted/80 dark:bg-white/10">
-              <Calendar className="h-5 w-5 text-muted-foreground" />
-            </div>
-            <div>
-              <p className="text-2xl font-bold text-foreground">
-                {jobs?.length || 0}
-              </p>
-              <p className="text-sm text-muted-foreground">Total</p>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Jobs List */}
+      {/* Stats + Jobs List */}
       {jobs && jobs.length > 0 ? (
-        <div className="space-y-4 animate-in fade-in slide-in-from-bottom-4 duration-500 delay-250">
-          <h2 className="text-lg font-semibold text-foreground">
-            All Staging Jobs
-          </h2>
-          <HistoryGrid jobs={jobs} properties={properties || []} />
-        </div>
+        <HistoryPageClient jobs={jobs} properties={properties || []} />
       ) : (
         <Card className="animate-in fade-in slide-in-from-bottom-4 duration-500 delay-250">
           <CardContent className="flex flex-col items-center justify-center py-16">
