@@ -303,7 +303,7 @@ export function Sidebar({ credits = 0, user }: SidebarProps) {
             side="top"
             className="min-w-[240px] mb-2"
           >
-            <DropdownMenuLabel>
+            <DropdownMenuLabel className="normal-case">
               <div className="flex flex-col space-y-1">
                 <p className="text-sm font-medium">{displayName}</p>
                 <p className="text-xs text-muted-foreground truncate">{displayEmail}</p>
