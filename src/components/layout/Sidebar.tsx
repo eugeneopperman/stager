@@ -74,6 +74,17 @@ export function Sidebar({ credits = 0, user }: SidebarProps) {
         .toUpperCase()
     : user?.email?.[0]?.toUpperCase() || "U";
 
+  // Format name as Title Case
+  const formatName = (name: string) => {
+    return name
+      .split(" ")
+      .map((word) => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+      .join(" ");
+  };
+
+  const displayName = user?.full_name ? formatName(user.full_name) : "User";
+  const displayEmail = user?.email?.toLowerCase();
+
   return (
     <div className={cn(
       "flex h-full flex-col",
@@ -290,12 +301,12 @@ export function Sidebar({ credits = 0, user }: SidebarProps) {
           <DropdownMenuContent
             align={isCollapsed ? "center" : "start"}
             side="top"
-            className="w-56 mb-2"
+            className="min-w-[240px] mb-2"
           >
             <DropdownMenuLabel>
               <div className="flex flex-col space-y-1">
-                <p className="text-sm font-medium">{user?.full_name || "User"}</p>
-                <p className="text-xs text-muted-foreground">{user?.email}</p>
+                <p className="text-sm font-medium">{displayName}</p>
+                <p className="text-xs text-muted-foreground truncate">{displayEmail}</p>
               </div>
             </DropdownMenuLabel>
             <DropdownMenuSeparator />
