@@ -136,6 +136,7 @@ export async function GET(request: NextRequest) {
 - **profiles** - User profiles (extends auth.users)
 - **properties** - Real estate properties
 - **staging_jobs** - Staging processing jobs
+- **notifications** - Persistent user notifications
 
 ### Key Relationships
 - `profiles.id` → `auth.users.id` (1:1)
@@ -189,11 +190,14 @@ NEXT_PUBLIC_APP_URL=http://localhost:3000
 | `src/lib/gemini.ts` | Gemini API integration with inpainting-focused prompt |
 | `src/lib/constants.ts` | Room types, styles (with image paths), credit thresholds |
 | `src/lib/database.types.ts` | TypeScript types for Supabase tables |
+| `src/lib/notifications.ts` | Notification helper functions (create, fetch, mark read) |
 | `src/middleware.ts` | Auth protection middleware |
 | `src/contexts/SidebarContext.tsx` | Sidebar collapse/auto-hide state management |
 | `src/components/providers/ThemeProvider.tsx` | next-themes wrapper for dark/light mode |
-| `src/components/layout/FloatingControls.tsx` | Floating search icon + notification bell with expandable search |
+| `src/components/layout/FloatingControls.tsx` | Floating search icon + notification dropdown with expandable search |
+| `src/components/layout/NotificationDropdown.tsx` | Bell icon with unread badge, notification popover dropdown |
 | `src/components/layout/Sidebar.tsx` | Collapsible navigation sidebar with tooltips and user avatar dropdown |
+| `src/components/ui/popover.tsx` | Radix UI popover component for dropdowns |
 | `src/components/ui/tooltip.tsx` | Tooltip component for collapsed UI elements |
 | `src/components/staging/ImageUploader.tsx` | Single image drag-drop upload |
 | `src/components/staging/BatchImageUploader.tsx` | Multi-image upload component |
@@ -213,6 +217,7 @@ NEXT_PUBLIC_APP_URL=http://localhost:3000
 | `docs/PRD-Stage-Photo-Redesign.md` | Stage page redesign PRD |
 | `prompt-structure.txt` | Reference AI staging prompt |
 | `AGENT.md` | Agent notes and lessons learned |
+| `supabase/migrations/006_create_notifications.sql` | Notifications table with RLS policies |
 
 ## Commands
 

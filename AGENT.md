@@ -110,7 +110,8 @@ useEffect(() => {
 ### Layout Components (`/src/components/layout/`)
 | Component | Purpose |
 |-----------|---------|
-| `FloatingControls.tsx` | Floating search icon + notification bell, expandable animated search bar |
+| `FloatingControls.tsx` | Floating search icon + notification dropdown, expandable animated search bar |
+| `NotificationDropdown.tsx` | Bell icon with unread badge, popover dropdown for notifications |
 | `Sidebar.tsx` | Collapsible navigation sidebar with tooltips, credit display, user avatar dropdown |
 
 ### Settings Components (`/src/app/(dashboard)/settings/`)
@@ -394,6 +395,37 @@ When planning major feature changes:
 5. Implement based on approved plan
 
 Example: `docs/PRD-Stage-Photo-Redesign.md`
+
+---
+
+## Notification System
+
+### Architecture
+The app has a persistent notification system stored in the database:
+
+**Database Table:** `notifications`
+- `id`, `user_id`, `type`, `title`, `message`, `link`, `is_read`, `created_at`
+- Types: `staging_complete`, `staging_failed`, `low_credits`
+- RLS policies: users can only see/update/delete their own notifications
+
+**Helper Functions:** `/src/lib/notifications.ts`
+- `createNotification()` - Create a new notification
+- `getNotifications()` - Fetch user's notifications (most recent first)
+- `getUnreadCount()` - Count of unread notifications
+- `markAsRead()` - Mark single notification as read
+- `markAllAsRead()` - Mark all as read
+- `formatRelativeTime()` - "2 minutes ago" formatting
+
+**Triggers:**
+1. **Staging Complete** - Created in `/api/staging/route.ts` (sync) and `/api/webhooks/replicate/route.ts` (async)
+2. **Staging Failed** - Same locations as above
+3. **Low Credits** - When credits drop to 3 or below after staging
+
+**UI Component:** `NotificationDropdown.tsx`
+- Polls for unread count every 30 seconds
+- Fetches full notification list when dropdown opens
+- Click notification → marks as read + navigates to link
+- Glass effect styling consistent with app design
 
 ---
 

@@ -154,6 +154,7 @@ Full monetization with Stripe.
 | Glassmorphism UI redesign | Medium | ✅ Complete |
 | Custom typography (Outfit/Lato) | Low | ✅ Complete |
 | Floating search & notifications | Medium | ✅ Complete |
+| Persistent notification system | Medium | ✅ Complete |
 | Personalized dashboard greeting | Low | ✅ Complete |
 | Payment integration | Low | Planned |
 | Team accounts | Low | Future |
@@ -295,6 +296,7 @@ vercel logs
 - **profiles** - User profiles with credits
 - **properties** - Real estate properties
 - **staging_jobs** - Staging job records
+- **notifications** - Persistent user notifications
 
 ### Key Fields
 ```
@@ -374,6 +376,8 @@ staging_jobs:
 | 1.072 | 2025-01-16 | Stronger glassmorphism (40% cards), personalized dashboard greeting |
 | 1.073 | 2025-01-16 | Layout restructure: removed header, floating controls, sidebar user avatar |
 | 1.074 | 2025-01-16 | 100px top padding, standardized heading sizes across all pages |
+| 1.085 | 2025-01-16 | Persistent notification system: database, dropdown UI, staging/credits triggers |
+| 1.086 | 2025-01-16 | Fixed search bar input overlay styling |
 | 1.0.0 | TBD | MVP release |
 
 ---
