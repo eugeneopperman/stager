@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import { Bell, Check, CheckCheck, ImageIcon, CreditCard, X, Loader2 } from "lucide-react";
+import { Bell, CheckCheck, ImageIcon, CreditCard, X, Loader2, Trash2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import {
@@ -16,6 +16,8 @@ import {
   getUnreadCount,
   markAsRead,
   markAllAsRead,
+  deleteNotification,
+  deleteAllNotifications,
   formatRelativeTime,
 } from "@/lib/notifications";
 import type { Notification, NotificationType } from "@/lib/database.types";
@@ -111,6 +113,27 @@ export function NotificationDropdown() {
     setUnreadCount(0);
   };
 
+  // Delete single notification
+  const handleDeleteNotification = async (
+    e: React.MouseEvent,
+    notification: Notification
+  ) => {
+    e.stopPropagation(); // Prevent triggering the notification click
+    await deleteNotification(supabase, notification.id);
+    setNotifications((prev) => prev.filter((n) => n.id !== notification.id));
+    if (!notification.is_read) {
+      setUnreadCount((prev) => Math.max(0, prev - 1));
+    }
+  };
+
+  // Clear all notifications
+  const handleClearAll = async () => {
+    if (!userId) return;
+    await deleteAllNotifications(supabase, userId);
+    setNotifications([]);
+    setUnreadCount(0);
+  };
+
   return (
     <Popover open={open} onOpenChange={handleOpenChange}>
       <PopoverTrigger asChild>
@@ -153,17 +176,30 @@ export function NotificationDropdown() {
             <Bell className="h-4 w-4 text-muted-foreground" />
             <span className="font-semibold">Notifications</span>
           </div>
-          {unreadCount > 0 && (
-            <Button
-              variant="ghost"
-              size="sm"
-              className="h-7 text-xs text-muted-foreground hover:text-foreground"
-              onClick={handleMarkAllAsRead}
-            >
-              <CheckCheck className="h-3.5 w-3.5 mr-1" />
-              Mark all read
-            </Button>
-          )}
+          <div className="flex items-center gap-1">
+            {unreadCount > 0 && (
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-7 text-xs text-muted-foreground hover:text-foreground"
+                onClick={handleMarkAllAsRead}
+              >
+                <CheckCheck className="h-3.5 w-3.5 mr-1" />
+                Mark all read
+              </Button>
+            )}
+            {notifications.length > 0 && (
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-7 text-xs text-muted-foreground hover:text-destructive"
+                onClick={handleClearAll}
+              >
+                <Trash2 className="h-3.5 w-3.5 mr-1" />
+                Clear all
+              </Button>
+            )}
+          </div>
         </div>
 
         {/* Content */}
@@ -191,16 +227,22 @@ export function NotificationDropdown() {
                 const iconColor = notificationColors[notification.type];
 
                 return (
-                  <button
+                  <div
                     key={notification.id}
-                    onClick={() => handleNotificationClick(notification)}
                     className={cn(
-                      "w-full flex items-start gap-3 px-4 py-3 text-left",
+                      "group relative w-full flex items-start gap-3 px-4 py-3 text-left",
                       "transition-colors duration-150",
                       "hover:bg-accent/50 dark:hover:bg-white/5",
                       !notification.is_read && "bg-primary/5"
                     )}
                   >
+                    {/* Clickable area for notification */}
+                    <button
+                      onClick={() => handleNotificationClick(notification)}
+                      className="absolute inset-0 w-full h-full"
+                      aria-label={`View ${notification.title}`}
+                    />
+
                     {/* Unread indicator */}
                     <div className="mt-1.5 shrink-0">
                       {!notification.is_read ? (
@@ -234,7 +276,22 @@ export function NotificationDropdown() {
                         {formatRelativeTime(notification.created_at)}
                       </p>
                     </div>
-                  </button>
+
+                    {/* Delete button - appears on hover */}
+                    <button
+                      onClick={(e) => handleDeleteNotification(e, notification)}
+                      className={cn(
+                        "relative z-10 p-1.5 rounded-full shrink-0",
+                        "opacity-0 group-hover:opacity-100",
+                        "transition-opacity duration-150",
+                        "hover:bg-destructive/10 text-muted-foreground hover:text-destructive",
+                        "focus:opacity-100 focus:outline-none focus:ring-2 focus:ring-destructive/50"
+                      )}
+                      aria-label="Delete notification"
+                    >
+                      <X className="h-4 w-4" />
+                    </button>
+                  </div>
                 );
               })}
             </div>

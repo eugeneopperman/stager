@@ -136,6 +136,26 @@ export async function deleteNotification(
 }
 
 /**
+ * Delete all notifications for a user
+ */
+export async function deleteAllNotifications(
+  supabase: SupabaseClientType,
+  userId: string
+): Promise<{ success: boolean; error?: string }> {
+  const { error } = await supabase
+    .from("notifications")
+    .delete()
+    .eq("user_id", userId);
+
+  if (error) {
+    console.error("Failed to delete all notifications:", error);
+    return { success: false, error: error.message };
+  }
+
+  return { success: true };
+}
+
+/**
  * Helper to format notification time as relative (e.g., "2 minutes ago")
  */
 export function formatRelativeTime(dateString: string): string {
