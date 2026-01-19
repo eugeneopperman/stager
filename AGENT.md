@@ -521,6 +521,38 @@ const handleCardClick = (filter: string) => {
 
 ---
 
+## Version Management
+
+The app version is displayed in the UI and stored in `/src/lib/version.ts`:
+
+```typescript
+export const APP_VERSION = "1.096";
+```
+
+**Important:** When deploying new features, remember to update this version number. It's easy to forget since it's a separate file from the main changes.
+
+---
+
+## Step Indicator Centering Pattern
+
+When building step indicators with connector lines, avoid `flex-1` on the last step to prevent extra space:
+
+```tsx
+// BAD - creates empty space after last step
+<div className="flex items-center flex-1">
+  {/* step content */}
+  {!isLastStep && <div className="flex-1">{/* connector */}</div>}
+</div>
+
+// GOOD - last step doesn't expand
+<div className={cn("flex items-center", !isLastStep && "flex-1")}>
+  {/* step content */}
+  {!isLastStep && <div className="flex-1">{/* connector */}</div>}
+</div>
+```
+
+---
+
 ## Session Continuity Tips
 
 1. Read `CLAUDE.md` for project overview and conventions

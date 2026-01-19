@@ -386,7 +386,10 @@ staging_jobs:
 | 1.090 | 2025-01-16 | Mobile sidebar auto-close on navigation |
 | 1.091 | 2025-01-16 | Auto-close mobile sidebar on navigation |
 | 1.092 | 2025-01-16 | Add delete functionality to notifications panel |
-| 1.093 | 2025-01-18 | 4-step wizard flow for Stage Photo page with Guided/Quick mode toggle |
+| 1.093 | 2025-01-19 | 4-step wizard flow for Stage Photo page with Guided/Quick mode toggle |
+| 1.094 | 2025-01-19 | Wizard step indicator centering adjustments |
+| 1.095 | 2025-01-19 | Align step indicator width with upload card |
+| 1.096 | 2025-01-19 | Fix step indicator centering - remove flex-1 from last step |
 | 1.0.0 | TBD | MVP release |
 
 ---

@@ -190,6 +190,7 @@ NEXT_PUBLIC_APP_URL=http://localhost:3000
 | `src/lib/supabase/middleware.ts` | Middleware Supabase client |
 | `src/lib/gemini.ts` | Gemini API integration with inpainting-focused prompt |
 | `src/lib/constants.ts` | Room types, styles (with image paths), credit thresholds |
+| `src/lib/version.ts` | App version number displayed in UI |
 | `src/lib/database.types.ts` | TypeScript types for Supabase tables |
 | `src/lib/notifications.ts` | Notification helper functions (create, fetch, mark read) |
 | `src/middleware.ts` | Auth protection middleware |
