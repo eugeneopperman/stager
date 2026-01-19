@@ -43,8 +43,10 @@ export function WizardStepIndicator({
           const isCurrent = currentIndex === step.number;
           const isUpcoming = currentIndex < step.number;
 
+          const isLastStep = index === STEPS.length - 1;
+
           return (
-            <div key={step.id} className="flex items-center flex-1">
+            <div key={step.id} className={cn("flex items-center", !isLastStep && "flex-1")}>
               {/* Step indicator */}
               <div className="flex flex-col items-center gap-2">
                 <div
@@ -75,7 +77,7 @@ export function WizardStepIndicator({
               </div>
 
               {/* Connector line (except for last step) */}
-              {index < STEPS.length - 1 && (
+              {!isLastStep && (
                 <div className="flex-1 px-2 sm:px-4">
                   <div
                     className={cn(
