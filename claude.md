@@ -55,6 +55,7 @@ Stager is a web application designed for real estate agents to virtually stage p
 │   │   ├── ui/                # shadcn/ui components
 │   │   ├── layout/            # FloatingControls, Sidebar (with user avatar)
 │   │   ├── staging/           # Staging components (uploaders, selectors)
+│   │   │   └── wizard/        # 4-step wizard components
 │   │   ├── properties/        # Property management components
 │   │   └── dashboard/         # Dashboard widgets
 │   │
@@ -205,8 +206,16 @@ NEXT_PUBLIC_APP_URL=http://localhost:3000
 | `src/components/staging/StyleGallery.tsx` | Visual style grid with thumbnail images |
 | `src/components/staging/CreditDisplay.tsx` | Inline credit usage progress bar |
 | `src/components/staging/PropertySelector.tsx` | Property selection with inline create |
+| `src/components/staging/QuickStageLayout.tsx` | Original two-panel layout for Quick mode |
+| `src/components/staging/wizard/StagingWizard.tsx` | Main wizard container with step routing |
+| `src/components/staging/wizard/WizardStepIndicator.tsx` | 4-step visual progress bar |
+| `src/components/staging/wizard/WizardNavigation.tsx` | Reusable Back/Next/Skip buttons |
+| `src/components/staging/wizard/UploadStep.tsx` | Step 1: Upload with speed messaging |
+| `src/components/staging/wizard/PrepareStep.tsx` | Step 2: Preprocessing with skip option |
+| `src/components/staging/wizard/StyleStep.tsx` | Step 3: Room type and style selection |
+| `src/components/staging/wizard/GenerateStep.tsx` | Step 4: Summary and generate |
 | `src/app/(dashboard)/DashboardShell.tsx` | Dashboard layout with max-w-7xl container |
-| `src/app/(dashboard)/stage/page.tsx` | Two-panel staging interface |
+| `src/app/(dashboard)/stage/page.tsx` | Stage page with Guided/Quick mode toggle |
 | `src/app/(dashboard)/stage/batch/page.tsx` | Batch staging workflow |
 | `src/app/(dashboard)/settings/ThemeSelector.tsx` | Light/dark/system theme picker |
 | `src/app/(dashboard)/settings/SidebarSettings.tsx` | Sidebar behavior settings |

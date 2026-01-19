@@ -95,6 +95,18 @@ useEffect(() => {
 | `RoomTypeSelector.tsx` | Room type button grid (legacy) |
 | `RoomTypeDropdown.tsx` | Compact room type dropdown with icons |
 | `CreditDisplay.tsx` | Inline credit usage progress bar |
+| `QuickStageLayout.tsx` | Original two-panel layout for Quick mode |
+
+### Wizard Components (`/src/components/staging/wizard/`)
+| Component | Purpose |
+|-----------|---------|
+| `StagingWizard.tsx` | Main wizard container with state management |
+| `WizardStepIndicator.tsx` | Visual 4-step progress bar with icons |
+| `WizardNavigation.tsx` | Reusable Back/Next/Skip navigation buttons |
+| `UploadStep.tsx` | Step 1: Full-width upload with speed messaging |
+| `PrepareStep.tsx` | Step 2: Preprocessing tools with skip option |
+| `StyleStep.tsx` | Step 3: Room type and style selection |
+| `GenerateStep.tsx` | Step 4: Summary and generate button |
 
 ### Property Detail Components (`/src/app/(dashboard)/properties/[id]/`)
 | Component | Purpose |
@@ -319,9 +331,54 @@ The app uses floating controls instead of a traditional header bar:
 
 ---
 
-## Stage Page Two-Panel Layout
+## Stage Page Wizard Flow
 
-The Stage Photo page (`/stage`) uses a two-panel layout for better UX:
+The Stage Photo page (`/stage`) has two modes: **Guided** (wizard) and **Quick** (two-panel).
+
+### Mode Toggle Pattern
+Users can switch between modes via a toggle in the page header. The preference is stored in localStorage:
+
+```typescript
+const STORAGE_KEY = "stager-staging-mode";
+
+// Load on mount
+useEffect(() => {
+  const stored = localStorage.getItem(STORAGE_KEY) as "guided" | "quick" | null;
+  if (stored) setMode(stored);
+}, []);
+
+// Save on change
+const handleModeChange = (newMode: "guided" | "quick") => {
+  setMode(newMode);
+  localStorage.setItem(STORAGE_KEY, newMode);
+};
+```
+
+### Wizard State Machine
+The guided mode uses a state machine pattern for the 4-step flow:
+
+```typescript
+type WizardStep = "upload" | "prepare" | "style" | "generate" | "processing" | "complete";
+```
+
+**Step transitions:**
+- Upload → Prepare (auto-advance on image select)
+- Prepare → Style (Continue or Skip button)
+- Style → Generate (Continue button, requires room type + style)
+- Generate → Processing (Generate button click)
+- Processing → Complete (all variations done)
+
+### Wizard Components Architecture
+- `StagingWizard.tsx` - Main container with all state and processing logic
+- Step components receive props and callbacks, no internal state for wizard flow
+- `WizardStepIndicator` is purely presentational, receives current step
+- `WizardNavigation` is reusable across steps with configurable buttons
+
+---
+
+## Stage Page Two-Panel Layout (Quick Mode)
+
+The Quick mode uses a two-panel layout for power users:
 
 **Layout Structure:**
 ```

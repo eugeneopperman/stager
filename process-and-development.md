@@ -156,6 +156,8 @@ Full monetization with Stripe.
 | Floating search & notifications | Medium | ✅ Complete |
 | Persistent notification system | Medium | ✅ Complete |
 | Personalized dashboard greeting | Low | ✅ Complete |
+| Stage page 4-step wizard | Medium | ✅ Complete |
+| Guided/Quick mode toggle | Low | ✅ Complete |
 | Payment integration | Low | Planned |
 | Team accounts | Low | Future |
 
@@ -381,6 +383,10 @@ staging_jobs:
 | 1.087 | 2025-01-16 | History page stats cards clickable as filters with visual indicator |
 | 1.088 | 2025-01-16 | User avatar dropdown: Title Case name, lowercase email, wider popup |
 | 1.089 | 2025-01-16 | Fixed dropdown label CSS uppercase override |
+| 1.090 | 2025-01-16 | Mobile sidebar auto-close on navigation |
+| 1.091 | 2025-01-16 | Auto-close mobile sidebar on navigation |
+| 1.092 | 2025-01-16 | Add delete functionality to notifications panel |
+| 1.093 | 2025-01-18 | 4-step wizard flow for Stage Photo page with Guided/Quick mode toggle |
 | 1.0.0 | TBD | MVP release |
 
 ---
