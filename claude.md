@@ -262,3 +262,15 @@ When the user prompts "wrap up this session", update the following documentation
    - Any new patterns or conventions established
 
 After updating, commit the documentation changes with message: "Update documentation for session [date]"
+
+### "let's get ready to code"
+When the user prompts "let's get ready to code", review and familiarize yourself with the codebase by reading:
+
+1. **CLAUDE.md** - Project overview, tech stack, directory structure, patterns, and conventions
+2. **AGENT.md** - Agent notes, lessons learned, and debugging tips from previous sessions
+3. **process-and-development.md** - Development roadmap, version history, and feature status
+
+After reviewing, provide a brief summary of:
+- Current project state and recent changes
+- Any pending tasks or known issues
+- Ready to receive instructions for the session

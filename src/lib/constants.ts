@@ -83,6 +83,9 @@ export const DEFAULT_CREDITS = 10;
 export const CREDITS_PER_STAGING = 1;
 export const LOW_CREDITS_THRESHOLD = 3; // Show warning when credits fall to this level or below
 
+// Time estimates for user feedback
+export const STAGING_TIME_ESTIMATE = "15-30 seconds";
+
 export const ACCEPTED_IMAGE_TYPES = [
   "image/jpeg",
   "image/jpg",
