@@ -591,7 +591,7 @@ export function StagingWizard() {
   return (
     <div className="space-y-6">
       {/* Step indicator */}
-      <WizardStepIndicator currentStep={step} className="max-w-3xl mx-auto" />
+      <WizardStepIndicator currentStep={step} className="max-w-2xl mx-auto" />
 
       {/* Error alert */}
       {error && (
