@@ -90,12 +90,12 @@ export function PropertiesListClient({ properties }: PropertiesListClientProps) 
         <div className="flex flex-col sm:flex-row sm:flex-wrap sm:items-center gap-3">
           {/* Search */}
           <div className="relative flex-1 min-w-0 sm:min-w-[200px]">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground z-10 pointer-events-none" />
             <Input
               placeholder="Search properties..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-9 bg-card/60 backdrop-blur-sm"
+              className="pl-9"
             />
           </div>
 

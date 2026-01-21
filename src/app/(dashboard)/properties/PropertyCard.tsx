@@ -16,9 +16,11 @@ import {
   Camera,
   Star,
   Loader2,
+  Download,
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { EditPropertyDialog } from "./EditPropertyDialog";
+import { BatchDownloadDialog } from "@/components/download/BatchDownloadDialog";
 import type { Property } from "@/lib/database.types";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
@@ -32,6 +34,7 @@ export function PropertyCard({ property }: PropertyCardProps) {
   const [isDeleting, setIsDeleting] = useState(false);
   const [isTogglingFavorite, setIsTogglingFavorite] = useState(false);
   const [showEditDialog, setShowEditDialog] = useState(false);
+  const [showDownloadDialog, setShowDownloadDialog] = useState(false);
   const [isFavorite, setIsFavorite] = useState(property.is_favorite || false);
 
   const hasPreviewImage = !!property.previewImageUrl;
@@ -169,6 +172,25 @@ export function PropertyCard({ property }: PropertyCardProps) {
               </TooltipContent>
             </Tooltip>
 
+            {/* Download All - only show if there are staged images */}
+            {property.stagingCount > 0 && (
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      e.preventDefault();
+                      setShowDownloadDialog(true);
+                    }}
+                    className="p-2.5 sm:p-1.5 rounded-full transition-colors hover:bg-white/20 text-white"
+                  >
+                    <Download className="h-4 w-4" />
+                  </button>
+                </TooltipTrigger>
+                <TooltipContent>Download All</TooltipContent>
+              </Tooltip>
+            )}
+
             {/* Edit - larger touch target on mobile */}
             <Tooltip>
               <TooltipTrigger asChild>
@@ -239,6 +261,16 @@ export function PropertyCard({ property }: PropertyCardProps) {
         open={showEditDialog}
         onOpenChange={setShowEditDialog}
       />
+
+      {property.stagingCount > 0 && (
+        <BatchDownloadDialog
+          open={showDownloadDialog}
+          onOpenChange={setShowDownloadDialog}
+          propertyId={property.id}
+          propertyAddress={property.address}
+          imageCount={property.stagingCount}
+        />
+      )}
     </>
   );
 }
