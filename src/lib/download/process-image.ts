@@ -3,7 +3,6 @@ import { getResolutionConfig, type ResolutionPreset } from "./presets";
 import {
   generateWatermarkBuffer,
   getWatermarkPosition,
-  calculateWatermarkDimensions,
 } from "./watermark";
 
 export interface ProcessImageOptions {
@@ -80,19 +79,23 @@ export async function processImage(
     const finalWidth = resizedMetadata.width || targetWidth;
     const finalHeight = resizedMetadata.height || targetHeight;
 
-    // Generate watermark
-    const watermarkDimensions = calculateWatermarkDimensions(finalWidth);
-    const watermarkBuffer = generateWatermarkBuffer({
+    // Generate watermark (now async)
+    const watermarkBuffer = await generateWatermarkBuffer({
       imageWidth: finalWidth,
       imageHeight: finalHeight,
     });
+
+    // Get watermark dimensions
+    const watermarkMeta = await sharp(watermarkBuffer).metadata();
+    const watermarkWidth = watermarkMeta.width || 100;
+    const watermarkHeight = watermarkMeta.height || 40;
 
     // Calculate position
     const position = getWatermarkPosition(
       finalWidth,
       finalHeight,
-      watermarkDimensions.width,
-      watermarkDimensions.height
+      watermarkWidth,
+      watermarkHeight
     );
 
     // Composite the watermark onto the image
