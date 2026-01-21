@@ -268,5 +268,9 @@ export async function GET(
     createdAt: job.created_at,
     completedAt: job.completed_at,
     processingTimeMs: job.processing_time_ms,
+    // Version tracking fields
+    versionGroupId: job.version_group_id,
+    isPrimaryVersion: job.is_primary_version,
+    parentJobId: job.parent_job_id,
   });
 }

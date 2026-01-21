@@ -34,6 +34,8 @@ import {
   Check,
   Trash2,
   Star,
+  RefreshCw,
+  Layers,
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import type { StagingJob } from "@/lib/database.types";
@@ -41,6 +43,8 @@ import Link from "next/link";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { DownloadDialog } from "@/components/download/DownloadDialog";
+import { RemixDialog } from "@/components/staging/RemixDialog";
+import { VersionThumbnailStrip } from "@/components/staging/VersionThumbnailStrip";
 
 interface PropertyOption {
   id: string;
@@ -64,6 +68,8 @@ export function HistoryJobCard({ job, properties }: HistoryJobCardProps) {
   const [isFavorite, setIsFavorite] = useState(job.is_favorite || false);
   const [showOriginal, setShowOriginal] = useState(false);
   const [showDownloadDialog, setShowDownloadDialog] = useState(false);
+  const [showRemixDialog, setShowRemixDialog] = useState(false);
+  const [versionCount, setVersionCount] = useState<number | null>(null);
 
   const currentProperty = properties.find((p) => p.id === currentPropertyId);
   const hasOriginalImage = job.original_image_url && !job.original_image_url.includes("...");
@@ -158,6 +164,11 @@ export function HistoryJobCard({ job, properties }: HistoryJobCardProps) {
   const handleToggleCompare = (e: React.MouseEvent) => {
     e.stopPropagation();
     setShowOriginal(!showOriginal);
+  };
+
+  const handleRemix = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setShowRemixDialog(true);
   };
 
   const handleDelete = async (e: React.MouseEvent) => {
@@ -301,6 +312,21 @@ export function HistoryJobCard({ job, properties }: HistoryJobCardProps) {
             </Tooltip>
           )}
 
+          {/* Remix */}
+          {isCompleted && hasOriginalImage && (
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <button
+                  onClick={handleRemix}
+                  className="p-1.5 rounded-full transition-colors hover:bg-white/20 text-white"
+                >
+                  <RefreshCw className="h-4 w-4" />
+                </button>
+              </TooltipTrigger>
+              <TooltipContent>Remix with Different Style</TooltipContent>
+            </Tooltip>
+          )}
+
           {/* Download */}
           {isCompleted && job.staged_image_url && (
             <Tooltip>
@@ -402,11 +428,24 @@ export function HistoryJobCard({ job, properties }: HistoryJobCardProps) {
 
         {/* Bottom Gradient + Info */}
         <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent p-4 pt-12">
-          <h3 className="text-white font-semibold text-sm">{roomTypeLabel}</h3>
-          <p className="text-white/70 text-xs truncate">
-            {styleLabel}
-            {currentProperty && ` • ${currentProperty.address}`}
-          </p>
+          <div className="flex items-center justify-between">
+            <div className="min-w-0 flex-1">
+              <h3 className="text-white font-semibold text-sm">{roomTypeLabel}</h3>
+              <p className="text-white/70 text-xs truncate">
+                {styleLabel}
+                {currentProperty && ` • ${currentProperty.address}`}
+              </p>
+            </div>
+            {/* Version badge */}
+            {job.version_group_id && (
+              <div className="flex items-center gap-1 px-2 py-0.5 rounded-full bg-white/20 backdrop-blur-sm">
+                <Layers className="h-3 w-3 text-white" />
+                {job.is_primary_version && (
+                  <Star className="h-3 w-3 text-yellow-400 fill-current" />
+                )}
+              </div>
+            )}
+          </div>
         </div>
       </div>
 
@@ -515,6 +554,15 @@ export function HistoryJobCard({ job, properties }: HistoryJobCardProps) {
           imageUrl={job.staged_image_url}
           roomType={job.room_type}
           style={job.style}
+        />
+      )}
+
+      {/* Remix Dialog */}
+      {isCompleted && hasOriginalImage && (
+        <RemixDialog
+          open={showRemixDialog}
+          onOpenChange={setShowRemixDialog}
+          job={job}
         />
       )}
     </>

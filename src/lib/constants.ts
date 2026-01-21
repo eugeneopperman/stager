@@ -95,3 +95,8 @@ export const ACCEPTED_IMAGE_TYPES = [
 
 export const MAX_IMAGE_SIZE = 10 * 1024 * 1024; // 10MB
 export const MAX_BATCH_SIZE = 10; // Maximum images per batch staging
+
+// Remix and version control constants
+export const FREE_REMIXES_PER_IMAGE = 2; // Number of free remixes per original image
+export const CREDITS_PER_REMIX = 1; // Credits charged after free remixes
+export const VERSION_WARNING_THRESHOLD = 5; // Warn user when creating 6th+ version

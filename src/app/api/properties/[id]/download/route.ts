@@ -46,6 +46,36 @@ export async function GET(
     return NextResponse.json({ error: "No completed images to download" }, { status: 400 });
   }
 
+  // Filter to only include primary versions when there are version groups
+  // For jobs without version groups, include them all
+  // For jobs with version groups, only include the primary version (or first if no primary)
+  const versionGroupJobs = new Map<string, typeof stagingJobs>();
+  const jobsWithoutVersionGroup: typeof stagingJobs = [];
+
+  for (const job of stagingJobs) {
+    if (job.version_group_id) {
+      const existing = versionGroupJobs.get(job.version_group_id) || [];
+      existing.push(job);
+      versionGroupJobs.set(job.version_group_id, existing);
+    } else {
+      jobsWithoutVersionGroup.push(job);
+    }
+  }
+
+  // For each version group, select the primary version (or first completed if no primary)
+  const filteredJobs = [...jobsWithoutVersionGroup];
+  for (const [, groupJobs] of versionGroupJobs) {
+    const primaryJob = groupJobs.find((j) => j.is_primary_version);
+    if (primaryJob) {
+      filteredJobs.push(primaryJob);
+    } else if (groupJobs.length > 0) {
+      filteredJobs.push(groupJobs[0]); // Fallback to first job
+    }
+  }
+
+  // Sort by created_at for consistent ordering
+  filteredJobs.sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime());
+
   // Create ZIP file
   const zip = new JSZip();
 
@@ -64,7 +94,7 @@ export async function GET(
   const roomTypeCounts: Record<string, number> = {};
 
   // Fetch and add each image to the ZIP
-  for (const job of stagingJobs) {
+  for (const job of filteredJobs) {
     if (!job.staged_image_url) continue;
 
     try {

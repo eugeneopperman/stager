@@ -28,6 +28,7 @@ import {
   XCircle,
   ArrowLeftRight,
   Cpu,
+  RefreshCw,
 } from "lucide-react";
 
 interface StagedVariation {
@@ -338,6 +339,16 @@ export function StagingWizard() {
       });
   };
 
+  const handleTryDifferentStyle = () => {
+    // Keep the image but go back to style selection
+    // Clear previous style selections and variations
+    setStyles([]);
+    setVariations([]);
+    setError(null);
+    setCompareIndex(0);
+    setStep("style");
+  };
+
   const getStyleLabel = (styleId: FurnitureStyle) => {
     return FURNITURE_STYLES.find((s) => s.id === styleId)?.label || styleId;
   };
@@ -451,6 +462,10 @@ export function StagingWizard() {
                 Download All
               </Button>
             )}
+            <Button variant="outline" onClick={handleTryDifferentStyle}>
+              <RefreshCw className="mr-2 h-4 w-4" />
+              Try Different Style
+            </Button>
             <Button onClick={handleReset}>
               <RotateCcw className="mr-2 h-4 w-4" />
               Stage Another

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -13,10 +13,15 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { Download, Eye, ArrowLeftRight } from "lucide-react";
+import { Download, Eye, ArrowLeftRight, RefreshCw, Star, Loader2 } from "lucide-react";
 import type { StagingJob } from "@/lib/database.types";
 import { cn } from "@/lib/utils";
 import { DownloadDialog } from "@/components/download/DownloadDialog";
+import { RemixDialog } from "@/components/staging/RemixDialog";
+import { VersionThumbnailStrip } from "@/components/staging/VersionThumbnailStrip";
+import { createClient } from "@/lib/supabase/client";
+import { toast } from "sonner";
+import { useRouter } from "next/navigation";
 
 interface StagedImageCardProps {
   job: StagingJob;
@@ -24,11 +29,70 @@ interface StagedImageCardProps {
 }
 
 export function StagedImageCard({ job, propertyAddress }: StagedImageCardProps) {
+  const router = useRouter();
   const [showDetail, setShowDetail] = useState(false);
   const [showComparison, setShowComparison] = useState(false);
   const [sliderPosition, setSliderPosition] = useState(50);
   const [showOriginal, setShowOriginal] = useState(false);
   const [showDownloadDialog, setShowDownloadDialog] = useState(false);
+  const [showRemixDialog, setShowRemixDialog] = useState(false);
+  const [versions, setVersions] = useState<StagingJob[]>([]);
+  const [currentJob, setCurrentJob] = useState<StagingJob>(job);
+  const [isSettingPrimary, setIsSettingPrimary] = useState(false);
+
+  // Fetch versions when job has a version group
+  useEffect(() => {
+    if (job.version_group_id) {
+      fetchVersions();
+    }
+  }, [job.version_group_id]);
+
+  const fetchVersions = async () => {
+    try {
+      const response = await fetch(`/api/staging/versions?jobId=${job.id}`);
+      if (response.ok) {
+        const data = await response.json();
+        setVersions(data.versions || []);
+      }
+    } catch (error) {
+      console.error("Failed to fetch versions:", error);
+    }
+  };
+
+  const handleSetPrimary = async (version: StagingJob) => {
+    setIsSettingPrimary(true);
+    try {
+      const response = await fetch(`/api/staging/${version.id}/primary`, {
+        method: "PUT",
+      });
+      if (response.ok) {
+        toast.success("Set as primary version");
+        // Update local state
+        setVersions((prev) =>
+          prev.map((v) => ({
+            ...v,
+            is_primary_version: v.id === version.id,
+          }))
+        );
+        router.refresh();
+      } else {
+        throw new Error("Failed to set primary version");
+      }
+    } catch (error) {
+      toast.error("Failed to set primary version");
+    } finally {
+      setIsSettingPrimary(false);
+    }
+  };
+
+  const handleVersionSelect = (version: StagingJob) => {
+    setCurrentJob(version);
+  };
+
+  const handleRemix = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setShowRemixDialog(true);
+  };
 
   const formatRoomType = (roomType: string) => {
     return roomType
@@ -70,10 +134,11 @@ export function StagedImageCard({ job, propertyAddress }: StagedImageCardProps) 
     setShowOriginal(!showOriginal);
   };
 
-  const hasOriginalImage = job.original_image_url && !job.original_image_url.includes("...");
+  const hasOriginalImage = currentJob.original_image_url && !currentJob.original_image_url.includes("...");
   const displayImageUrl = showOriginal && hasOriginalImage
-    ? job.original_image_url
-    : job.staged_image_url;
+    ? currentJob.original_image_url
+    : currentJob.staged_image_url;
+  const hasVersions = versions.length > 1;
 
   return (
     <>
@@ -132,6 +197,21 @@ export function StagedImageCard({ job, propertyAddress }: StagedImageCardProps) 
             </Tooltip>
           )}
 
+          {/* Remix */}
+          {hasOriginalImage && (
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <button
+                  onClick={handleRemix}
+                  className="p-1.5 rounded-full transition-colors hover:bg-white/20 text-white"
+                >
+                  <RefreshCw className="h-4 w-4" />
+                </button>
+              </TooltipTrigger>
+              <TooltipContent>Remix with Different Style</TooltipContent>
+            </Tooltip>
+          )}
+
           {/* View */}
           <Tooltip>
             <TooltipTrigger asChild>
@@ -161,28 +241,62 @@ export function StagedImageCard({ job, propertyAddress }: StagedImageCardProps) 
 
         {/* Bottom Gradient + Info */}
         <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent p-4 pt-12">
-          <h3 className="text-white font-semibold text-sm">
-            {formatRoomType(job.room_type)}
-          </h3>
-          <p className="text-white/70 text-xs">
-            {formatStyle(job.style)} • {formatShortDate(job.created_at)}
-          </p>
+          <div className="flex items-center justify-between">
+            <div className="min-w-0 flex-1">
+              <h3 className="text-white font-semibold text-sm">
+                {formatRoomType(currentJob.room_type)}
+              </h3>
+              <p className="text-white/70 text-xs">
+                {formatStyle(currentJob.style)} • {formatShortDate(currentJob.created_at)}
+              </p>
+            </div>
+            {/* Primary badge */}
+            {currentJob.is_primary_version && (
+              <div className="flex items-center gap-1 px-2 py-0.5 rounded-full bg-yellow-500/80 backdrop-blur-sm">
+                <Star className="h-3 w-3 text-white fill-current" />
+                <span className="text-[10px] text-white font-medium">Primary</span>
+              </div>
+            )}
+          </div>
         </div>
       </div>
+
+      {/* Version Thumbnail Strip */}
+      {hasVersions && (
+        <VersionThumbnailStrip
+          versions={versions}
+          currentVersionId={currentJob.id}
+          onVersionSelect={handleVersionSelect}
+          onSetPrimary={handleSetPrimary}
+          isSettingPrimary={isSettingPrimary}
+          className="mt-2"
+        />
+      )}
 
       {/* Detail Dialog */}
       <Dialog open={showDetail} onOpenChange={setShowDetail}>
         <DialogContent className="max-w-4xl">
           <DialogHeader>
             <DialogTitle>
-              {formatRoomType(job.room_type)} - {formatStyle(job.style)}
+              {formatRoomType(currentJob.room_type)} - {formatStyle(currentJob.style)}
             </DialogTitle>
           </DialogHeader>
 
           <div className="space-y-4">
+            {/* Version strip in dialog */}
+            {hasVersions && (
+              <VersionThumbnailStrip
+                versions={versions}
+                currentVersionId={currentJob.id}
+                onVersionSelect={handleVersionSelect}
+                onSetPrimary={handleSetPrimary}
+                isSettingPrimary={isSettingPrimary}
+              />
+            )}
+
             {/* Toggle - only show if original image exists */}
             {hasOriginalImage && (
-              <div className="flex justify-center">
+              <div className="flex justify-center gap-2">
                 <Button
                   variant={showComparison ? "default" : "outline"}
                   size="sm"
@@ -190,6 +304,14 @@ export function StagedImageCard({ job, propertyAddress }: StagedImageCardProps) 
                 >
                   <ArrowLeftRight className="h-4 w-4 mr-2" />
                   {showComparison ? "Hide Comparison" : "Compare Before/After"}
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setShowRemixDialog(true)}
+                >
+                  <RefreshCw className="h-4 w-4 mr-2" />
+                  Remix
                 </Button>
               </div>
             )}
@@ -201,7 +323,7 @@ export function StagedImageCard({ job, propertyAddress }: StagedImageCardProps) 
                 onMouseMove={handleSliderMove}
               >
                 <img
-                  src={job.original_image_url}
+                  src={currentJob.original_image_url}
                   alt="Original"
                   className="absolute inset-0 w-full h-full object-contain bg-muted"
                 />
@@ -210,7 +332,7 @@ export function StagedImageCard({ job, propertyAddress }: StagedImageCardProps) 
                   style={{ width: `${sliderPosition}%` }}
                 >
                   <img
-                    src={job.staged_image_url || ""}
+                    src={currentJob.staged_image_url || ""}
                     alt="Staged"
                     className="absolute inset-0 w-full h-full object-contain bg-muted"
                     style={{ width: `${100 / (sliderPosition / 100)}%`, maxWidth: "none" }}
@@ -234,7 +356,7 @@ export function StagedImageCard({ job, propertyAddress }: StagedImageCardProps) 
             ) : (
               <div className="rounded-lg overflow-hidden bg-muted">
                 <img
-                  src={job.staged_image_url || ""}
+                  src={currentJob.staged_image_url || ""}
                   alt="Staged room"
                   className="w-full h-auto max-h-[70vh] object-contain"
                 />
@@ -244,7 +366,13 @@ export function StagedImageCard({ job, propertyAddress }: StagedImageCardProps) 
             {/* Info & Actions */}
             <div className="flex items-center justify-between pt-4 border-t">
               <div className="text-sm text-muted-foreground">
-                {formatStyle(job.style)} style • {formatShortDate(job.created_at)}
+                {formatStyle(currentJob.style)} style • {formatShortDate(currentJob.created_at)}
+                {currentJob.is_primary_version && (
+                  <span className="ml-2 inline-flex items-center gap-1 text-yellow-600 dark:text-yellow-400">
+                    <Star className="h-3 w-3 fill-current" />
+                    Primary
+                  </span>
+                )}
               </div>
               <Button onClick={() => handleDownload()}>
                 <Download className="h-4 w-4 mr-2" />
@@ -256,14 +384,27 @@ export function StagedImageCard({ job, propertyAddress }: StagedImageCardProps) 
       </Dialog>
 
       {/* Download Dialog */}
-      {job.staged_image_url && (
+      {currentJob.staged_image_url && (
         <DownloadDialog
           open={showDownloadDialog}
           onOpenChange={setShowDownloadDialog}
-          jobId={job.id}
-          imageUrl={job.staged_image_url}
-          roomType={job.room_type}
-          style={job.style}
+          jobId={currentJob.id}
+          imageUrl={currentJob.staged_image_url}
+          roomType={currentJob.room_type}
+          style={currentJob.style}
+        />
+      )}
+
+      {/* Remix Dialog */}
+      {hasOriginalImage && (
+        <RemixDialog
+          open={showRemixDialog}
+          onOpenChange={setShowRemixDialog}
+          job={currentJob}
+          onRemixComplete={() => {
+            fetchVersions();
+            router.refresh();
+          }}
         />
       )}
     </>

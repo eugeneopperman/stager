@@ -133,6 +133,32 @@ export interface Database {
           created_at?: string;
         };
       };
+      version_groups: {
+        Row: {
+          id: string;
+          user_id: string;
+          original_image_hash: string;
+          original_image_url: string;
+          free_remixes_used: number;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          user_id: string;
+          original_image_hash: string;
+          original_image_url: string;
+          free_remixes_used?: number;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          user_id?: string;
+          original_image_hash?: string;
+          original_image_url?: string;
+          free_remixes_used?: number;
+          created_at?: string;
+        };
+      };
       staging_jobs: {
         Row: {
           id: string;
@@ -156,6 +182,10 @@ export interface Database {
           processing_time_ms: number | null;
           // Favorite feature
           is_favorite: boolean;
+          // Version/remix tracking
+          version_group_id: string | null;
+          is_primary_version: boolean;
+          parent_job_id: string | null;
         };
         Insert: {
           id?: string;
@@ -177,6 +207,10 @@ export interface Database {
           generation_params?: GenerationParamsJson | null;
           processing_time_ms?: number | null;
           is_favorite?: boolean;
+          // Version/remix tracking
+          version_group_id?: string | null;
+          is_primary_version?: boolean;
+          parent_job_id?: string | null;
         };
         Update: {
           id?: string;
@@ -198,6 +232,10 @@ export interface Database {
           generation_params?: GenerationParamsJson | null;
           processing_time_ms?: number | null;
           is_favorite?: boolean;
+          // Version/remix tracking
+          version_group_id?: string | null;
+          is_primary_version?: boolean;
+          parent_job_id?: string | null;
         };
       };
     };
@@ -217,3 +255,4 @@ export type Profile = Database["public"]["Tables"]["profiles"]["Row"];
 export type Property = Database["public"]["Tables"]["properties"]["Row"];
 export type StagingJob = Database["public"]["Tables"]["staging_jobs"]["Row"];
 export type Notification = Database["public"]["Tables"]["notifications"]["Row"];
+export type VersionGroup = Database["public"]["Tables"]["version_groups"]["Row"];
