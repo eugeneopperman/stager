@@ -10,7 +10,7 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Download, Loader2, FolderDown, Images } from "lucide-react";
+import { Download, Loader2, Images } from "lucide-react";
 import { DownloadOptions } from "./DownloadOptions";
 import type { ResolutionPreset } from "@/lib/download/presets";
 
@@ -30,21 +30,22 @@ export function BatchDownloadDialog({
   imageCount,
 }: BatchDownloadDialogProps) {
   const [resolution, setResolution] = useState<ResolutionPreset>("original");
-  const [watermark, setWatermark] = useState(false);
+  const [includeWatermark, setIncludeWatermark] = useState(false);
+  const [includeClean, setIncludeClean] = useState(true);
   const [isDownloading, setIsDownloading] = useState(false);
-  const [isDownloadingBoth, setIsDownloadingBoth] = useState(false);
 
-  const handleDownload = async (includeClean = false) => {
-    const setLoading = includeClean ? setIsDownloadingBoth : setIsDownloading;
-    setLoading(true);
+  const handleDownload = async () => {
+    setIsDownloading(true);
 
     try {
+      const needsBoth = includeWatermark && includeClean;
+
       // Build the download URL
       const params = new URLSearchParams({
         propertyId,
         resolution,
-        watermark: includeClean ? "true" : String(watermark),
-        includeClean: String(includeClean),
+        watermark: String(includeWatermark),
+        includeClean: String(needsBoth),
       });
 
       const response = await fetch(`/api/download/batch?${params.toString()}`);
@@ -74,7 +75,7 @@ export function BatchDownloadDialog({
     } catch (error) {
       console.error("Batch download failed:", error);
     } finally {
-      setLoading(false);
+      setIsDownloading(false);
     }
   };
 
@@ -105,32 +106,19 @@ export function BatchDownloadDialog({
           {/* Download Options */}
           <DownloadOptions
             resolution={resolution}
-            watermark={watermark}
+            includeWatermark={includeWatermark}
+            includeClean={includeClean}
             onResolutionChange={setResolution}
-            onWatermarkChange={setWatermark}
+            onIncludeWatermarkChange={setIncludeWatermark}
+            onIncludeCleanChange={setIncludeClean}
           />
         </div>
 
-        <DialogFooter className="flex-col sm:flex-row gap-2">
-          {watermark && (
-            <Button
-              variant="outline"
-              onClick={() => handleDownload(true)}
-              disabled={isDownloading || isDownloadingBoth}
-              className="w-full sm:w-auto"
-            >
-              {isDownloadingBoth ? (
-                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-              ) : (
-                <FolderDown className="h-4 w-4 mr-2" />
-              )}
-              Download Both
-            </Button>
-          )}
+        <DialogFooter>
           <Button
-            onClick={() => handleDownload(false)}
-            disabled={isDownloading || isDownloadingBoth}
-            className="w-full sm:w-auto"
+            onClick={handleDownload}
+            disabled={isDownloading}
+            className="w-full"
           >
             {isDownloading ? (
               <Loader2 className="h-4 w-4 mr-2 animate-spin" />

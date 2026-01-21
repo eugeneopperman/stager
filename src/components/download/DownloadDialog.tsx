@@ -9,7 +9,7 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Download, Loader2, FolderDown } from "lucide-react";
+import { Download, Loader2 } from "lucide-react";
 import { DownloadOptions } from "./DownloadOptions";
 import type { ResolutionPreset } from "@/lib/download/presets";
 
@@ -31,9 +31,9 @@ export function DownloadDialog({
   style,
 }: DownloadDialogProps) {
   const [resolution, setResolution] = useState<ResolutionPreset>("original");
-  const [watermark, setWatermark] = useState(false);
+  const [includeWatermark, setIncludeWatermark] = useState(false);
+  const [includeClean, setIncludeClean] = useState(true);
   const [isDownloading, setIsDownloading] = useState(false);
-  const [isDownloadingBoth, setIsDownloadingBoth] = useState(false);
 
   const formatLabel = (str: string) =>
     str
@@ -41,39 +41,38 @@ export function DownloadDialog({
       .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
       .join(" ");
 
-  const handleDownload = async (includeClean = false) => {
-    const setLoading = includeClean ? setIsDownloadingBoth : setIsDownloading;
-    setLoading(true);
+  const handleDownload = async () => {
+    setIsDownloading(true);
 
     try {
-      // Build the download URL
-      const params = new URLSearchParams({
-        jobId,
-        resolution,
-        watermark: includeClean ? "true" : String(watermark),
-      });
+      const baseName = `${formatLabel(roomType)}-${formatLabel(style)}`;
+      const needsBoth = includeWatermark && includeClean;
 
-      if (includeClean) {
-        // For "Download Both", we need to download twice and create a client-side zip
-        // Or we use a different endpoint. For simplicity, let's download both versions
-        // one at a time
+      if (needsBoth) {
+        // Download both versions and create ZIP
+        const JSZip = (await import("jszip")).default;
+        const zip = new JSZip();
 
         // Download watermarked version
-        const watermarkedResponse = await fetch(`/api/download/image?${params.toString()}`);
+        const watermarkedParams = new URLSearchParams({
+          jobId,
+          resolution,
+          watermark: "true",
+        });
+        const watermarkedResponse = await fetch(`/api/download/image?${watermarkedParams.toString()}`);
         if (!watermarkedResponse.ok) throw new Error("Failed to download watermarked image");
         const watermarkedBlob = await watermarkedResponse.blob();
 
         // Download clean version
-        params.set("watermark", "false");
-        const cleanResponse = await fetch(`/api/download/image?${params.toString()}`);
+        const cleanParams = new URLSearchParams({
+          jobId,
+          resolution,
+          watermark: "false",
+        });
+        const cleanResponse = await fetch(`/api/download/image?${cleanParams.toString()}`);
         if (!cleanResponse.ok) throw new Error("Failed to download clean image");
         const cleanBlob = await cleanResponse.blob();
 
-        // Create a simple ZIP with both files using JSZip
-        const JSZip = (await import("jszip")).default;
-        const zip = new JSZip();
-
-        const baseName = `${formatLabel(roomType)}-${formatLabel(style)}`;
         zip.file(`watermarked/${baseName}.jpg`, watermarkedBlob);
         zip.file(`clean/${baseName}.jpg`, cleanBlob);
 
@@ -81,26 +80,27 @@ export function DownloadDialog({
         const url = URL.createObjectURL(zipBlob);
         const link = document.createElement("a");
         link.href = url;
-        link.download = `${baseName}-both.zip`;
+        link.download = `${baseName}.zip`;
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);
         URL.revokeObjectURL(url);
       } else {
         // Single download
+        const params = new URLSearchParams({
+          jobId,
+          resolution,
+          watermark: String(includeWatermark),
+        });
+
         const response = await fetch(`/api/download/image?${params.toString()}`);
         if (!response.ok) throw new Error("Failed to download image");
 
         const blob = await response.blob();
         const url = URL.createObjectURL(blob);
 
-        // Get filename from Content-Disposition header or generate one
-        const contentDisposition = response.headers.get("Content-Disposition");
-        let filename = `${formatLabel(roomType)}-${formatLabel(style)}${watermark ? "-watermarked" : ""}.jpg`;
-        if (contentDisposition) {
-          const match = contentDisposition.match(/filename="(.+)"/);
-          if (match) filename = match[1];
-        }
+        const suffix = includeWatermark ? "-watermarked" : "";
+        const filename = `${baseName}${suffix}.jpg`;
 
         const link = document.createElement("a");
         link.href = url;
@@ -115,9 +115,11 @@ export function DownloadDialog({
     } catch (error) {
       console.error("Download failed:", error);
     } finally {
-      setLoading(false);
+      setIsDownloading(false);
     }
   };
+
+  const needsZip = includeWatermark && includeClean;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -139,39 +141,26 @@ export function DownloadDialog({
           {/* Download Options */}
           <DownloadOptions
             resolution={resolution}
-            watermark={watermark}
+            includeWatermark={includeWatermark}
+            includeClean={includeClean}
             onResolutionChange={setResolution}
-            onWatermarkChange={setWatermark}
+            onIncludeWatermarkChange={setIncludeWatermark}
+            onIncludeCleanChange={setIncludeClean}
           />
         </div>
 
-        <DialogFooter className="flex-col sm:flex-row gap-2">
-          {watermark && (
-            <Button
-              variant="outline"
-              onClick={() => handleDownload(true)}
-              disabled={isDownloading || isDownloadingBoth}
-              className="w-full sm:w-auto"
-            >
-              {isDownloadingBoth ? (
-                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-              ) : (
-                <FolderDown className="h-4 w-4 mr-2" />
-              )}
-              Download Both
-            </Button>
-          )}
+        <DialogFooter>
           <Button
-            onClick={() => handleDownload(false)}
-            disabled={isDownloading || isDownloadingBoth}
-            className="w-full sm:w-auto"
+            onClick={handleDownload}
+            disabled={isDownloading}
+            className="w-full"
           >
             {isDownloading ? (
               <Loader2 className="h-4 w-4 mr-2 animate-spin" />
             ) : (
               <Download className="h-4 w-4 mr-2" />
             )}
-            Download
+            {needsZip ? "Download ZIP" : "Download"}
           </Button>
         </DialogFooter>
       </DialogContent>
