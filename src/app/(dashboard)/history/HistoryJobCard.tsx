@@ -40,6 +40,7 @@ import type { StagingJob } from "@/lib/database.types";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
+import { DownloadDialog } from "@/components/download/DownloadDialog";
 
 interface PropertyOption {
   id: string;
@@ -62,6 +63,7 @@ export function HistoryJobCard({ job, properties }: HistoryJobCardProps) {
   const [currentPropertyId, setCurrentPropertyId] = useState<string | null>(job.property_id);
   const [isFavorite, setIsFavorite] = useState(job.is_favorite || false);
   const [showOriginal, setShowOriginal] = useState(false);
+  const [showDownloadDialog, setShowDownloadDialog] = useState(false);
 
   const currentProperty = properties.find((p) => p.id === currentPropertyId);
   const hasOriginalImage = job.original_image_url && !job.original_image_url.includes("...");
@@ -94,12 +96,7 @@ export function HistoryJobCard({ job, properties }: HistoryJobCardProps) {
   const handleDownload = (e: React.MouseEvent) => {
     e.stopPropagation();
     if (job.staged_image_url) {
-      const link = document.createElement("a");
-      link.href = job.staged_image_url;
-      link.download = `staged-${job.room_type}-${job.style}-${job.id}.png`;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
+      setShowDownloadDialog(true);
     }
   };
 
@@ -500,7 +497,7 @@ export function HistoryJobCard({ job, properties }: HistoryJobCardProps) {
                   </span>
                 )}
               </div>
-              <Button onClick={handleDownload}>
+              <Button onClick={(e) => handleDownload(e)}>
                 <Download className="h-4 w-4 mr-2" />
                 Download
               </Button>
@@ -508,6 +505,18 @@ export function HistoryJobCard({ job, properties }: HistoryJobCardProps) {
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* Download Dialog */}
+      {job.staged_image_url && (
+        <DownloadDialog
+          open={showDownloadDialog}
+          onOpenChange={setShowDownloadDialog}
+          jobId={job.id}
+          imageUrl={job.staged_image_url}
+          roomType={job.room_type}
+          style={job.style}
+        />
+      )}
     </>
   );
 }

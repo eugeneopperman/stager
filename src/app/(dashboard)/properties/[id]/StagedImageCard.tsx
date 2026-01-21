@@ -16,6 +16,7 @@ import {
 import { Download, Eye, ArrowLeftRight } from "lucide-react";
 import type { StagingJob } from "@/lib/database.types";
 import { cn } from "@/lib/utils";
+import { DownloadDialog } from "@/components/download/DownloadDialog";
 
 interface StagedImageCardProps {
   job: StagingJob;
@@ -27,6 +28,7 @@ export function StagedImageCard({ job, propertyAddress }: StagedImageCardProps) 
   const [showComparison, setShowComparison] = useState(false);
   const [sliderPosition, setSliderPosition] = useState(50);
   const [showOriginal, setShowOriginal] = useState(false);
+  const [showDownloadDialog, setShowDownloadDialog] = useState(false);
 
   const formatRoomType = (roomType: string) => {
     return roomType
@@ -59,12 +61,7 @@ export function StagedImageCard({ job, propertyAddress }: StagedImageCardProps) 
   const handleDownload = (e?: React.MouseEvent) => {
     e?.stopPropagation();
     if (job.staged_image_url) {
-      const link = document.createElement("a");
-      link.href = job.staged_image_url;
-      link.download = `${propertyAddress.replace(/[^a-z0-9]/gi, "-")}-${job.room_type}-${job.id}.png`;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
+      setShowDownloadDialog(true);
     }
   };
 
@@ -257,6 +254,18 @@ export function StagedImageCard({ job, propertyAddress }: StagedImageCardProps) 
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* Download Dialog */}
+      {job.staged_image_url && (
+        <DownloadDialog
+          open={showDownloadDialog}
+          onOpenChange={setShowDownloadDialog}
+          jobId={job.id}
+          imageUrl={job.staged_image_url}
+          roomType={job.room_type}
+          style={job.style}
+        />
+      )}
     </>
   );
 }

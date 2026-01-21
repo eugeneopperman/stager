@@ -11,11 +11,11 @@ import {
   CheckCircle2,
   Clock,
   XCircle,
-  FolderDown,
 } from "lucide-react";
 import Link from "next/link";
 import { PropertyActions } from "./PropertyActions";
 import { StagedImageCard } from "./StagedImageCard";
+import { BatchDownloadButton } from "@/components/download/BatchDownloadButton";
 
 interface PropertyDetailPageProps {
   params: Promise<{ id: string }>;
@@ -141,12 +141,11 @@ export default async function PropertyDetailPage({ params }: PropertyDetailPageP
         <div className="flex gap-2">
           <PropertyActions property={property} />
           {completedJobs.length > 0 && (
-            <Button variant="outline" asChild>
-              <a href={`/api/properties/${property.id}/download`} download>
-                <FolderDown className="mr-2 h-4 w-4" />
-                Download All
-              </a>
-            </Button>
+            <BatchDownloadButton
+              propertyId={property.id}
+              propertyAddress={property.address}
+              imageCount={completedJobs.length}
+            />
           )}
           <Button asChild>
             <Link href={`/stage?property=${property.id}`}>
@@ -195,12 +194,13 @@ export default async function PropertyDetailPage({ params }: PropertyDetailPageP
             </CardDescription>
           </div>
           {completedJobs.length > 0 && (
-            <Button variant="outline" size="sm" asChild>
-              <a href={`/api/properties/${property.id}/download`} download>
-                <FolderDown className="mr-2 h-4 w-4" />
-                Download All ({completedJobs.length})
-              </a>
-            </Button>
+            <BatchDownloadButton
+              propertyId={property.id}
+              propertyAddress={property.address}
+              imageCount={completedJobs.length}
+              size="sm"
+              showCount
+            />
           )}
         </CardHeader>
         <CardContent>
