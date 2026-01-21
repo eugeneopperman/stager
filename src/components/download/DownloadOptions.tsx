@@ -103,7 +103,7 @@ export function DownloadOptions({
         {watermark && (
           <div className="mt-3 p-3 rounded-lg bg-muted/50">
             <p className="text-xs text-muted-foreground mb-2">Watermark preview:</p>
-            <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-black/60 text-white text-xs">
+            <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-black/40 text-white text-xs">
               <Home className="h-3.5 w-3.5" />
               <span>Virtually staged with AI</span>
             </div>
