@@ -34,7 +34,7 @@ export default async function BillingPage() {
   // Fetch all completed staging jobs for usage stats
   const { data: allJobs } = await supabase
     .from("staging_jobs")
-    .select("id, created_at, credits_used, room_type, style, status")
+    .select("id, created_at, credits_used, room_type, style, status, staged_image_url")
     .eq("user_id", user?.id)
     .order("created_at", { ascending: false });
 
@@ -210,8 +210,18 @@ export default async function BillingPage() {
                   className="flex items-center justify-between p-3 rounded-lg bg-slate-50 dark:bg-slate-900"
                 >
                   <div className="flex items-center gap-3">
-                    <div className="p-2 rounded-lg bg-slate-200 dark:bg-slate-800">
-                      <Sparkles className="h-4 w-4 text-slate-600 dark:text-slate-400" />
+                    <div className="h-12 w-12 rounded-lg bg-slate-200 dark:bg-slate-800 overflow-hidden flex-shrink-0">
+                      {job.staged_image_url ? (
+                        <img
+                          src={job.staged_image_url}
+                          alt={`${formatRoomType(job.room_type)} staging`}
+                          className="h-full w-full object-cover"
+                        />
+                      ) : (
+                        <div className="h-full w-full flex items-center justify-center">
+                          <Sparkles className="h-5 w-5 text-slate-400" />
+                        </div>
+                      )}
                     </div>
                     <div>
                       <p className="font-medium text-slate-900 dark:text-white">
