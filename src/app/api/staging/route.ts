@@ -3,6 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import { getProviderRouter, getReplicateProvider, getDecor8Provider, Decor8Provider } from "@/lib/providers";
 import { type RoomType, type FurnitureStyle, CREDITS_PER_STAGING, ROOM_TYPES } from "@/lib/constants";
 import { createNotification } from "@/lib/notifications";
+import { getUserCredits, deductCredits, logCreditTransaction } from "@/lib/subscription";
 
 /**
  * POST /api/staging
@@ -28,21 +29,17 @@ export async function POST(request: NextRequest) {
     }
     console.log("[Staging API] User authenticated:", user.id);
 
-    // Get user profile and check credits
-    const { data: profile } = await supabase
-      .from("profiles")
-      .select("credits_remaining")
-      .eq("id", user.id)
-      .single();
+    // Get user credits (handles both personal and team credits)
+    const creditInfo = await getUserCredits(user.id);
 
-    if (!profile || profile.credits_remaining < CREDITS_PER_STAGING) {
+    if (creditInfo.available < CREDITS_PER_STAGING) {
       console.log("[Staging API] Insufficient credits");
       return NextResponse.json(
         { error: "Insufficient credits. Please upgrade your plan." },
         { status: 402 }
       );
     }
-    console.log("[Staging API] Credits OK:", profile.credits_remaining);
+    console.log("[Staging API] Credits OK:", creditInfo.available, "isTeam:", creditInfo.isTeamMember);
 
     // Parse request body
     const body = await request.json();
@@ -232,14 +229,22 @@ export async function POST(request: NextRequest) {
         })
         .eq("id", job.id);
 
-      // Deduct credits
-      const newCredits = profile.credits_remaining - CREDITS_PER_STAGING;
-      await supabase
-        .from("profiles")
-        .update({
-          credits_remaining: newCredits,
-        })
-        .eq("id", user.id);
+      // Deduct credits (handles both personal and team credits)
+      const deductSuccess = await deductCredits(user.id, CREDITS_PER_STAGING);
+      if (!deductSuccess) {
+        console.error("[Staging API] Failed to deduct credits");
+      }
+      const newCredits = creditInfo.available - CREDITS_PER_STAGING;
+
+      // Log the credit transaction
+      await logCreditTransaction({
+        userId: user.id,
+        type: "staging_deduction",
+        amount: -CREDITS_PER_STAGING,
+        balanceAfter: newCredits,
+        referenceId: job.id,
+        description: `Staging job: ${roomType} - ${style}`,
+      });
 
       // Create staging completion notification
       const roomLabel = ROOM_TYPES.find((r) => r.id === roomType)?.label || roomType;

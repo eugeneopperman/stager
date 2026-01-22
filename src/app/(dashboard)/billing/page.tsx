@@ -1,6 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
   CreditCard,
@@ -10,10 +9,26 @@ import {
   Clock,
   Sparkles,
   AlertTriangle,
+  CheckCircle,
 } from "lucide-react";
 import { LOW_CREDITS_THRESHOLD, CREDITS_PER_STAGING } from "@/lib/constants";
+import { PricingTable } from "@/components/billing/PricingTable";
+import { TopupPacks } from "@/components/billing/TopupPacks";
+import { SubscriptionStatus } from "@/components/billing/SubscriptionStatus";
+import { getUserSubscription, getPlans } from "@/lib/subscription";
 
-export default async function BillingPage() {
+interface PageProps {
+  searchParams: Promise<{
+    success?: string;
+    canceled?: string;
+    plan?: string;
+    topup?: string;
+    credits?: string;
+  }>;
+}
+
+export default async function BillingPage({ searchParams }: PageProps) {
+  const params = await searchParams;
   const supabase = await createClient();
 
   const {
@@ -23,13 +38,21 @@ export default async function BillingPage() {
   // Fetch user profile with credits
   const { data: profile } = await supabase
     .from("profiles")
-    .select("credits_remaining, created_at")
+    .select("credits_remaining, created_at, stripe_customer_id, plan_id")
     .eq("id", user?.id)
     .single();
 
   const credits = profile?.credits_remaining || 0;
   const isLowCredits = credits <= LOW_CREDITS_THRESHOLD;
   const hasNoCredits = credits < CREDITS_PER_STAGING;
+
+  // Fetch subscription and plans
+  const [subscription, plans] = await Promise.all([
+    user ? getUserSubscription(user.id) : null,
+    getPlans(),
+  ]);
+
+  const currentPlanSlug = subscription?.plan?.slug || "free";
 
   // Fetch all completed staging jobs for usage stats
   const { data: allJobs } = await supabase
@@ -75,16 +98,71 @@ export default async function BillingPage() {
   };
 
   return (
-    <div className="space-y-6 max-w-4xl mx-auto">
+    <div className="space-y-8 max-w-6xl mx-auto">
+      {/* Success/Cancel Messages */}
+      {params.success && (
+        <Card className="border-green-200 bg-green-50 dark:bg-green-950/30 dark:border-green-900">
+          <CardContent className="p-4 flex items-center gap-3">
+            <CheckCircle className="h-5 w-5 text-green-600" />
+            <div>
+              <p className="font-medium text-green-800 dark:text-green-200">
+                Subscription activated!
+              </p>
+              <p className="text-sm text-green-600 dark:text-green-400">
+                Your {params.plan} plan is now active. Enjoy your credits!
+              </p>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {params.topup === "success" && (
+        <Card className="border-green-200 bg-green-50 dark:bg-green-950/30 dark:border-green-900">
+          <CardContent className="p-4 flex items-center gap-3">
+            <CheckCircle className="h-5 w-5 text-green-600" />
+            <div>
+              <p className="font-medium text-green-800 dark:text-green-200">
+                Credits added!
+              </p>
+              <p className="text-sm text-green-600 dark:text-green-400">
+                {params.credits} credits have been added to your account.
+              </p>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {params.canceled && (
+        <Card className="border-amber-200 bg-amber-50 dark:bg-amber-950/30 dark:border-amber-900">
+          <CardContent className="p-4 flex items-center gap-3">
+            <AlertTriangle className="h-5 w-5 text-amber-600" />
+            <div>
+              <p className="font-medium text-amber-800 dark:text-amber-200">
+                Checkout canceled
+              </p>
+              <p className="text-sm text-amber-600 dark:text-amber-400">
+                No changes were made to your account.
+              </p>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
       {/* Header */}
       <div>
         <h1 className="text-foreground">
           Billing & Credits
         </h1>
         <p className="text-muted-foreground mt-2">
-          Manage your credits and view usage history
+          Manage your subscription, credits, and view usage history
         </p>
       </div>
+
+      {/* Current Subscription */}
+      <SubscriptionStatus
+        subscription={subscription}
+        hasStripeCustomer={!!profile?.stripe_customer_id}
+      />
 
       {/* Credit Balance Card */}
       <Card
@@ -140,11 +218,9 @@ export default async function BillingPage() {
               </div>
             </div>
             <div className="text-right">
-              <Button disabled className="mb-2">
-                <CreditCard className="mr-2 h-4 w-4" />
-                Buy Credits
-              </Button>
-              <p className="text-xs text-slate-500">Coming soon</p>
+              <Badge variant="outline" className="text-lg px-3 py-1">
+                {currentPlanSlug.charAt(0).toUpperCase() + currentPlanSlug.slice(1)} Plan
+              </Badge>
             </div>
           </div>
         </CardContent>
@@ -192,6 +268,38 @@ export default async function BillingPage() {
           </CardContent>
         </Card>
       </div>
+
+      {/* Credit Top-ups */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Coins className="h-5 w-5" />
+            Need More Credits?
+          </CardTitle>
+          <CardDescription>
+            Purchase additional credits instantly - no subscription change needed
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <TopupPacks />
+        </CardContent>
+      </Card>
+
+      {/* Subscription Plans */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <CreditCard className="h-5 w-5" />
+            Subscription Plans
+          </CardTitle>
+          <CardDescription>
+            Choose a plan that fits your needs. Upgrade or downgrade anytime.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <PricingTable plans={plans} currentPlanSlug={currentPlanSlug} />
+        </CardContent>
+      </Card>
 
       {/* Usage History */}
       <Card>
@@ -250,59 +358,6 @@ export default async function BillingPage() {
               </p>
             </div>
           )}
-        </CardContent>
-      </Card>
-
-      {/* Pricing Info (Placeholder) */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Credit Packages</CardTitle>
-          <CardDescription>
-            Purchase additional credits to continue staging
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="grid gap-4 md:grid-cols-3">
-            <div className="p-4 rounded-lg border-2 border-slate-200 dark:border-slate-800">
-              <p className="font-semibold text-slate-900 dark:text-white">
-                Starter Pack
-              </p>
-              <p className="text-3xl font-bold text-slate-900 dark:text-white mt-2">
-                $9
-              </p>
-              <p className="text-sm text-slate-500">10 credits</p>
-              <Button disabled className="w-full mt-4" variant="outline">
-                Coming Soon
-              </Button>
-            </div>
-            <div className="p-4 rounded-lg border-2 border-blue-500 relative">
-              <Badge className="absolute -top-2 left-1/2 -translate-x-1/2 bg-blue-500">
-                Popular
-              </Badge>
-              <p className="font-semibold text-slate-900 dark:text-white">
-                Pro Pack
-              </p>
-              <p className="text-3xl font-bold text-slate-900 dark:text-white mt-2">
-                $29
-              </p>
-              <p className="text-sm text-slate-500">50 credits</p>
-              <Button disabled className="w-full mt-4">
-                Coming Soon
-              </Button>
-            </div>
-            <div className="p-4 rounded-lg border-2 border-slate-200 dark:border-slate-800">
-              <p className="font-semibold text-slate-900 dark:text-white">
-                Agency Pack
-              </p>
-              <p className="text-3xl font-bold text-slate-900 dark:text-white mt-2">
-                $79
-              </p>
-              <p className="text-sm text-slate-500">150 credits</p>
-              <Button disabled className="w-full mt-4" variant="outline">
-                Coming Soon
-              </Button>
-            </div>
-          </div>
         </CardContent>
       </Card>
     </div>

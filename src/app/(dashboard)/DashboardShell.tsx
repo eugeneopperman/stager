@@ -16,9 +16,10 @@ interface DashboardShellProps {
     full_name?: string;
   };
   credits?: number;
+  isEnterprise?: boolean;
 }
 
-function DashboardContent({ children, user, credits = 0 }: DashboardShellProps) {
+function DashboardContent({ children, user, credits = 0, isEnterprise = false }: DashboardShellProps) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const { isCollapsed, isAutoHide, isHovered, setHovered } = useSidebar();
 
@@ -58,7 +59,7 @@ function DashboardContent({ children, user, credits = 0 }: DashboardShellProps) 
         onMouseEnter={() => isAutoHide && setHovered(true)}
         onMouseLeave={() => isAutoHide && setHovered(false)}
       >
-        <Sidebar credits={credits} user={user} />
+        <Sidebar credits={credits} user={user} isEnterprise={isEnterprise} />
       </div>
 
       {/* Mobile Sidebar */}
@@ -84,7 +85,7 @@ function DashboardContent({ children, user, credits = 0 }: DashboardShellProps) 
           "transition-transform duration-300 ease-out",
           sidebarOpen ? "translate-x-0" : "-translate-x-full"
         )}>
-          <Sidebar credits={credits} user={user} onNavigate={() => setSidebarOpen(false)} />
+          <Sidebar credits={credits} user={user} isEnterprise={isEnterprise} onNavigate={() => setSidebarOpen(false)} />
         </div>
       </div>
 
@@ -125,11 +126,11 @@ function DashboardContent({ children, user, credits = 0 }: DashboardShellProps) 
   );
 }
 
-export function DashboardShell({ children, user, credits = 0 }: DashboardShellProps) {
+export function DashboardShell({ children, user, credits = 0, isEnterprise = false }: DashboardShellProps) {
   return (
     <DashboardProvider credits={credits} user={user}>
       <SidebarProvider>
-        <DashboardContent user={user} credits={credits}>
+        <DashboardContent user={user} credits={credits} isEnterprise={isEnterprise}>
           {children}
         </DashboardContent>
       </SidebarProvider>

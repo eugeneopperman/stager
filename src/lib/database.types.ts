@@ -22,6 +22,31 @@ export type StagingProvider = "gemini" | "stable-diffusion";
 // Notification types
 export type NotificationType = "staging_complete" | "staging_failed" | "low_credits";
 
+// Subscription status types
+export type SubscriptionStatus = "active" | "canceled" | "past_due" | "trialing" | "paused";
+
+// Organization role types
+export type OrganizationRole = "owner" | "member";
+
+// Credit top-up status
+export type TopupStatus = "pending" | "completed" | "failed" | "refunded";
+
+// Credit transaction types
+export type CreditTransactionType =
+  | "subscription_renewal"
+  | "topup_purchase"
+  | "staging_deduction"
+  | "allocation_to_member"
+  | "allocation_from_owner"
+  | "refund"
+  | "adjustment";
+
+// Property visibility
+export type PropertyVisibility = "private" | "team";
+
+// Plan features stored as JSON
+export type PlanFeatures = string[];
+
 // ControlNet inputs stored as JSON
 export interface ControlNetInputsJson {
   depth_map_url?: string;
@@ -46,12 +71,253 @@ export interface GenerationParamsJson {
 export interface Database {
   public: {
     Tables: {
+      plans: {
+        Row: {
+          id: string;
+          stripe_product_id: string | null;
+          stripe_price_id: string | null;
+          slug: string;
+          name: string;
+          description: string | null;
+          price_cents: number;
+          credits_per_month: number;
+          max_team_members: number;
+          features: PlanFeatures;
+          is_active: boolean;
+          sort_order: number;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          stripe_product_id?: string | null;
+          stripe_price_id?: string | null;
+          slug: string;
+          name: string;
+          description?: string | null;
+          price_cents?: number;
+          credits_per_month: number;
+          max_team_members?: number;
+          features?: PlanFeatures;
+          is_active?: boolean;
+          sort_order?: number;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          stripe_product_id?: string | null;
+          stripe_price_id?: string | null;
+          slug?: string;
+          name?: string;
+          description?: string | null;
+          price_cents?: number;
+          credits_per_month?: number;
+          max_team_members?: number;
+          features?: PlanFeatures;
+          is_active?: boolean;
+          sort_order?: number;
+          created_at?: string;
+          updated_at?: string;
+        };
+      };
+      subscriptions: {
+        Row: {
+          id: string;
+          user_id: string;
+          plan_id: string;
+          stripe_subscription_id: string | null;
+          stripe_customer_id: string | null;
+          status: SubscriptionStatus;
+          current_period_start: string | null;
+          current_period_end: string | null;
+          cancel_at_period_end: boolean;
+          canceled_at: string | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          user_id: string;
+          plan_id: string;
+          stripe_subscription_id?: string | null;
+          stripe_customer_id?: string | null;
+          status?: SubscriptionStatus;
+          current_period_start?: string | null;
+          current_period_end?: string | null;
+          cancel_at_period_end?: boolean;
+          canceled_at?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          user_id?: string;
+          plan_id?: string;
+          stripe_subscription_id?: string | null;
+          stripe_customer_id?: string | null;
+          status?: SubscriptionStatus;
+          current_period_start?: string | null;
+          current_period_end?: string | null;
+          cancel_at_period_end?: boolean;
+          canceled_at?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+      };
+      organizations: {
+        Row: {
+          id: string;
+          name: string;
+          owner_id: string;
+          subscription_id: string | null;
+          total_credits: number;
+          unallocated_credits: number;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          name: string;
+          owner_id: string;
+          subscription_id?: string | null;
+          total_credits?: number;
+          unallocated_credits?: number;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          name?: string;
+          owner_id?: string;
+          subscription_id?: string | null;
+          total_credits?: number;
+          unallocated_credits?: number;
+          created_at?: string;
+          updated_at?: string;
+        };
+      };
+      organization_members: {
+        Row: {
+          id: string;
+          organization_id: string;
+          user_id: string;
+          role: OrganizationRole;
+          allocated_credits: number;
+          credits_used_this_period: number;
+          invited_at: string;
+          joined_at: string | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          organization_id: string;
+          user_id: string;
+          role?: OrganizationRole;
+          allocated_credits?: number;
+          credits_used_this_period?: number;
+          invited_at?: string;
+          joined_at?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          organization_id?: string;
+          user_id?: string;
+          role?: OrganizationRole;
+          allocated_credits?: number;
+          credits_used_this_period?: number;
+          invited_at?: string;
+          joined_at?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+      };
+      credit_topups: {
+        Row: {
+          id: string;
+          user_id: string;
+          organization_id: string | null;
+          stripe_payment_intent_id: string | null;
+          stripe_checkout_session_id: string | null;
+          credits_purchased: number;
+          amount_cents: number;
+          status: TopupStatus;
+          created_at: string;
+          completed_at: string | null;
+        };
+        Insert: {
+          id?: string;
+          user_id: string;
+          organization_id?: string | null;
+          stripe_payment_intent_id?: string | null;
+          stripe_checkout_session_id?: string | null;
+          credits_purchased: number;
+          amount_cents: number;
+          status?: TopupStatus;
+          created_at?: string;
+          completed_at?: string | null;
+        };
+        Update: {
+          id?: string;
+          user_id?: string;
+          organization_id?: string | null;
+          stripe_payment_intent_id?: string | null;
+          stripe_checkout_session_id?: string | null;
+          credits_purchased?: number;
+          amount_cents?: number;
+          status?: TopupStatus;
+          created_at?: string;
+          completed_at?: string | null;
+        };
+      };
+      credit_transactions: {
+        Row: {
+          id: string;
+          user_id: string | null;
+          organization_id: string | null;
+          transaction_type: CreditTransactionType;
+          amount: number;
+          balance_after: number;
+          reference_id: string | null;
+          description: string | null;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          user_id?: string | null;
+          organization_id?: string | null;
+          transaction_type: CreditTransactionType;
+          amount: number;
+          balance_after: number;
+          reference_id?: string | null;
+          description?: string | null;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          user_id?: string | null;
+          organization_id?: string | null;
+          transaction_type?: CreditTransactionType;
+          amount?: number;
+          balance_after?: number;
+          reference_id?: string | null;
+          description?: string | null;
+          created_at?: string;
+        };
+      };
       profiles: {
         Row: {
           id: string;
           full_name: string | null;
           company_name: string | null;
           credits_remaining: number;
+          stripe_customer_id: string | null;
+          plan_id: string | null;
+          credits_reset_at: string | null;
+          organization_id: string | null;
           created_at: string;
           updated_at: string;
         };
@@ -60,6 +326,10 @@ export interface Database {
           full_name?: string | null;
           company_name?: string | null;
           credits_remaining?: number;
+          stripe_customer_id?: string | null;
+          plan_id?: string | null;
+          credits_reset_at?: string | null;
+          organization_id?: string | null;
           created_at?: string;
           updated_at?: string;
         };
@@ -68,6 +338,10 @@ export interface Database {
           full_name?: string | null;
           company_name?: string | null;
           credits_remaining?: number;
+          stripe_customer_id?: string | null;
+          plan_id?: string | null;
+          credits_reset_at?: string | null;
+          organization_id?: string | null;
           created_at?: string;
           updated_at?: string;
         };
@@ -78,6 +352,8 @@ export interface Database {
           user_id: string;
           address: string;
           description: string | null;
+          organization_id: string | null;
+          visibility: PropertyVisibility;
           created_at: string;
           updated_at: string;
           is_favorite: boolean;
@@ -87,6 +363,8 @@ export interface Database {
           user_id: string;
           address: string;
           description?: string | null;
+          organization_id?: string | null;
+          visibility?: PropertyVisibility;
           created_at?: string;
           updated_at?: string;
           is_favorite?: boolean;
@@ -96,6 +374,8 @@ export interface Database {
           user_id?: string;
           address?: string;
           description?: string | null;
+          organization_id?: string | null;
+          visibility?: PropertyVisibility;
           created_at?: string;
           updated_at?: string;
           is_favorite?: boolean;
@@ -164,6 +444,7 @@ export interface Database {
           id: string;
           user_id: string;
           property_id: string | null;
+          organization_id: string | null;
           original_image_url: string;
           staged_image_url: string | null;
           room_type: string;
@@ -191,6 +472,7 @@ export interface Database {
           id?: string;
           user_id: string;
           property_id?: string | null;
+          organization_id?: string | null;
           original_image_url: string;
           staged_image_url?: string | null;
           room_type: string;
@@ -216,6 +498,7 @@ export interface Database {
           id?: string;
           user_id?: string;
           property_id?: string | null;
+          organization_id?: string | null;
           original_image_url?: string;
           staged_image_url?: string | null;
           room_type?: string;
@@ -256,3 +539,28 @@ export type Property = Database["public"]["Tables"]["properties"]["Row"];
 export type StagingJob = Database["public"]["Tables"]["staging_jobs"]["Row"];
 export type Notification = Database["public"]["Tables"]["notifications"]["Row"];
 export type VersionGroup = Database["public"]["Tables"]["version_groups"]["Row"];
+
+// New subscription-related types
+export type Plan = Database["public"]["Tables"]["plans"]["Row"];
+export type Subscription = Database["public"]["Tables"]["subscriptions"]["Row"];
+export type Organization = Database["public"]["Tables"]["organizations"]["Row"];
+export type OrganizationMember = Database["public"]["Tables"]["organization_members"]["Row"];
+export type CreditTopup = Database["public"]["Tables"]["credit_topups"]["Row"];
+export type CreditTransaction = Database["public"]["Tables"]["credit_transactions"]["Row"];
+
+// Extended types with relations
+export interface PlanWithDetails extends Plan {
+  features: string[];
+}
+
+export interface SubscriptionWithPlan extends Subscription {
+  plan: Plan;
+}
+
+export interface OrganizationWithMembers extends Organization {
+  members: OrganizationMember[];
+}
+
+export interface OrganizationMemberWithProfile extends OrganizationMember {
+  profile: Profile;
+}

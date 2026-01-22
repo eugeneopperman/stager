@@ -17,6 +17,7 @@ import {
   ChevronLeft,
   ChevronRight,
   Coins,
+  Users,
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { useRouter } from "next/navigation";
@@ -38,7 +39,7 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { LOW_CREDITS_THRESHOLD } from "@/lib/constants";
 import { useSidebar } from "@/contexts/SidebarContext";
 
-const navigation = [
+const baseNavigation = [
   { name: "Dashboard", href: "/dashboard", icon: Home },
   { name: "Stage Photo", href: "/stage", icon: ImagePlus },
   { name: "Batch Stage", href: "/stage/batch", icon: Images },
@@ -46,20 +47,28 @@ const navigation = [
   { name: "History", href: "/history", icon: History },
 ];
 
+const teamNavItem = { name: "Team", href: "/team", icon: Users };
+
 interface SidebarProps {
   credits?: number;
   user?: {
     email?: string;
     full_name?: string;
   };
+  isEnterprise?: boolean;
   onNavigate?: () => void;
 }
 
-export function Sidebar({ credits = 0, user, onNavigate }: SidebarProps) {
+export function Sidebar({ credits = 0, user, isEnterprise = false, onNavigate }: SidebarProps) {
   const pathname = usePathname();
   const router = useRouter();
   const supabase = createClient();
   const { isCollapsed, toggleCollapsed } = useSidebar();
+
+  // Build navigation with optional Team item
+  const navigation = isEnterprise
+    ? [...baseNavigation, teamNavItem]
+    : baseNavigation;
 
   const handleLogout = async () => {
     await supabase.auth.signOut();
