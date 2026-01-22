@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import {
   Dialog,
@@ -44,7 +44,7 @@ import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { DownloadDialog } from "@/components/download/DownloadDialog";
 import { RemixDialog } from "@/components/staging/RemixDialog";
-import { VersionThumbnailStrip } from "@/components/staging/VersionThumbnailStrip";
+import { VersionBadge } from "@/components/staging/VersionBadge";
 
 interface PropertyOption {
   id: string;
@@ -69,8 +69,28 @@ export function HistoryJobCard({ job, properties }: HistoryJobCardProps) {
   const [showOriginal, setShowOriginal] = useState(false);
   const [showDownloadDialog, setShowDownloadDialog] = useState(false);
   const [showRemixDialog, setShowRemixDialog] = useState(false);
-  const [versionCount, setVersionCount] = useState<number | null>(null);
+  const [versionCount, setVersionCount] = useState<number>(1);
 
+  // Fetch version count when job has a version group
+  useEffect(() => {
+    if (job.version_group_id) {
+      fetchVersionCount();
+    }
+  }, [job.version_group_id]);
+
+  const fetchVersionCount = async () => {
+    try {
+      const response = await fetch(`/api/staging/versions?jobId=${job.id}`);
+      if (response.ok) {
+        const data = await response.json();
+        setVersionCount(data.totalVersions || 1);
+      }
+    } catch (error) {
+      console.error("Failed to fetch version count:", error);
+    }
+  };
+
+  const hasVersions = versionCount > 1;
   const currentProperty = properties.find((p) => p.id === currentPropertyId);
   const hasOriginalImage = job.original_image_url && !job.original_image_url.includes("...");
   const isCompleted = job.status === "completed";
@@ -202,16 +222,33 @@ export function HistoryJobCard({ job, properties }: HistoryJobCardProps) {
 
   return (
     <>
-      {/* Card */}
+      {/* Stacked card wrapper for version effect */}
       <div
         className={cn(
-          "group relative aspect-[4/3] rounded-2xl overflow-hidden",
-          "transition-all duration-300 ease-out",
-          "hover:scale-[1.02] hover:shadow-xl",
-          isCompleted && job.staged_image_url && "cursor-pointer"
+          "relative",
+          hasVersions && [
+            "before:absolute before:inset-0 before:translate-x-1 before:translate-y-1",
+            "before:rounded-2xl before:bg-card before:border before:border-border/50",
+            "before:-z-10 before:opacity-60",
+          ],
+          hasVersions && versionCount > 2 && [
+            "after:absolute after:inset-0 after:translate-x-2 after:translate-y-2",
+            "after:rounded-2xl after:bg-card after:border after:border-border/30",
+            "after:-z-20 after:opacity-30",
+          ]
         )}
-        onClick={() => isCompleted && job.staged_image_url && setShowDetail(true)}
       >
+        {/* Card */}
+        <div
+          className={cn(
+            "group relative aspect-[4/3] rounded-2xl overflow-hidden",
+            "transition-all duration-300 ease-out",
+            "hover:scale-[1.02] hover:shadow-xl",
+            "bg-card",
+            isCompleted && job.staged_image_url && "cursor-pointer"
+          )}
+          onClick={() => isCompleted && job.staged_image_url && setShowDetail(true)}
+        >
         {/* Background Image */}
         {displayImageUrl ? (
           <img
@@ -221,6 +258,19 @@ export function HistoryJobCard({ job, properties }: HistoryJobCardProps) {
           />
         ) : (
           <div className="absolute inset-0 bg-muted" />
+        )}
+
+        {/* Version Badge */}
+        {hasVersions && isCompleted && !showOriginal && (
+          <div className="absolute top-3 left-3 z-10">
+            <VersionBadge
+              count={versionCount}
+              onClick={(e) => {
+                e.stopPropagation();
+                setShowDetail(true);
+              }}
+            />
+          </div>
         )}
 
         {/* Original Badge (when comparing) */}
@@ -436,16 +486,15 @@ export function HistoryJobCard({ job, properties }: HistoryJobCardProps) {
                 {currentProperty && ` • ${currentProperty.address}`}
               </p>
             </div>
-            {/* Version badge */}
-            {job.version_group_id && (
-              <div className="flex items-center gap-1 px-2 py-0.5 rounded-full bg-white/20 backdrop-blur-sm">
-                <Layers className="h-3 w-3 text-white" />
-                {job.is_primary_version && (
-                  <Star className="h-3 w-3 text-yellow-400 fill-current" />
-                )}
+            {/* Primary badge */}
+            {job.is_primary_version && hasVersions && (
+              <div className="flex items-center gap-1 px-2 py-0.5 rounded-full bg-yellow-500/80 backdrop-blur-sm">
+                <Star className="h-3 w-3 text-white fill-current" />
+                <span className="text-[10px] text-white font-medium">Primary</span>
               </div>
             )}
           </div>
+        </div>
         </div>
       </div>
 

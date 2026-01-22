@@ -50,6 +50,36 @@ export default async function PropertyDetailPage({ params }: PropertyDetailPageP
 
   const completedJobs = stagingJobs?.filter((job) => job.status === "completed") || [];
 
+  // Filter to show only primary versions when there are version groups
+  // For jobs without version groups, include them all
+  // For jobs with version groups, only include the primary version (or first if no primary)
+  const groupedByVersion = new Map<string, typeof completedJobs>();
+  const jobsWithoutVersionGroup: typeof completedJobs = [];
+
+  for (const job of completedJobs) {
+    if (job.version_group_id) {
+      const existing = groupedByVersion.get(job.version_group_id) || [];
+      existing.push(job);
+      groupedByVersion.set(job.version_group_id, existing);
+    } else {
+      jobsWithoutVersionGroup.push(job);
+    }
+  }
+
+  // Select primary or first from each version group
+  const displayJobs = [...jobsWithoutVersionGroup];
+  for (const [, groupJobs] of groupedByVersion) {
+    const primaryJob = groupJobs.find((j) => j.is_primary_version);
+    if (primaryJob) {
+      displayJobs.push(primaryJob);
+    } else if (groupJobs.length > 0) {
+      displayJobs.push(groupJobs[0]);
+    }
+  }
+
+  // Sort by created_at descending
+  displayJobs.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString("en-US", {
       month: "long",
@@ -204,9 +234,9 @@ export default async function PropertyDetailPage({ params }: PropertyDetailPageP
           )}
         </CardHeader>
         <CardContent>
-          {completedJobs.length > 0 ? (
+          {displayJobs.length > 0 ? (
             <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-              {completedJobs.map((job) => (
+              {displayJobs.map((job) => (
                 <StagedImageCard
                   key={job.id}
                   job={job}

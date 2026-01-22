@@ -19,6 +19,7 @@ import { cn } from "@/lib/utils";
 import { DownloadDialog } from "@/components/download/DownloadDialog";
 import { RemixDialog } from "@/components/staging/RemixDialog";
 import { VersionThumbnailStrip } from "@/components/staging/VersionThumbnailStrip";
+import { VersionBadge } from "@/components/staging/VersionBadge";
 import { createClient } from "@/lib/supabase/client";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
@@ -142,14 +143,31 @@ export function StagedImageCard({ job, propertyAddress }: StagedImageCardProps) 
 
   return (
     <>
+      {/* Stacked card wrapper for version effect */}
       <div
         className={cn(
-          "group relative aspect-[4/3] rounded-2xl overflow-hidden",
-          "transition-all duration-300 ease-out",
-          "hover:scale-[1.02] hover:shadow-xl cursor-pointer"
+          "relative",
+          hasVersions && [
+            "before:absolute before:inset-0 before:translate-x-1 before:translate-y-1",
+            "before:rounded-2xl before:bg-card before:border before:border-border/50",
+            "before:-z-10 before:opacity-60",
+          ],
+          hasVersions && versions.length > 2 && [
+            "after:absolute after:inset-0 after:translate-x-2 after:translate-y-2",
+            "after:rounded-2xl after:bg-card after:border after:border-border/30",
+            "after:-z-20 after:opacity-30",
+          ]
         )}
-        onClick={() => setShowDetail(true)}
       >
+        <div
+          className={cn(
+            "group relative aspect-[4/3] rounded-2xl overflow-hidden",
+            "transition-all duration-300 ease-out",
+            "hover:scale-[1.02] hover:shadow-xl cursor-pointer",
+            "bg-card" // Ensure solid background for stacked effect
+          )}
+          onClick={() => setShowDetail(true)}
+        >
         {/* Background Image */}
         {displayImageUrl && (
           <img
@@ -157,6 +175,19 @@ export function StagedImageCard({ job, propertyAddress }: StagedImageCardProps) 
             alt={`${formatRoomType(job.room_type)} - ${job.style}`}
             className="absolute inset-0 w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
           />
+        )}
+
+        {/* Version Badge */}
+        {hasVersions && !showOriginal && (
+          <div className="absolute top-3 left-3 z-10">
+            <VersionBadge
+              count={versions.length}
+              onClick={(e) => {
+                e.stopPropagation();
+                setShowDetail(true);
+              }}
+            />
+          </div>
         )}
 
         {/* Original Badge (when comparing) */}
@@ -259,19 +290,8 @@ export function StagedImageCard({ job, propertyAddress }: StagedImageCardProps) 
             )}
           </div>
         </div>
+        </div>
       </div>
-
-      {/* Version Thumbnail Strip */}
-      {hasVersions && (
-        <VersionThumbnailStrip
-          versions={versions}
-          currentVersionId={currentJob.id}
-          onVersionSelect={handleVersionSelect}
-          onSetPrimary={handleSetPrimary}
-          isSettingPrimary={isSettingPrimary}
-          className="mt-2"
-        />
-      )}
 
       {/* Detail Dialog */}
       <Dialog open={showDetail} onOpenChange={setShowDetail}>
