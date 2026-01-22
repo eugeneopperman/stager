@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Slider } from "@/components/ui/slider";
-import { UserPlus, Loader2, AlertCircle } from "lucide-react";
+import { UserPlus, Loader2, AlertCircle, CheckCircle2, Mail } from "lucide-react";
 
 interface InviteMemberDialogProps {
   maxCredits: number;
@@ -21,6 +21,7 @@ export function InviteMemberDialog({ maxCredits, onSuccess }: InviteMemberDialog
   const [initialCredits, setInitialCredits] = useState(0);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState<string | null>(null);
 
   const handleInvite = async () => {
     if (!email || !email.includes("@")) {
@@ -30,6 +31,7 @@ export function InviteMemberDialog({ maxCredits, onSuccess }: InviteMemberDialog
 
     setIsLoading(true);
     setError(null);
+    setSuccess(null);
 
     try {
       const response = await fetch("/api/team/invite", {
@@ -41,17 +43,23 @@ export function InviteMemberDialog({ maxCredits, onSuccess }: InviteMemberDialog
       const data = await response.json();
 
       if (!response.ok) {
-        setError(data.error || "Failed to invite member");
+        setError(data.error || "Failed to send invitation");
         return;
       }
 
-      setOpen(false);
-      setEmail("");
-      setInitialCredits(0);
-      onSuccess();
-      router.refresh();
+      setSuccess(`Invitation sent to ${email}!`);
+
+      // Close dialog after brief delay to show success
+      setTimeout(() => {
+        setOpen(false);
+        setEmail("");
+        setInitialCredits(0);
+        setSuccess(null);
+        onSuccess();
+        router.refresh();
+      }, 1500);
     } catch (err) {
-      setError("Failed to invite member. Please try again.");
+      setError("Failed to send invitation. Please try again.");
     } finally {
       setIsLoading(false);
     }
@@ -63,6 +71,7 @@ export function InviteMemberDialog({ maxCredits, onSuccess }: InviteMemberDialog
       setEmail("");
       setInitialCredits(0);
       setError(null);
+      setSuccess(null);
     }
   };
 
@@ -78,7 +87,7 @@ export function InviteMemberDialog({ maxCredits, onSuccess }: InviteMemberDialog
         <DialogHeader>
           <DialogTitle>Invite Team Member</DialogTitle>
           <DialogDescription>
-            Invite a new member to your team. They must have an existing Stager account.
+            Send an invitation email to add someone to your team. They can join even if they don't have an account yet.
           </DialogDescription>
         </DialogHeader>
 
@@ -91,6 +100,7 @@ export function InviteMemberDialog({ maxCredits, onSuccess }: InviteMemberDialog
               placeholder="teammate@example.com"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
+              disabled={isLoading || !!success}
             />
           </div>
 
@@ -104,6 +114,7 @@ export function InviteMemberDialog({ maxCredits, onSuccess }: InviteMemberDialog
                 max={maxCredits}
                 step={1}
                 className="flex-1"
+                disabled={isLoading || !!success}
               />
               <Input
                 type="number"
@@ -117,6 +128,7 @@ export function InviteMemberDialog({ maxCredits, onSuccess }: InviteMemberDialog
                 min={0}
                 max={maxCredits}
                 className="w-20"
+                disabled={isLoading || !!success}
               />
             </div>
             <p className="text-xs text-muted-foreground">
@@ -130,20 +142,30 @@ export function InviteMemberDialog({ maxCredits, onSuccess }: InviteMemberDialog
               {error}
             </div>
           )}
+
+          {success && (
+            <div className="flex items-center gap-2 p-3 bg-green-50 dark:bg-green-950/30 rounded-lg text-green-600 text-sm">
+              <CheckCircle2 className="h-4 w-4 flex-shrink-0" />
+              {success}
+            </div>
+          )}
         </div>
 
         <DialogFooter>
           <Button variant="outline" onClick={() => setOpen(false)} disabled={isLoading}>
             Cancel
           </Button>
-          <Button onClick={handleInvite} disabled={isLoading || !email}>
+          <Button onClick={handleInvite} disabled={isLoading || !email || !!success}>
             {isLoading ? (
               <>
                 <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                Inviting...
+                Sending...
               </>
             ) : (
-              "Send Invitation"
+              <>
+                <Mail className="h-4 w-4 mr-2" />
+                Send Invitation
+              </>
             )}
           </Button>
         </DialogFooter>

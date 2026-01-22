@@ -41,6 +41,9 @@ export type CreditTransactionType =
   | "refund"
   | "adjustment";
 
+// Team invitation status types
+export type TeamInvitationStatus = "pending" | "accepted" | "expired" | "revoked";
+
 // Property visibility
 export type PropertyVisibility = "private" | "team";
 
@@ -308,6 +311,47 @@ export interface Database {
           created_at?: string;
         };
       };
+      team_invitations: {
+        Row: {
+          id: string;
+          organization_id: string;
+          email: string;
+          invitation_token: string;
+          initial_credits: number;
+          invited_by: string;
+          status: TeamInvitationStatus;
+          created_at: string;
+          updated_at: string;
+          expires_at: string;
+          accepted_at: string | null;
+        };
+        Insert: {
+          id?: string;
+          organization_id: string;
+          email: string;
+          invitation_token: string;
+          initial_credits?: number;
+          invited_by: string;
+          status?: TeamInvitationStatus;
+          created_at?: string;
+          updated_at?: string;
+          expires_at: string;
+          accepted_at?: string | null;
+        };
+        Update: {
+          id?: string;
+          organization_id?: string;
+          email?: string;
+          invitation_token?: string;
+          initial_credits?: number;
+          invited_by?: string;
+          status?: TeamInvitationStatus;
+          created_at?: string;
+          updated_at?: string;
+          expires_at?: string;
+          accepted_at?: string | null;
+        };
+      };
       profiles: {
         Row: {
           id: string;
@@ -547,6 +591,7 @@ export type Organization = Database["public"]["Tables"]["organizations"]["Row"];
 export type OrganizationMember = Database["public"]["Tables"]["organization_members"]["Row"];
 export type CreditTopup = Database["public"]["Tables"]["credit_topups"]["Row"];
 export type CreditTransaction = Database["public"]["Tables"]["credit_transactions"]["Row"];
+export type TeamInvitation = Database["public"]["Tables"]["team_invitations"]["Row"];
 
 // Extended types with relations
 export interface PlanWithDetails extends Plan {

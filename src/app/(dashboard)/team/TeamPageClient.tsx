@@ -1,15 +1,17 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
-import { Users, Coins, Building2, Loader2, Edit2, Check, X } from "lucide-react";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Users, Coins, Building2, Loader2, Edit2, Check, X, AlertCircle } from "lucide-react";
 import { TeamMemberCard } from "@/components/team/TeamMemberCard";
 import { InviteMemberDialog } from "@/components/team/InviteMemberDialog";
+import { PendingInvitationsList } from "@/components/team/PendingInvitationsList";
 import type { Organization, OrganizationMember, Profile } from "@/lib/database.types";
 
 type OrganizationWithMembers = Organization & {
@@ -31,6 +33,7 @@ export function TeamPageClient({ userId, initialOrganization, initialRole }: Tea
   const [isEditingName, setIsEditingName] = useState(false);
   const [newOrgName, setNewOrgName] = useState("");
   const [editName, setEditName] = useState("");
+  const [error, setError] = useState<string | null>(null);
 
   const isOwner = role === "owner";
   const members = organization?.members || [];
@@ -49,22 +52,39 @@ export function TeamPageClient({ userId, initialOrganization, initialRole }: Tea
   };
 
   const handleCreateOrganization = async () => {
+    console.log("TeamPageClient: handleCreateOrganization called with name:", newOrgName);
     if (!newOrgName.trim()) return;
 
     setIsCreating(true);
+    setError(null);
     try {
+      console.log("TeamPageClient: Sending POST to /api/team...");
       const response = await fetch("/api/team", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ name: newOrgName.trim() }),
       });
 
+      console.log("TeamPageClient: Response status:", response.status);
+      const data = await response.json();
+      console.log("TeamPageClient: Response data:", data);
+
       if (response.ok) {
+        console.log("TeamPageClient: Success, fetching organization...");
         await fetchOrganization();
         router.refresh();
+      } else {
+        setError(data.error || "Failed to create organization");
+        // If org already exists, try to fetch it
+        if (data.error === "Organization already exists") {
+          console.log("TeamPageClient: Org exists, fetching...");
+          await fetchOrganization();
+          router.refresh();
+        }
       }
-    } catch (error) {
-      console.error("Error creating organization:", error);
+    } catch (err) {
+      console.error("Error creating organization:", err);
+      setError("An unexpected error occurred");
     } finally {
       setIsCreating(false);
     }
@@ -106,6 +126,12 @@ export function TeamPageClient({ userId, initialOrganization, initialRole }: Tea
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
+          {error && (
+            <Alert variant="destructive">
+              <AlertCircle className="h-4 w-4" />
+              <AlertDescription>{error}</AlertDescription>
+            </Alert>
+          )}
           <div className="space-y-2">
             <Label htmlFor="orgName">Organization Name</Label>
             <Input
@@ -287,6 +313,11 @@ export function TeamPageClient({ userId, initialOrganization, initialRole }: Tea
           )}
         </CardContent>
       </Card>
+
+      {/* Pending Invitations (owners only) */}
+      {isOwner && (
+        <PendingInvitationsList onUpdate={fetchOrganization} />
+      )}
     </div>
   );
 }
