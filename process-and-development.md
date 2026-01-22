@@ -158,6 +158,7 @@ Full monetization with Stripe.
 | Personalized dashboard greeting | Low | ✅ Complete |
 | Stage page 4-step wizard | Medium | ✅ Complete |
 | Guided/Quick mode toggle | Low | ✅ Complete |
+| Image remix & version control | Medium | ✅ Complete |
 | Payment integration | Low | Planned |
 | Team accounts | Low | Future |
 
@@ -299,6 +300,7 @@ vercel logs
 - **properties** - Real estate properties
 - **staging_jobs** - Staging job records
 - **notifications** - Persistent user notifications
+- **version_groups** - Groups versions of remixed images
 
 ### Key Fields
 ```
@@ -316,6 +318,16 @@ staging_jobs:
   - style (text)
   - status (pending/processing/completed/failed)
   - credits_used (integer)
+  - version_group_id (uuid, references version_groups)
+  - is_primary_version (boolean)
+  - parent_job_id (uuid, references staging_jobs)
+
+version_groups:
+  - id (uuid)
+  - user_id (uuid, references profiles)
+  - original_image_hash (text)
+  - original_image_url (text)
+  - free_remixes_used (integer, default: 0)
 ```
 
 ---
@@ -390,6 +402,9 @@ staging_jobs:
 | 1.094 | 2025-01-19 | Wizard step indicator centering adjustments |
 | 1.095 | 2025-01-19 | Align step indicator width with upload card |
 | 1.096 | 2025-01-19 | Fix step indicator centering - remove flex-1 from last step |
+| 1.104 | 2025-01-21 | Image Remix & Version Control: remix API, version groups, primary version selection |
+| 1.105 | 2025-01-21 | Version display improvements: stacked card effect, VersionBadge, server-side grouping |
+| 1.106 | 2025-01-21 | Billing page: add thumbnails to Usage History entries |
 | 1.0.0 | TBD | MVP release |
 
 ---

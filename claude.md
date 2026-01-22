@@ -138,11 +138,14 @@ export async function GET(request: NextRequest) {
 - **properties** - Real estate properties
 - **staging_jobs** - Staging processing jobs
 - **notifications** - Persistent user notifications
+- **version_groups** - Groups remixed versions of same original image
 
 ### Key Relationships
 - `profiles.id` → `auth.users.id` (1:1)
 - `properties.user_id` → `profiles.id` (many:1)
 - `staging_jobs.property_id` → `properties.id` (many:1)
+- `staging_jobs.version_group_id` → `version_groups.id` (many:1)
+- `staging_jobs.parent_job_id` → `staging_jobs.id` (self-reference for remixes)
 
 ## Environment Variables
 
@@ -208,6 +211,10 @@ NEXT_PUBLIC_APP_URL=http://localhost:3000
 | `src/components/staging/CreditDisplay.tsx` | Inline credit usage progress bar |
 | `src/components/staging/PropertySelector.tsx` | Property selection with inline create |
 | `src/components/staging/QuickStageLayout.tsx` | Original two-panel layout for Quick mode |
+| `src/components/staging/RemixDialog.tsx` | Modal for configuring remix options |
+| `src/components/staging/RemixButton.tsx` | Reusable remix action with variants |
+| `src/components/staging/VersionThumbnailStrip.tsx` | Horizontal version thumbnail navigation |
+| `src/components/staging/VersionBadge.tsx` | Compact version count badge |
 | `src/components/staging/wizard/StagingWizard.tsx` | Main wizard container with step routing |
 | `src/components/staging/wizard/WizardStepIndicator.tsx` | 4-step visual progress bar |
 | `src/components/staging/wizard/WizardNavigation.tsx` | Reusable Back/Next/Skip buttons |
@@ -229,6 +236,11 @@ NEXT_PUBLIC_APP_URL=http://localhost:3000
 | `prompt-structure.txt` | Reference AI staging prompt |
 | `AGENT.md` | Agent notes and lessons learned |
 | `supabase/migrations/006_create_notifications.sql` | Notifications table with RLS policies |
+| `supabase/migrations/007_add_remix_support.sql` | Version groups table and remix fields |
+| `src/app/api/staging/[jobId]/remix/route.ts` | Create remix of existing staging job |
+| `src/app/api/staging/[jobId]/primary/route.ts` | Set version as primary |
+| `src/app/api/staging/versions/route.ts` | Fetch all versions for a job |
+| `docs/PRD-Version-Display-Improvements.md` | Version display improvements PRD |
 
 ## Commands
 

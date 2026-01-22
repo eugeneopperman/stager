@@ -108,6 +108,14 @@ useEffect(() => {
 | `StyleStep.tsx` | Step 3: Room type and style selection |
 | `GenerateStep.tsx` | Step 4: Summary and generate button |
 
+### Remix & Version Components (`/src/components/staging/`)
+| Component | Purpose |
+|-----------|---------|
+| `RemixDialog.tsx` | Modal for configuring remix options (room type, style) |
+| `RemixButton.tsx` | Reusable remix action with icon/button/menuItem variants |
+| `VersionThumbnailStrip.tsx` | Horizontal scrollable strip of version thumbnails |
+| `VersionBadge.tsx` | Compact badge showing version count (Layers icon + number) |
+
 ### Property Detail Components (`/src/app/(dashboard)/properties/[id]/`)
 | Component | Purpose |
 |-----------|---------|
@@ -149,6 +157,9 @@ useEffect(() => {
 | Endpoint | Method | Purpose |
 |----------|--------|---------|
 | `/api/staging` | POST | Process single staging job |
+| `/api/staging/[jobId]/remix` | POST | Create a remix of existing job |
+| `/api/staging/[jobId]/primary` | PUT | Set a version as primary |
+| `/api/staging/versions` | GET | Fetch all versions for a job |
 | `/api/search` | GET | Global search (properties + staging jobs) |
 | `/api/properties/[id]/download` | GET | Download all property images as ZIP |
 | `/api/account/delete` | DELETE | Delete user account |
@@ -549,6 +560,68 @@ When building step indicators with connector lines, avoid `flex-1` on the last s
   {/* step content */}
   {!isLastStep && <div className="flex-1">{/* connector */}</div>}
 </div>
+```
+
+---
+
+## Image Remix & Version Control System
+
+### Overview
+The app supports "remixing" staged photos - regenerating with different settings while tracking all versions linked to the same original image.
+
+### Database Schema
+**New table: `version_groups`**
+- Tracks unique original images by hash
+- Stores `free_remixes_used` (2 free per image, then 1 credit each)
+- User-scoped with RLS policies
+
+**New columns on `staging_jobs`:**
+- `version_group_id` - Links to version_groups table
+- `is_primary_version` - Boolean, used for display/downloads
+- `parent_job_id` - References the job that was remixed
+
+### API Endpoints
+| Endpoint | Method | Purpose |
+|----------|--------|---------|
+| `/api/staging/[jobId]/remix` | POST | Create a remix of existing job |
+| `/api/staging/versions` | GET | Fetch all versions for a job |
+| `/api/staging/[jobId]/primary` | PUT | Set a version as primary |
+
+### Version Display Pattern
+Uses **progressive disclosure**:
+1. **Grid view**: Stacked card effect + compact VersionBadge (count indicator)
+2. **Dialog view**: Full VersionThumbnailStrip for navigation
+
+**Stacked card CSS pattern** (pseudo-elements):
+```tsx
+<div className={cn(
+  "relative",
+  hasVersions && [
+    "before:absolute before:inset-0 before:translate-x-1 before:translate-y-1",
+    "before:rounded-2xl before:bg-card before:border before:border-border/50",
+    "before:-z-10 before:opacity-60",
+  ],
+  hasVersions && versions.length > 2 && [
+    "after:absolute after:inset-0 after:translate-x-2 after:translate-y-2",
+    "after:rounded-2xl after:bg-card after:border after:border-border/30",
+    "after:-z-20 after:opacity-30",
+  ]
+)}>
+```
+
+### Server-side Version Grouping
+On property detail pages, filter to show only one job per version group:
+```typescript
+// Group by version_group_id
+const groupedByVersion = new Map<string, typeof completedJobs>();
+for (const job of completedJobs) {
+  if (job.version_group_id) {
+    const existing = groupedByVersion.get(job.version_group_id) || [];
+    existing.push(job);
+    groupedByVersion.set(job.version_group_id, existing);
+  }
+}
+// Select primary (or first) from each group
 ```
 
 ---
