@@ -310,35 +310,71 @@ export async function isEnterprisePlan(userId: string): Promise<boolean> {
 export async function getUserOrganization(userId: string) {
   const supabase = await createClient();
 
-  // Check if user is owner
-  const { data: ownedOrg } = await supabase
+  // First, check if user is owner of an organization (simple query)
+  const { data: ownedOrg, error: ownedError } = await supabase
     .from("organizations")
-    .select(`
-      *,
-      members:organization_members(
-        *,
-        profile:profiles(id, full_name, company_name)
-      )
-    `)
+    .select("*")
     .eq("owner_id", userId)
     .single();
 
-  if (ownedOrg) {
-    return { organization: ownedOrg, role: "owner" as const };
+  if (ownedError && ownedError.code !== "PGRST116") {
+    // Non-"not found" error occurred
   }
 
-  // Check if user is member
-  const { data: membership } = await supabase
+  if (ownedOrg) {
+    // Fetch members separately
+    const { data: members, error: membersError } = await supabase
+      .from("organization_members")
+      .select(`
+        *,
+        profile:profiles(id, full_name, company_name)
+      `)
+      .eq("organization_id", ownedOrg.id);
+
+    if (membersError) {
+      // Members query failed
+    }
+
+    return {
+      organization: { ...ownedOrg, members: members || [] },
+      role: "owner" as const,
+    };
+  }
+
+  // Check if user is a member of an organization
+  const { data: membership, error: memberError } = await supabase
     .from("organization_members")
-    .select(`
-      *,
-      organization:organizations(*)
-    `)
+    .select("*")
     .eq("user_id", userId)
     .single();
 
+  if (memberError && memberError.code !== "PGRST116") {
+    // Non-"not found" error occurred
+  }
+
   if (membership) {
-    return { organization: membership.organization, role: membership.role };
+    // Fetch the organization
+    const { data: org } = await supabase
+      .from("organizations")
+      .select("*")
+      .eq("id", membership.organization_id)
+      .single();
+
+    if (org) {
+      // Fetch all members
+      const { data: members } = await supabase
+        .from("organization_members")
+        .select(`
+          *,
+          profile:profiles(id, full_name, company_name)
+        `)
+        .eq("organization_id", org.id);
+
+      return {
+        organization: { ...org, members: members || [] },
+        role: membership.role,
+      };
+    }
   }
 
   return null;

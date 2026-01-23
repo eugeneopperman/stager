@@ -92,7 +92,13 @@ export function PropertySelector({
       .single();
 
     if (error) {
-      setCreateError("Failed to create property");
+      setCreateError(`Failed to create property: ${error.message}`);
+      setIsCreating(false);
+      return;
+    }
+
+    if (!newProperty) {
+      setCreateError("Property may have been created. Please refresh.");
       setIsCreating(false);
       return;
     }

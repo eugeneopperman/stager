@@ -38,8 +38,13 @@ export function CreatePropertyButton() {
     setIsLoading(true);
     const supabase = createClient();
 
-    // Get current user
-    const { data: { user } } = await supabase.auth.getUser();
+    const { data: { user }, error: authError } = await supabase.auth.getUser();
+
+    if (authError) {
+      setError(`Authentication error: ${authError.message}`);
+      setIsLoading(false);
+      return;
+    }
 
     if (!user) {
       setError("You must be logged in");
@@ -47,17 +52,20 @@ export function CreatePropertyButton() {
       return;
     }
 
-    const { error: insertError } = await supabase
+    const { data: newProperty, error: insertError } = await supabase
       .from("properties")
       .insert({
         user_id: user.id,
         address: address.trim(),
         description: description.trim() || null,
-      });
+      })
+      .select()
+      .single();
 
     if (insertError) {
-      console.error("Failed to create property:", insertError);
-      setError("Failed to create property. Please try again.");
+      setError(`Failed to create property: ${insertError.message}`);
+    } else if (!newProperty) {
+      setError("Property may have been created. Please refresh the page.");
     } else {
       setOpen(false);
       setAddress("");
