@@ -160,7 +160,8 @@ Full monetization with Stripe.
 | Guided/Quick mode toggle | Low | ✅ Complete |
 | Image remix & version control | Medium | ✅ Complete |
 | Payment integration | Low | Planned |
-| Team accounts | Low | Future |
+| Team accounts | Medium | ✅ Complete |
+| Email-based team invitations | Medium | ✅ Complete |
 
 ---
 
@@ -247,8 +248,11 @@ npm run dev
 |----------|-------------|
 | `NEXT_PUBLIC_SUPABASE_URL` | Supabase project URL |
 | `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Supabase anonymous key |
+| `SUPABASE_SERVICE_ROLE_KEY` | Supabase service role key (for server-side operations) |
 | `GOOGLE_GEMINI_API_KEY` | Google AI API key |
 | `NEXT_PUBLIC_APP_URL` | Application URL |
+| `RESEND_API_KEY` | Resend email service API key |
+| `RESEND_FROM_EMAIL` | Email sender address (requires verified domain for production) |
 
 ### Deployment Commands
 ```bash
@@ -405,6 +409,8 @@ version_groups:
 | 1.104 | 2025-01-21 | Image Remix & Version Control: remix API, version groups, primary version selection |
 | 1.105 | 2025-01-21 | Version display improvements: stacked card effect, VersionBadge, server-side grouping |
 | 1.106 | 2025-01-21 | Billing page: add thumbnails to Usage History entries |
+| 1.108 | 2025-01-21 | Subscription Plans & Team Management: plans table, organizations, credit allocation |
+| 1.109 | 2025-01-23 | Email-Based Team Invitations: Resend integration, invitation tokens, accept flow |
 | 1.0.0 | TBD | MVP release |
 
 ---

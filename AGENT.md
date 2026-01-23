@@ -626,6 +626,94 @@ for (const job of completedJobs) {
 
 ---
 
+## Team Invitations System
+
+### Architecture
+Email-based team invitations using Resend for Enterprise organizations.
+
+**Database Table:** `team_invitations`
+- `id`, `organization_id`, `email`, `invitation_token`, `initial_credits`, `invited_by`, `status`, `expires_at`, `accepted_at`
+- Status values: `pending`, `accepted`, `expired`, `revoked`
+- 7-day expiration by default
+
+**Email Service:** Resend
+- Requires `RESEND_API_KEY` environment variable
+- Requires `RESEND_FROM_EMAIL` with verified domain for production
+- Test mode only allows sending to account owner's email
+
+**API Endpoints:**
+| Endpoint | Method | Purpose |
+|----------|--------|---------|
+| `/api/team/invite` | POST | Create invitation & send email |
+| `/api/team/invitations` | GET | List pending invitations |
+| `/api/team/invitations/[id]` | DELETE | Revoke invitation |
+| `/api/team/invitations/[id]/resend` | POST | Resend with new token/expiry |
+| `/api/team/invite/accept` | GET/POST | Validate/accept invitation |
+
+**Components:**
+- `InviteMemberDialog.tsx` - Updated for email-based invitations with success state
+- `PendingInvitationsList.tsx` - Shows pending invitations with resend/revoke actions
+
+### Resend Domain Verification
+For production email sending:
+1. Go to https://resend.com/domains
+2. Add your domain
+3. Add DNS records (MX, TXT, CNAME)
+4. Update `RESEND_FROM_EMAIL` to use verified domain
+
+---
+
+## Debugging Tips
+
+### Lazy Initialization for External APIs
+When using external APIs (like Resend), lazy-initialize clients to avoid build-time errors:
+
+```typescript
+// BAD - fails at build time if env var not set
+const resend = new Resend(process.env.RESEND_API_KEY);
+
+// GOOD - only initializes when called
+let resendClient: Resend | null = null;
+
+function getResendClient(): Resend {
+  if (!resendClient) {
+    const apiKey = process.env.RESEND_API_KEY;
+    if (!apiKey) throw new Error("RESEND_API_KEY not set");
+    resendClient = new Resend(apiKey);
+  }
+  return resendClient;
+}
+```
+
+### Suspense Boundary for useSearchParams
+Next.js requires Suspense boundaries when using `useSearchParams()` in pages that can be statically rendered:
+
+```tsx
+function PageContent() {
+  const searchParams = useSearchParams();
+  // ... component logic
+}
+
+export default function Page() {
+  return (
+    <Suspense fallback={<Loading />}>
+      <PageContent />
+    </Suspense>
+  );
+}
+```
+
+### Supabase Join Results as Arrays
+When using Supabase joins, the related data may come as an array instead of a single object:
+
+```typescript
+// Handle both cases
+const orgData = invitation.organization;
+const org = Array.isArray(orgData) ? orgData[0] : orgData;
+```
+
+---
+
 ## Session Continuity Tips
 
 1. Read `CLAUDE.md` for project overview and conventions

@@ -158,6 +158,10 @@ SUPABASE_SERVICE_ROLE_KEY=your_service_role_key
 # Gemini AI
 GOOGLE_GEMINI_API_KEY=your_gemini_api_key
 
+# Resend (Email)
+RESEND_API_KEY=re_xxxxx
+RESEND_FROM_EMAIL=Stager <noreply@yourdomain.com>
+
 # App
 NEXT_PUBLIC_APP_URL=http://localhost:3000
 ```
@@ -196,6 +200,7 @@ NEXT_PUBLIC_APP_URL=http://localhost:3000
 | `src/lib/version.ts` | App version number displayed in UI |
 | `src/lib/database.types.ts` | TypeScript types for Supabase tables |
 | `src/lib/notifications.ts` | Notification helper functions (create, fetch, mark read) |
+| `src/lib/email.ts` | Resend email client for team invitations |
 | `src/middleware.ts` | Auth protection middleware |
 | `src/contexts/SidebarContext.tsx` | Sidebar collapse/auto-hide state management |
 | `src/components/providers/ThemeProvider.tsx` | next-themes wrapper for dark/light mode |
@@ -241,6 +246,18 @@ NEXT_PUBLIC_APP_URL=http://localhost:3000
 | `src/app/api/staging/[jobId]/primary/route.ts` | Set version as primary |
 | `src/app/api/staging/versions/route.ts` | Fetch all versions for a job |
 | `docs/PRD-Version-Display-Improvements.md` | Version display improvements PRD |
+| `supabase/migrations/008_subscription_plans.sql` | Subscription plans, organizations, team members |
+| `supabase/migrations/009_team_invitations.sql` | Team invitations table with RLS |
+| `src/components/team/InviteMemberDialog.tsx` | Email-based team invitation dialog |
+| `src/components/team/PendingInvitationsList.tsx` | List pending invitations with resend/revoke |
+| `src/components/team/TeamMemberCard.tsx` | Team member display with credit allocation |
+| `src/app/api/team/invite/route.ts` | Create invitation and send email |
+| `src/app/api/team/invitations/route.ts` | List pending invitations |
+| `src/app/api/team/invitations/[id]/route.ts` | Revoke invitation |
+| `src/app/api/team/invitations/[id]/resend/route.ts` | Resend invitation email |
+| `src/app/api/team/invite/accept/route.ts` | Validate and accept invitation |
+| `src/app/invite/accept/page.tsx` | Invitation accept page for users |
+| `src/app/(dashboard)/team/TeamPageClient.tsx` | Team management page |
 
 ## Commands
 
