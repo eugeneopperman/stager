@@ -1,9 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
-import { getProviderRouter, getReplicateProvider, getDecor8Provider, Decor8Provider } from "@/lib/providers";
+import { getProviderRouter, getReplicateProvider, Decor8Provider } from "@/lib/providers";
 import { type RoomType, type FurnitureStyle, CREDITS_PER_STAGING, ROOM_TYPES } from "@/lib/constants";
 import { createNotification } from "@/lib/notifications";
-import { getUserCredits, deductCredits, logCreditTransaction } from "@/lib/subscription";
+import { getUserCredits, deductCredits, logCreditTransaction } from "@/lib/billing/subscription";
 
 /**
  * POST /api/staging
@@ -13,7 +13,6 @@ import { getUserCredits, deductCredits, logCreditTransaction } from "@/lib/subsc
  */
 export async function POST(request: NextRequest) {
   const startTime = Date.now();
-  console.log("[Staging API] Request received");
 
   try {
     const supabase = await createClient();
@@ -24,22 +23,18 @@ export async function POST(request: NextRequest) {
     } = await supabase.auth.getUser();
 
     if (!user) {
-      console.log("[Staging API] Unauthorized - no user");
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
-    console.log("[Staging API] User authenticated:", user.id);
 
     // Get user credits (handles both personal and team credits)
     const creditInfo = await getUserCredits(user.id);
 
     if (creditInfo.available < CREDITS_PER_STAGING) {
-      console.log("[Staging API] Insufficient credits");
       return NextResponse.json(
         { error: "Insufficient credits. Please upgrade your plan." },
         { status: 402 }
       );
     }
-    console.log("[Staging API] Credits OK:", creditInfo.available, "isTeam:", creditInfo.isTeamMember);
 
     // Parse request body
     const body = await request.json();
@@ -62,17 +57,14 @@ export async function POST(request: NextRequest) {
     };
 
     if (!image || !mimeType || !roomType || !style) {
-      console.log("[Staging API] Missing required fields");
       return NextResponse.json(
         { error: "Missing required fields" },
         { status: 400 }
       );
     }
-    console.log("[Staging API] Room:", roomType, "Style:", style, "Image size:", image.length, "Mask:", mask ? "yes" : "no");
 
     // Generate a unique job ID
     const jobId = crypto.randomUUID();
-    console.log("[Staging API] Job ID:", jobId);
 
     // Try to upload original image to Supabase Storage (non-blocking)
     const originalFileName = `${user.id}/${jobId}-original.${mimeType.split("/")[1] || "png"}`;
@@ -95,27 +87,20 @@ export async function POST(request: NextRequest) {
 
         if (signedUrlData?.signedUrl) {
           originalImageUrl = signedUrlData.signedUrl;
-          console.log("[Staging API] Original image uploaded with signed URL");
         } else {
           const { data: publicUrl } = supabase.storage
             .from("staging-images")
             .getPublicUrl(originalFileName);
           originalImageUrl = publicUrl.publicUrl;
-          console.log("[Staging API] Original image uploaded with public URL");
         }
-      } else {
-        console.error("[Staging API] Storage upload failed:", originalUploadError.message);
       }
-    } catch (storageError) {
-      console.error("[Staging API] Storage error (non-fatal):", storageError);
+    } catch {
       // Continue with base64 fallback
     }
 
     // Select provider
-    console.log("[Staging API] Selecting provider...");
     const router = getProviderRouter();
-    const { provider, fallbackUsed } = await router.selectProvider();
-    console.log("[Staging API] Provider selected:", provider.providerId, "Fallback used:", fallbackUsed);
+    const { provider } = await router.selectProvider();
 
     // Create staging job record
     const { data: job, error: jobError } = await supabase
@@ -140,17 +125,13 @@ export async function POST(request: NextRequest) {
         { status: 500 }
       );
     }
-    console.log("[Staging API] Job created in DB");
 
     // Handle sync provider (Decor8 or Gemini)
     if (provider.supportsSync) {
-      console.log("[Staging API] Using sync provider:", provider.providerId, "declutterFirst:", declutterFirst);
-
       let result;
 
       // If declutterFirst and using Decor8, use the declutter → stage pipeline
       if (declutterFirst && provider instanceof Decor8Provider) {
-        console.log("[Staging API] Using declutter → stage pipeline");
         result = await provider.declutterAndStage({
           imageBase64: image,
           mimeType,
@@ -168,10 +149,8 @@ export async function POST(request: NextRequest) {
           maskBase64: mask,
         });
       }
-      console.log("[Staging API] Staging returned, success:", result.success);
 
       if (!result.success || !result.imageData) {
-        console.error("[Staging API] Staging failed:", result.error);
         await supabase
           .from("staging_jobs")
           .update({
@@ -199,7 +178,6 @@ export async function POST(request: NextRequest) {
       }
 
       // Upload staged image
-      console.log("[Staging API] Uploading staged image...");
       const fileName = `${user.id}/${job.id}-staged.${result.mimeType?.split("/")[1] || "png"}`;
       const imageBuffer = Buffer.from(result.imageData, "base64");
 
@@ -269,7 +247,6 @@ export async function POST(request: NextRequest) {
         );
       }
 
-      console.log("[Staging API] Success! Processing time:", Date.now() - startTime, "ms");
       return NextResponse.json({
         success: true,
         jobId: job.id,
@@ -280,15 +257,11 @@ export async function POST(request: NextRequest) {
     }
 
     // Handle async provider (Stable Diffusion)
-    console.log("[Staging API] Using async provider (Stable Diffusion)");
-    console.log("[Staging API] Original image URL:", originalImageUrl.substring(0, 150));
-
     // Get webhook URL for completion callback (only use HTTPS URLs)
     const appUrl = process.env.NEXT_PUBLIC_APP_URL || "";
     const webhookUrl = appUrl.startsWith("https://")
       ? `${appUrl}/api/webhooks/replicate`
       : undefined;
-    console.log("[Staging API] Webhook URL:", webhookUrl || "none (will use polling)");
 
     // Start async staging with Replicate
     // Use base64 data URL directly (storage URLs have permission issues)
@@ -305,7 +278,6 @@ export async function POST(request: NextRequest) {
         },
         webhookUrl // Pass undefined if not set, not empty string
       );
-      console.log("[Staging API] Replicate prediction started:", asyncResult.predictionId);
 
       // Store prediction ID for status polling
       await supabase
@@ -347,10 +319,8 @@ export async function POST(request: NextRequest) {
   } catch (error) {
     console.error("[Staging API] Unexpected error:", error);
     const errorMessage = error instanceof Error ? error.message : "An unexpected error occurred";
-    const errorStack = error instanceof Error ? error.stack : undefined;
-    console.error("[Staging API] Error details:", errorMessage, errorStack);
     return NextResponse.json(
-      { error: errorMessage, details: errorStack?.substring(0, 500) },
+      { error: errorMessage },
       { status: 500 }
     );
   }

@@ -45,10 +45,12 @@ export function SubscriptionStatus({ subscription, hasStripeCustomer }: Subscrip
     setIsLoadingCancel(true);
 
     try {
-      const response = await fetch("/api/billing/subscription/cancel", {
-        method: "POST",
+      const response = await fetch("/api/billing/subscription", {
+        method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ cancel: !subscription?.cancel_at_period_end }),
+        body: JSON.stringify({
+          action: subscription?.cancel_at_period_end ? "resume" : "cancel"
+        }),
       });
 
       if (response.ok) {
@@ -180,7 +182,7 @@ export function SubscriptionStatus({ subscription, hasStripeCustomer }: Subscrip
                   <AlertDialogTitle>Cancel Subscription?</AlertDialogTitle>
                   <AlertDialogDescription>
                     Your subscription will remain active until {formatDate(subscription.current_period_end)}.
-                    After that, you'll be downgraded to the Free plan with 5 credits per month.
+                    After that, you&apos;ll be downgraded to the Free plan with 5 credits per month.
                     You can resume your subscription anytime before the period ends.
                   </AlertDialogDescription>
                 </AlertDialogHeader>

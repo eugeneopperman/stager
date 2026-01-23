@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { PropertySelector } from "@/components/staging/PropertySelector";
@@ -51,10 +52,12 @@ export function GenerateStep({
           <Card className="overflow-hidden">
             <CardContent className="p-0">
               <div className="relative aspect-video bg-muted">
-                <img
+                <Image
                   src={preview}
                   alt="Room to stage"
-                  className="w-full h-full object-contain"
+                  fill
+                  className="object-contain"
+                  unoptimized
                 />
                 {/* Preview overlay showing selection */}
                 <div className="absolute bottom-4 left-4 right-4 flex gap-2 flex-wrap">

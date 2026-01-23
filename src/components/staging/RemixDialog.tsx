@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import Image from "next/image";
 import { useRouter } from "next/navigation";
 import {
   Dialog,
@@ -18,7 +19,6 @@ import {
   type FurnitureStyle,
   FREE_REMIXES_PER_IMAGE,
   VERSION_WARNING_THRESHOLD,
-  FURNITURE_STYLES,
 } from "@/lib/constants";
 import { Loader2, AlertTriangle, Gift, Coins } from "lucide-react";
 import { toast } from "sonner";
@@ -47,23 +47,23 @@ export function RemixDialog({
 
   // Fetch version info when dialog opens
   useEffect(() => {
-    if (open) {
-      fetchVersionInfo();
-    }
-  }, [open, job.id]);
+    if (!open) return;
 
-  const fetchVersionInfo = async () => {
-    try {
-      const response = await fetch(`/api/staging/versions?jobId=${job.id}`);
-      if (response.ok) {
-        const data = await response.json();
-        setFreeRemixesRemaining(data.freeRemixesRemaining);
-        setTotalVersions(data.totalVersions);
+    const fetchVersionInfo = async () => {
+      try {
+        const response = await fetch(`/api/staging/versions?jobId=${job.id}`);
+        if (response.ok) {
+          const data = await response.json();
+          setFreeRemixesRemaining(data.freeRemixesRemaining);
+          setTotalVersions(data.totalVersions);
+        }
+      } catch (error) {
+        console.error("Failed to fetch version info:", error);
       }
-    } catch (error) {
-      console.error("Failed to fetch version info:", error);
-    }
-  };
+    };
+
+    void fetchVersionInfo();
+  }, [open, job.id]);
 
   const handleGenerate = async () => {
     if (!roomType || style.length === 0) {
@@ -103,7 +103,7 @@ export function RemixDialog({
 
       if (onRemixComplete && data.jobId) {
         // Fetch the new job details
-        const jobResponse = await fetch(`/api/staging/${data.jobId}/status`);
+        const jobResponse = await fetch(`/api/staging/${data.jobId}`);
         if (jobResponse.ok) {
           const jobData = await jobResponse.json();
           onRemixComplete(jobData);
@@ -150,10 +150,12 @@ export function RemixDialog({
           {hasOriginalImage && (
             <div className="flex gap-4">
               <div className="relative w-32 h-24 rounded-lg overflow-hidden flex-shrink-0">
-                <img
-                  src={job.original_image_url}
+                <Image
+                  src={job.original_image_url!}
                   alt="Original"
-                  className="w-full h-full object-cover"
+                  fill
+                  className="object-cover"
+                  unoptimized
                 />
                 <div className="absolute bottom-0 inset-x-0 bg-black/60 px-2 py-0.5">
                   <span className="text-[10px] text-white">Original</span>

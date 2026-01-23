@@ -11,7 +11,6 @@ import { type RoomType, type FurnitureStyle } from "@/lib/constants";
  */
 export async function POST(request: NextRequest) {
   const startTime = Date.now();
-  console.log("[Declutter API] Request received");
 
   try {
     const supabase = await createClient();
@@ -60,7 +59,6 @@ export async function POST(request: NextRequest) {
 
     if (stageAfter && roomType && style) {
       // Declutter then stage
-      console.log("[Declutter API] Running declutter → stage pipeline");
       const result = await decor8Provider.declutterAndStage({
         imageBase64: image,
         mimeType,
@@ -86,7 +84,6 @@ export async function POST(request: NextRequest) {
       });
     } else {
       // Just declutter
-      console.log("[Declutter API] Running declutter only");
       const result = await decor8Provider.declutterRoom({
         imageBase64: image,
         mimeType,

@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
 import { PlanCard } from "./PlanCard";
 import type { Plan } from "@/lib/database.types";
 
@@ -11,7 +10,6 @@ interface PricingTableProps {
 }
 
 export function PricingTable({ plans, currentPlanSlug }: PricingTableProps) {
-  const router = useRouter();
   const [loadingPlan, setLoadingPlan] = useState<string | null>(null);
 
   const handleSelectPlan = async (plan: Plan) => {

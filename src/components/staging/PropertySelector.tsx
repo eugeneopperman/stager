@@ -22,6 +22,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Building2, Plus, Loader2, X } from "lucide-react";
+import { useCreateProperty } from "@/hooks/useCreateProperty";
 import type { Property } from "@/lib/database.types";
 
 interface PropertySelectorProps {
@@ -38,10 +39,18 @@ export function PropertySelector({
   const [properties, setProperties] = useState<Property[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [showCreateDialog, setShowCreateDialog] = useState(false);
-  const [isCreating, setIsCreating] = useState(false);
   const [newAddress, setNewAddress] = useState("");
   const [newDescription, setNewDescription] = useState("");
-  const [createError, setCreateError] = useState<string | null>(null);
+
+  const { createProperty, isCreating, error: createError, clearError } = useCreateProperty({
+    onSuccess: (newProperty) => {
+      setProperties((prev) => [newProperty, ...prev]);
+      onChange(newProperty.id, newProperty);
+      setNewAddress("");
+      setNewDescription("");
+      setShowCreateDialog(false);
+    },
+  });
 
   // Fetch properties on mount
   useEffect(() => {
@@ -61,57 +70,7 @@ export function PropertySelector({
 
   const handleCreateProperty = async (e: React.FormEvent) => {
     e.preventDefault();
-    setCreateError(null);
-
-    if (!newAddress.trim()) {
-      setCreateError("Address is required");
-      return;
-    }
-
-    setIsCreating(true);
-    const supabase = createClient();
-
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
-
-    if (!user) {
-      setCreateError("You must be logged in");
-      setIsCreating(false);
-      return;
-    }
-
-    const { data: newProperty, error } = await supabase
-      .from("properties")
-      .insert({
-        user_id: user.id,
-        address: newAddress.trim(),
-        description: newDescription.trim() || null,
-      })
-      .select()
-      .single();
-
-    if (error) {
-      setCreateError(`Failed to create property: ${error.message}`);
-      setIsCreating(false);
-      return;
-    }
-
-    if (!newProperty) {
-      setCreateError("Property may have been created. Please refresh.");
-      setIsCreating(false);
-      return;
-    }
-
-    // Add to list and select it
-    setProperties((prev) => [newProperty, ...prev]);
-    onChange(newProperty.id, newProperty);
-
-    // Reset and close
-    setNewAddress("");
-    setNewDescription("");
-    setShowCreateDialog(false);
-    setIsCreating(false);
+    await createProperty(newAddress, newDescription);
   };
 
   const selectedProperty = properties.find((p) => p.id === value);
@@ -193,7 +152,10 @@ export function PropertySelector({
       </div>
 
       {/* Create Property Dialog */}
-      <Dialog open={showCreateDialog} onOpenChange={setShowCreateDialog}>
+      <Dialog open={showCreateDialog} onOpenChange={(open) => {
+        setShowCreateDialog(open);
+        if (!open) clearError();
+      }}>
         <DialogContent className="sm:max-w-[425px]">
           <form onSubmit={handleCreateProperty}>
             <DialogHeader>

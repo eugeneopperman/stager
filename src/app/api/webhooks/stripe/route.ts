@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { headers } from "next/headers";
-import { stripe, getPlanByPriceId, getTopupByPriceId, PLAN_CONFIG } from "@/lib/stripe";
+import { stripe, getPlanByPriceId, PLAN_CONFIG } from "@/lib/billing/stripe";
 import { createClient, SupabaseClient } from "@supabase/supabase-js";
 import Stripe from "stripe";
 
@@ -70,7 +70,8 @@ export async function POST(request: NextRequest) {
         break;
 
       default:
-        console.log(`Unhandled event type: ${event.type}`);
+        // Unhandled event type
+        break;
     }
 
     return NextResponse.json({ received: true });
@@ -216,8 +217,6 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
           .eq("id", userId);
       }
     }
-
-    console.log(`Subscription created for user ${userId}, plan ${planSlug}`);
   }
 
   // Handle one-time payment (top-up)
@@ -264,8 +263,6 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
       balance_after: newBalance,
       description: `Purchased ${credits} credits`,
     });
-
-    console.log(`Top-up completed for user ${userId}, ${credits} credits`);
   }
 }
 
@@ -363,8 +360,6 @@ async function handleInvoicePaid(invoice: Stripe.Invoice) {
     balance_after: planConfig.credits,
     description: `Monthly credit reset - ${planSlug} plan`,
   });
-
-  console.log(`Credits reset for user ${userId}, ${planConfig.credits} credits`);
 }
 
 // Handle invoice.payment_failed
@@ -378,8 +373,6 @@ async function handlePaymentFailed(invoice: Stripe.Invoice) {
     .from("subscriptions")
     .update({ status: "past_due" })
     .eq("stripe_subscription_id", subscriptionId);
-
-  console.log(`Subscription ${subscriptionId} marked as past_due`);
 }
 
 // Handle customer.subscription.updated
@@ -429,8 +422,6 @@ async function handleSubscriptionUpdated(subscription: Stripe.Subscription) {
       .update({ plan_id: plan.id })
       .eq("id", userId);
   }
-
-  console.log(`Subscription ${subscription.id} updated`);
 }
 
 // Handle customer.subscription.deleted - downgrade to free
@@ -476,13 +467,10 @@ async function handleSubscriptionDeleted(subscription: Stripe.Subscription) {
       .update({ total_credits: 0, unallocated_credits: 0 })
       .eq("id", org.id);
   }
-
-  console.log(`Subscription ${subscription.id} deleted, user ${userId} downgraded to free`);
 }
 
 // Handle payment_intent.succeeded - for top-ups processed differently
-async function handlePaymentIntentSucceeded(paymentIntent: Stripe.PaymentIntent) {
+async function handlePaymentIntentSucceeded(_paymentIntent: Stripe.PaymentIntent) {
   // Top-ups are typically handled via checkout.session.completed
   // This is here for any direct payment intents
-  console.log(`Payment intent ${paymentIntent.id} succeeded`);
 }

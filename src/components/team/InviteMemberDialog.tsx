@@ -58,7 +58,7 @@ export function InviteMemberDialog({ maxCredits, onSuccess }: InviteMemberDialog
         onSuccess();
         router.refresh();
       }, 1500);
-    } catch (err) {
+    } catch {
       setError("Failed to send invitation. Please try again.");
     } finally {
       setIsLoading(false);
@@ -87,7 +87,7 @@ export function InviteMemberDialog({ maxCredits, onSuccess }: InviteMemberDialog
         <DialogHeader>
           <DialogTitle>Invite Team Member</DialogTitle>
           <DialogDescription>
-            Send an invitation email to add someone to your team. They can join even if they don't have an account yet.
+            Send an invitation email to add someone to your team. They can join even if they don&apos;t have an account yet.
           </DialogDescription>
         </DialogHeader>
 

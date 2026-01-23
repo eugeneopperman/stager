@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useSyncExternalStore } from "react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { StagingWizard } from "@/components/staging/wizard";
@@ -12,18 +12,29 @@ type StagingMode = "guided" | "quick";
 
 const STORAGE_KEY = "stager-staging-mode";
 
-export default function StagePage() {
-  const [mode, setMode] = useState<StagingMode>("guided");
-  const [mounted, setMounted] = useState(false);
+function getStoredMode(): StagingMode {
+  if (typeof window === "undefined") return "guided";
+  const stored = localStorage.getItem(STORAGE_KEY);
+  return stored === "guided" || stored === "quick" ? stored : "guided";
+}
 
-  // Load preference from localStorage on mount
-  useEffect(() => {
-    setMounted(true);
-    const stored = localStorage.getItem(STORAGE_KEY) as StagingMode | null;
-    if (stored === "guided" || stored === "quick") {
-      setMode(stored);
-    }
-  }, []);
+function subscribeToStorage(callback: () => void) {
+  window.addEventListener("storage", callback);
+  return () => window.removeEventListener("storage", callback);
+}
+
+export default function StagePage() {
+  const storedMode = useSyncExternalStore(
+    subscribeToStorage,
+    getStoredMode,
+    () => "guided" as StagingMode
+  );
+  const [mode, setMode] = useState<StagingMode>(storedMode);
+  const mounted = useSyncExternalStore(
+    () => () => {},
+    () => true,
+    () => false
+  );
 
   // Save preference to localStorage
   const handleModeChange = (newMode: StagingMode) => {

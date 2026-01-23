@@ -7,6 +7,7 @@ import {
   useEffect,
   useCallback,
   useRef,
+  useSyncExternalStore,
   type ReactNode,
 } from "react";
 
@@ -33,29 +34,62 @@ interface SidebarProviderProps {
   children: ReactNode;
 }
 
+// Helper to read from localStorage
+function getStoredCollapsed(): boolean {
+  if (typeof window === "undefined") return false;
+  return localStorage.getItem(STORAGE_KEY_COLLAPSED) === "true";
+}
+
+function getStoredAutoHide(): boolean {
+  if (typeof window === "undefined") return false;
+  return localStorage.getItem(STORAGE_KEY_AUTOHIDE) === "true";
+}
+
+function subscribeToStorage(callback: () => void) {
+  window.addEventListener("storage", callback);
+  return () => window.removeEventListener("storage", callback);
+}
+
 export function SidebarProvider({ children }: SidebarProviderProps) {
+  // Read initial values from localStorage via useSyncExternalStore
+  const storedCollapsed = useSyncExternalStore(
+    subscribeToStorage,
+    getStoredCollapsed,
+    () => false
+  );
+  const storedAutoHide = useSyncExternalStore(
+    subscribeToStorage,
+    getStoredAutoHide,
+    () => false
+  );
+  const mounted = useSyncExternalStore(
+    () => () => {},
+    () => true,
+    () => false
+  );
+
   // Initialize state from localStorage (client-side only)
-  const [isCollapsed, setIsCollapsed] = useState(false);
-  const [isAutoHide, setIsAutoHide] = useState(false);
+  const [isCollapsed, setIsCollapsed] = useState(storedCollapsed);
+  const [isAutoHide, setIsAutoHide] = useState(storedAutoHide);
   const [isHovered, setIsHovered] = useState(false);
-  const [mounted, setMounted] = useState(false);
 
   // Timeout ref for delayed hide
   const hideTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
-  // Initialize from localStorage after mount
+  // Sync state when stored values change
   useEffect(() => {
-    setMounted(true);
-    const storedCollapsed = localStorage.getItem(STORAGE_KEY_COLLAPSED);
-    const storedAutoHide = localStorage.getItem(STORAGE_KEY_AUTOHIDE);
+    if (mounted) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- Syncing state with external store is valid
+      setIsCollapsed(storedCollapsed);
+    }
+  }, [storedCollapsed, mounted]);
 
-    if (storedCollapsed !== null) {
-      setIsCollapsed(storedCollapsed === "true");
+  useEffect(() => {
+    if (mounted) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- Syncing state with external store is valid
+      setIsAutoHide(storedAutoHide);
     }
-    if (storedAutoHide !== null) {
-      setIsAutoHide(storedAutoHide === "true");
-    }
-  }, []);
+  }, [storedAutoHide, mounted]);
 
   // Persist collapsed state
   useEffect(() => {

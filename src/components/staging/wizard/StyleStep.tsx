@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import { Card, CardContent } from "@/components/ui/card";
 import { RoomTypeDropdown } from "@/components/staging/RoomTypeDropdown";
 import { StyleGallery } from "@/components/staging/StyleGallery";
@@ -38,10 +39,12 @@ export function StyleStep({
           <Card className="overflow-hidden">
             <CardContent className="p-0">
               <div className="relative aspect-video bg-muted">
-                <img
+                <Image
                   src={preview}
                   alt="Room to stage"
-                  className="w-full h-full object-contain"
+                  fill
+                  className="object-contain"
+                  unoptimized
                 />
               </div>
             </CardContent>

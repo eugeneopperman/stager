@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import { cn } from "@/lib/utils";
 import { ROOM_TYPES, type RoomType } from "@/lib/constants";
 import {
@@ -82,10 +83,12 @@ export function BatchImageCard({
     >
       {/* Image */}
       <div className="relative aspect-video">
-        <img
+        <Image
           src={mode === "results" && image.stagedImageUrl ? image.stagedImageUrl : image.preview}
           alt={roomTypeInfo?.label || "Room"}
-          className="w-full h-full object-cover"
+          fill
+          className="object-cover"
+          unoptimized
         />
 
         {/* Status Overlay */}

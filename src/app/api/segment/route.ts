@@ -9,8 +9,6 @@ import { createClient } from "@/lib/supabase/server";
  * User types what to select (e.g., "sofa, table, chairs").
  */
 export async function POST(request: NextRequest) {
-  console.log("[Segment API] Request received");
-
   try {
     const supabase = await createClient();
 
@@ -29,7 +27,7 @@ export async function POST(request: NextRequest) {
       image,
       mimeType,
       prompt,
-      negativePrompt,
+      negativePrompt: _negativePrompt,
     } = body as {
       image: string; // base64 image data
       mimeType: string;
@@ -54,8 +52,6 @@ export async function POST(request: NextRequest) {
 
     // Convert to data URL for Replicate
     const imageUrl = `data:${mimeType};base64,${image}`;
-
-    console.log("[Segment API] Prompt:", prompt);
 
     // Call FastSAM on Replicate - 50x faster than regular SAM
     const response = await fetch("https://api.replicate.com/v1/predictions", {
@@ -87,7 +83,6 @@ export async function POST(request: NextRequest) {
     }
 
     const prediction = await response.json();
-    console.log("[Segment API] Prediction created:", prediction.id);
 
     // Poll for completion - FastSAM is very fast (~2-5 seconds)
     const maxAttempts = 40; // 20 seconds max
@@ -98,7 +93,6 @@ export async function POST(request: NextRequest) {
         break;
       }
       if (result.status === "failed" || result.status === "canceled") {
-        console.error("[Segment API] Prediction failed:", result.error);
         return NextResponse.json(
           { error: result.error || "Segmentation failed" },
           { status: 500 }
@@ -115,22 +109,14 @@ export async function POST(request: NextRequest) {
         }
       );
       result = await pollResponse.json();
-
-      // Log progress every 10 attempts
-      if (i % 10 === 0) {
-        console.log("[Segment API] Polling attempt", i, "status:", result.status);
-      }
     }
 
     if (result.status !== "succeeded") {
-      console.error("[Segment API] Timed out. Final status:", result.status);
       return NextResponse.json(
         { error: "Segmentation timed out" },
         { status: 500 }
       );
     }
-
-    console.log("[Segment API] Success! Output:", JSON.stringify(result.output).substring(0, 500));
 
     // FastSAM returns output as a string URL or array of URLs
     let maskUrl: string | null = null;
@@ -143,14 +129,11 @@ export async function POST(request: NextRequest) {
     }
 
     if (!maskUrl) {
-      console.error("[Segment API] No mask in output:", result.output);
       return NextResponse.json(
         { error: "No objects found matching your prompt" },
         { status: 500 }
       );
     }
-
-    console.log("[Segment API] Got mask URL:", maskUrl);
 
     // Fetch the mask and convert to base64
     const maskResponse = await fetch(maskUrl);

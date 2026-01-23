@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useState } from "react";
+import Image from "next/image";
 import { Button } from "@/components/ui/button";
 import {
   Tooltip,
@@ -47,7 +48,7 @@ export function PreprocessingToolbar({
   const [workingImageUrl, setWorkingImageUrl] = useState<string | null>(null);
   const [adjustments, setAdjustments] = useState<ImageAdjustments>(DEFAULT_ADJUSTMENTS);
   const [history, setHistory] = useState<string[]>([]);
-  const [currentMask, setCurrentMask] = useState<string | null>(null);
+  const [, setCurrentMask] = useState<string | null>(null);
   const [showOriginal, setShowOriginal] = useState(false);
 
   // The current display image (working or original)
@@ -176,11 +177,13 @@ export function PreprocessingToolbar({
       ) : (
         /* Main Image Preview */
         <div className="relative aspect-video rounded-lg overflow-hidden bg-muted">
-          <img
+          <Image
             src={displayImageUrl}
             alt="Preview"
-            className="w-full h-full object-contain transition-all duration-150"
+            fill
+            className="object-contain transition-all duration-150"
             style={previewStyle}
+            unoptimized
           />
           {hasChanges && (
             <button

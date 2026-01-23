@@ -1,12 +1,12 @@
 import { createClient } from "@/lib/supabase/server";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { User, Building2, Mail, Calendar, Shield, Palette, PanelLeft } from "lucide-react";
-import { ProfileForm } from "./ProfileForm";
-import { PasswordSection } from "./PasswordSection";
-import { DangerZone } from "./DangerZone";
-import { ThemeSelector } from "./ThemeSelector";
-import { SidebarSettings } from "./SidebarSettings";
+import { User, Mail, Calendar, Shield, Palette, PanelLeft } from "lucide-react";
+import { ProfileForm } from "./_components/ProfileForm";
+import { PasswordSection } from "./_components/PasswordSection";
+import { DangerZone } from "./_components/DangerZone";
+import { ThemeSelector } from "./_components/ThemeSelector";
+import { SidebarSettings } from "./_components/SidebarSettings";
 
 export default async function SettingsPage() {
   const supabase = await createClient();

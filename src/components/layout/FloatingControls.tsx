@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef, useCallback } from "react";
+import Image from "next/image";
 import { Search, Building2, ImageIcon, Loader2, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -246,10 +247,13 @@ export function FloatingControls() {
                         )}
                       >
                         {job.staged_image_url ? (
-                          <img
+                          <Image
                             src={job.staged_image_url}
                             alt=""
-                            className="h-8 w-8 rounded-xl object-cover shrink-0 ring-1 ring-border/40"
+                            width={32}
+                            height={32}
+                            className="rounded-xl object-cover shrink-0 ring-1 ring-border/40"
+                            unoptimized
                           />
                         ) : (
                           <ImageIcon className="h-4 w-4 text-muted-foreground shrink-0" />

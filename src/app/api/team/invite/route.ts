@@ -4,7 +4,7 @@ import {
   sendTeamInvitationEmail,
   generateInvitationToken,
   getInvitationExpiryDate,
-} from "@/lib/email";
+} from "@/lib/notifications/email";
 
 // POST - Invite a member to organization by email
 export async function POST(request: NextRequest) {
@@ -112,7 +112,7 @@ export async function POST(request: NextRequest) {
 
     // Check if user already exists and is a member
     // Use service role to look up auth.users by email
-    const { data: existingUserProfile } = await supabase
+    const { data: _existingUserProfile } = await supabase
       .from("profiles")
       .select("id")
       .eq("id", user.id)
@@ -121,7 +121,7 @@ export async function POST(request: NextRequest) {
     // Try to find the user by checking if any profile exists with this email
     // We need to use a workaround since we can't directly query auth.users
     // Instead, check if an invitation was previously accepted by this email
-    const { data: existingMemberByEmail } = await supabase
+    const { data: _existingMemberByEmail } = await supabase
       .from("organization_members")
       .select(
         `

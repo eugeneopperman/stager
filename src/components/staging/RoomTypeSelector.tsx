@@ -1,29 +1,8 @@
 "use client";
 
 import { cn } from "@/lib/utils";
-import { ROOM_TYPES, type RoomType } from "@/lib/constants";
-import {
-  Sofa,
-  Bed,
-  Baby,
-  UtensilsCrossed,
-  CookingPot,
-  Briefcase,
-  Bath,
-  Trees,
-  LucideIcon,
-} from "lucide-react";
-
-const iconMap: Record<string, LucideIcon> = {
-  sofa: Sofa,
-  bed: Bed,
-  baby: Baby,
-  utensils: UtensilsCrossed,
-  "cooking-pot": CookingPot,
-  briefcase: Briefcase,
-  bath: Bath,
-  trees: Trees,
-};
+import { ROOM_TYPES, ROOM_TYPE_ICONS, type RoomType } from "@/lib/constants";
+import { Sofa } from "lucide-react";
 
 interface RoomTypeSelectorProps {
   value: RoomType | null;
@@ -43,7 +22,7 @@ export function RoomTypeSelector({
       </label>
       <div className="grid grid-cols-3 sm:grid-cols-4 lg:grid-cols-5 gap-2">
         {ROOM_TYPES.map((room) => {
-          const Icon = iconMap[room.icon] || Sofa;
+          const Icon = ROOM_TYPE_ICONS[room.icon] || Sofa;
           const isSelected = value === room.id;
 
           return (

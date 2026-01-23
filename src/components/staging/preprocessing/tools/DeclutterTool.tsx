@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useCallback } from "react";
+import Image from "next/image";
 import { Button } from "@/components/ui/button";
 import { Loader2, Eraser, RotateCcw } from "lucide-react";
 
@@ -121,10 +122,12 @@ export function DeclutterTool({
     <div className="space-y-3">
       {/* Image Preview - always visible */}
       <div className="relative aspect-video rounded-lg overflow-hidden bg-muted">
-        <img
+        <Image
           src={displayUrl}
           alt={state === "preview" && !showOriginal ? "Decluttered" : "Original"}
-          className="w-full h-full object-contain transition-opacity duration-150"
+          fill
+          className="object-contain transition-opacity duration-150"
+          unoptimized
         />
 
         {/* Processing overlay */}

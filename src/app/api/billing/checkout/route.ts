@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
-import { createSubscriptionCheckout, PlanSlug, PLAN_CONFIG } from "@/lib/stripe";
+import { createSubscriptionCheckout, PlanSlug, PLAN_CONFIG } from "@/lib/billing/stripe";
 
 export async function POST(request: NextRequest) {
   try {

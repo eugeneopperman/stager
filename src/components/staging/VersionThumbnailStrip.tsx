@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import { cn } from "@/lib/utils";
 import {
   Tooltip,
@@ -75,10 +76,12 @@ export function VersionThumbnailStrip({
                   )}
                 >
                   {version.staged_image_url ? (
-                    <img
+                    <Image
                       src={version.staged_image_url}
                       alt={`${formatRoomType(version.room_type)} - ${formatStyle(version.style)}`}
-                      className="w-full h-full object-cover"
+                      fill
+                      className="object-cover"
+                      unoptimized
                     />
                   ) : (
                     <div className="w-full h-full bg-muted flex items-center justify-center">

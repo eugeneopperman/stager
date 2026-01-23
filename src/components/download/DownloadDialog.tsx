@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Image from "next/image";
 import {
   Dialog,
   DialogContent,
@@ -130,11 +131,13 @@ export function DownloadDialog({
 
         <div className="space-y-4">
           {/* Image Preview */}
-          <div className="aspect-video rounded-lg overflow-hidden bg-muted">
-            <img
+          <div className="relative aspect-video rounded-lg overflow-hidden bg-muted">
+            <Image
               src={imageUrl}
               alt={`${formatLabel(roomType)} - ${formatLabel(style)}`}
-              className="w-full h-full object-cover"
+              fill
+              className="object-cover"
+              unoptimized
             />
           </div>
 

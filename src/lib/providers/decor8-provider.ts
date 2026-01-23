@@ -54,8 +54,6 @@ export class Decor8Provider extends BaseStagingProvider {
     const imageUrl = input.imageUrl || `data:${input.mimeType};base64,${input.imageBase64}`;
     const maskUrl = input.maskBase64 ? `data:image/png;base64,${input.maskBase64}` : undefined;
 
-    console.log("[Decor8Provider] Staging room:", roomType, "style:", designStyle, "mask:", maskUrl ? "yes" : "no");
-
     // Custom prompt emphasizing furniture addition only - explicitly mention keeping windows
     const customPrompt = `Add ${styleLabel} style furniture to this empty ${roomLabel}. Professional real estate virtual staging. Only add furniture and decor. Keep all windows exactly as they are. Preserve all existing architectural features including windows, doors, walls, flooring.`;
 
@@ -79,7 +77,6 @@ export class Decor8Provider extends BaseStagingProvider {
     // White areas = stage with furniture, Black areas = preserve original
     if (maskUrl) {
       requestBody.mask_info = maskUrl;
-      console.log("[Decor8Provider] Using mask for selective inpainting");
     }
 
     try {
@@ -93,7 +90,6 @@ export class Decor8Provider extends BaseStagingProvider {
       });
 
       const responseText = await response.text();
-      console.log("[Decor8Provider] Response status:", response.status);
 
       if (!response.ok) {
         console.error("[Decor8Provider] Error response:", responseText);
@@ -114,7 +110,6 @@ export class Decor8Provider extends BaseStagingProvider {
       }
 
       const generatedImage = data.info.images[0];
-      console.log("[Decor8Provider] Generated image:", generatedImage.url);
 
       // Fetch the generated image and convert to base64
       const imageResponse = await fetch(generatedImage.url);
@@ -210,9 +205,6 @@ export class Decor8Provider extends BaseStagingProvider {
   async declutterRoom(input: StagingInput): Promise<StagingResult> {
     const imageUrl = input.imageUrl || `data:${input.mimeType};base64,${input.imageBase64}`;
 
-    console.log("[Decor8Provider] Decluttering room...");
-    console.log("[Decor8Provider] Image URL length:", imageUrl.length, "starts with:", imageUrl.substring(0, 50));
-
     try {
       // Decor8 remove_objects_from_room parameters:
       // - input_image_url: The image to process
@@ -239,8 +231,6 @@ export class Decor8Provider extends BaseStagingProvider {
         ],
       };
 
-      console.log("[Decor8Provider] Declutter request body keys:", Object.keys(requestBody));
-
       const response = await fetch(`${this.baseUrl}/remove_objects_from_room`, {
         method: "POST",
         headers: {
@@ -251,18 +241,13 @@ export class Decor8Provider extends BaseStagingProvider {
       });
 
       const responseText = await response.text();
-      console.log("[Decor8Provider] Declutter response status:", response.status);
 
       if (!response.ok) {
-        console.error("[Decor8Provider] Declutter error:", responseText);
         return {
           success: false,
           error: `Decor8 declutter error: ${response.status} - ${responseText}`,
         };
       }
-
-      // Log full response to understand structure
-      console.log("[Decor8Provider] Declutter FULL response:", responseText.substring(0, 2000));
 
       // Parse response - structure may vary by endpoint
       const data = JSON.parse(responseText) as Record<string, unknown>;
@@ -270,7 +255,6 @@ export class Decor8Provider extends BaseStagingProvider {
       // Check for error - Decor8 may return error in 'error' field (empty string = no error)
       // or indicate failure via 'message' field
       if (data.error && String(data.error).length > 0) {
-        console.error("[Decor8Provider] Declutter API error:", data.error);
         return {
           success: false,
           error: String(data.error),
@@ -282,16 +266,11 @@ export class Decor8Provider extends BaseStagingProvider {
       if (message.toLowerCase().includes("error") ||
           message.toLowerCase().includes("failed") ||
           message.toLowerCase().includes("invalid")) {
-        console.error("[Decor8Provider] Declutter failed via message:", message);
         return {
           success: false,
           error: message,
         };
       }
-
-      // Log info structure for debugging
-      console.log("[Decor8Provider] Info field type:", typeof data.info);
-      console.log("[Decor8Provider] Info field contents:", JSON.stringify(data.info, null, 2)?.substring(0, 500));
 
       // Try to find the output image in various possible locations
       let outputImageUrl: string | null = null;
@@ -301,62 +280,51 @@ export class Decor8Provider extends BaseStagingProvider {
       const infoImage = info?.image as { url?: string } | undefined;
       if (infoImage?.url) {
         outputImageUrl = infoImage.url;
-        console.log("[Decor8Provider] Found image in info.image");
       }
 
       // Check info.images (staging response format - array)
       const infoImages = info?.images as Array<{ url: string; width?: number; height?: number }> | undefined;
       if (!outputImageUrl && infoImages?.length) {
         outputImageUrl = infoImages[0].url;
-        console.log("[Decor8Provider] Found image in info.images");
       }
 
       // Check info.output_image_url
       if (!outputImageUrl && typeof info?.output_image_url === "string") {
         outputImageUrl = info.output_image_url;
-        console.log("[Decor8Provider] Found image in info.output_image_url");
       }
 
       // Check info.image_url
       if (!outputImageUrl && typeof info?.image_url === "string") {
         outputImageUrl = info.image_url;
-        console.log("[Decor8Provider] Found image in info.image_url");
       }
 
       // Check info.url
       if (!outputImageUrl && typeof info?.url === "string") {
         outputImageUrl = info.url;
-        console.log("[Decor8Provider] Found image in info.url");
       }
 
       // Check for direct image_url field at root
       if (!outputImageUrl && typeof data.image_url === "string") {
         outputImageUrl = data.image_url;
-        console.log("[Decor8Provider] Found image in image_url field");
       }
 
       // Check for output_image_url field at root
       if (!outputImageUrl && typeof data.output_image_url === "string") {
         outputImageUrl = data.output_image_url;
-        console.log("[Decor8Provider] Found image in output_image_url field");
       }
 
       // Check for images array at root level
       const rootImages = data.images as Array<{ url?: string }> | undefined;
       if (!outputImageUrl && rootImages?.length && rootImages[0].url) {
         outputImageUrl = rootImages[0].url;
-        console.log("[Decor8Provider] Found image in root images array");
       }
 
       // Check for result field (sometimes APIs use this)
       if (!outputImageUrl && typeof data.result === "string" && data.result.startsWith("http")) {
         outputImageUrl = data.result;
-        console.log("[Decor8Provider] Found image in result field");
       }
 
       if (!outputImageUrl) {
-        console.error("[Decor8Provider] Could not find output image in response. Keys:", Object.keys(data));
-        console.error("[Decor8Provider] Info keys:", info ? Object.keys(info) : "no info");
         // Include the message from API in the error for better debugging
         const apiMessage = String(data.message || "");
         return {
@@ -364,9 +332,6 @@ export class Decor8Provider extends BaseStagingProvider {
           error: apiMessage ? `Declutter failed: ${apiMessage}` : "No decluttered image in response",
         };
       }
-
-      console.log("[Decor8Provider] Decluttered image URL:", outputImageUrl);
-      console.log("[Decor8Provider] Input was data URL:", imageUrl.startsWith("data:"));
 
       // Fetch and convert to base64
       const imageResponse = await fetch(outputImageUrl);
@@ -395,8 +360,6 @@ export class Decor8Provider extends BaseStagingProvider {
    * Declutter a room then stage it - full pipeline for furnished rooms
    */
   async declutterAndStage(input: StagingInput): Promise<StagingResult> {
-    console.log("[Decor8Provider] Starting declutter → stage pipeline");
-
     // Step 1: Declutter
     const declutterResult = await this.declutterRoom(input);
     if (!declutterResult.success || !declutterResult.imageData) {
@@ -405,8 +368,6 @@ export class Decor8Provider extends BaseStagingProvider {
         error: `Declutter failed: ${declutterResult.error}`,
       };
     }
-
-    console.log("[Decor8Provider] Declutter complete, now staging...");
 
     // Step 2: Stage the decluttered image
     const stageInput: StagingInput = {

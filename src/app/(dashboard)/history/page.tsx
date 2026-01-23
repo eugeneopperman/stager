@@ -3,7 +3,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { ImagePlus } from "lucide-react";
 import Link from "next/link";
-import { HistoryPageClient } from "./HistoryPageClient";
+import { HistoryPageClient } from "./_components/HistoryPageClient";
 
 export default async function HistoryPage() {
   const supabase = await createClient();
@@ -13,7 +13,7 @@ export default async function HistoryPage() {
   } = await supabase.auth.getUser();
 
   // Fetch all staging jobs for the user
-  const { data: jobs, error } = await supabase
+  const { data: jobs } = await supabase
     .from("staging_jobs")
     .select("*")
     .eq("user_id", user?.id)

@@ -1,10 +1,9 @@
 import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Users, Coins, Building2, AlertTriangle } from "lucide-react";
-import { getUserOrganization, isEnterprisePlan } from "@/lib/subscription";
-import { TeamPageClient } from "./TeamPageClient";
+import { Card, CardContent } from "@/components/ui/card";
+import { Users } from "lucide-react";
+import { getUserOrganization, isEnterprisePlan } from "@/lib/billing/subscription";
+import { TeamPageClient } from "./_components/TeamPageClient";
 
 export default async function TeamPage() {
   const supabase = await createClient();

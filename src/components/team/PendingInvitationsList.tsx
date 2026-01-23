@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -29,7 +29,7 @@ export function PendingInvitationsList({ onUpdate }: PendingInvitationsListProps
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState<string | null>(null);
 
-  const fetchInvitations = async () => {
+  const fetchInvitations = useCallback(async () => {
     try {
       const response = await fetch("/api/team/invitations");
       const data = await response.json();
@@ -40,16 +40,17 @@ export function PendingInvitationsList({ onUpdate }: PendingInvitationsListProps
       console.error("Error fetching invitations:", err);
     }
     setLoading(false);
-  };
+  }, []);
 
   useEffect(() => {
-    fetchInvitations();
-  }, []);
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- Fetching data on mount is valid
+    void fetchInvitations();
+  }, [fetchInvitations]);
 
   const handleResend = async (invitationId: string) => {
     setActionLoading(invitationId);
     try {
-      const response = await fetch(`/api/team/invitations/${invitationId}/resend`, {
+      const response = await fetch(`/api/team/invitations/${invitationId}`, {
         method: "POST",
       });
 

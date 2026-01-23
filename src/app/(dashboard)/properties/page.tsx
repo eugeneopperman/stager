@@ -1,8 +1,8 @@
 import { createClient } from "@/lib/supabase/server";
 import { Card, CardContent } from "@/components/ui/card";
 import { Building2, ImageIcon } from "lucide-react";
-import { CreatePropertyButton } from "./CreatePropertyButton";
-import { PropertiesListClient } from "./PropertiesListClient";
+import { CreatePropertyButton } from "./_components/CreatePropertyButton";
+import { PropertiesListClient } from "./_components/PropertiesListClient";
 import { cn } from "@/lib/utils";
 
 export default async function PropertiesPage() {
@@ -12,43 +12,43 @@ export default async function PropertiesPage() {
     data: { user },
   } = await supabase.auth.getUser();
 
-  // Fetch all properties with their staging job counts
+  // Fetch all properties with their completed staging jobs in a single query
+  // This avoids N+1 queries by fetching all related data at once
   const { data: properties } = await supabase
     .from("properties")
     .select(`
       *,
-      staging_jobs(count)
+      staging_jobs!left(
+        id,
+        status,
+        staged_image_url,
+        created_at
+      )
     `)
     .eq("user_id", user?.id)
     .order("created_at", { ascending: false });
 
-  // Get staging counts and preview images for each property
-  const propertiesWithCounts = await Promise.all(
-    (properties || []).map(async (property) => {
-      // Get count of completed stagings
-      const { count } = await supabase
-        .from("staging_jobs")
-        .select("*", { count: "exact", head: true })
-        .eq("property_id", property.id)
-        .eq("status", "completed");
+  // Aggregate counts and get preview images in JS (still better than N+1)
+  const propertiesWithCounts = (properties || []).map((property) => {
+    const completedJobs = (property.staging_jobs || []).filter(
+      (j: { status: string }) => j.status === "completed"
+    );
+    // Sort by created_at descending to get most recent first
+    completedJobs.sort((a: { created_at: string }, b: { created_at: string }) =>
+      new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+    );
 
-      // Get the most recent staged image as preview
-      const { data: previewJob } = await supabase
-        .from("staging_jobs")
-        .select("staged_image_url")
-        .eq("property_id", property.id)
-        .eq("status", "completed")
-        .order("created_at", { ascending: false })
-        .limit(1)
-        .single();
+    return {
+      ...property,
+      stagingCount: completedJobs.length,
+      previewImageUrl: completedJobs[0]?.staged_image_url || null,
+      // Remove staging_jobs from the spread to avoid passing large arrays to client
+      staging_jobs: undefined,
+    };
+  });
 
-      return {
-        ...property,
-        stagingCount: count || 0,
-        previewImageUrl: previewJob?.staged_image_url || null,
-      };
-    })
-  );
+  // Calculate total stagings
+  const totalStagings = propertiesWithCounts.reduce((sum, p) => sum + p.stagingCount, 0);
 
   return (
     <div className="space-y-6">
@@ -93,7 +93,7 @@ export default async function PropertiesPage() {
             </div>
             <div>
               <p className="text-2xl font-bold text-foreground">
-                {propertiesWithCounts.reduce((sum, p) => sum + p.stagingCount, 0)}
+                {totalStagings}
               </p>
               <p className="text-sm text-muted-foreground">Total Stagings</p>
             </div>

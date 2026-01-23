@@ -70,9 +70,10 @@ export function NotificationDropdown() {
 
   useEffect(() => {
     if (userId) {
-      fetchUnreadCount();
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- Fetching data on mount is valid
+      void fetchUnreadCount();
       // Poll every 30 seconds
-      const interval = setInterval(fetchUnreadCount, 30000);
+      const interval = setInterval(() => void fetchUnreadCount(), 30000);
       return () => clearInterval(interval);
     }
   }, [userId, fetchUnreadCount]);

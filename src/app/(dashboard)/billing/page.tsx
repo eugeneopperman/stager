@@ -1,3 +1,4 @@
+import Image from "next/image";
 import { createClient } from "@/lib/supabase/server";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -15,7 +16,7 @@ import { LOW_CREDITS_THRESHOLD, CREDITS_PER_STAGING } from "@/lib/constants";
 import { PricingTable } from "@/components/billing/PricingTable";
 import { TopupPacks } from "@/components/billing/TopupPacks";
 import { SubscriptionStatus } from "@/components/billing/SubscriptionStatus";
-import { getUserSubscription, getPlans } from "@/lib/subscription";
+import { getUserSubscription, getPlans } from "@/lib/billing/subscription";
 
 interface PageProps {
   searchParams: Promise<{
@@ -54,21 +55,22 @@ export default async function BillingPage({ searchParams }: PageProps) {
 
   const currentPlanSlug = subscription?.plan?.slug || "free";
 
-  // Fetch all completed staging jobs for usage stats
-  const { data: allJobs } = await supabase
+  // Fetch completed staging jobs for usage stats (filter in DB, not JS)
+  const { data: completedJobs } = await supabase
     .from("staging_jobs")
-    .select("id, created_at, credits_used, room_type, style, status, staged_image_url")
+    .select("id, created_at, credits_used, room_type, style, staged_image_url")
     .eq("user_id", user?.id)
+    .eq("status", "completed")
     .order("created_at", { ascending: false });
 
   // Calculate usage stats
-  const completedJobs = allJobs?.filter((job) => job.status === "completed") || [];
-  const totalCreditsUsed = completedJobs.reduce((sum, job) => sum + (job.credits_used || CREDITS_PER_STAGING), 0);
+  const jobs = completedJobs || [];
+  const totalCreditsUsed = jobs.reduce((sum, job) => sum + (job.credits_used || CREDITS_PER_STAGING), 0);
 
   // Get this month's usage
   const now = new Date();
   const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
-  const thisMonthJobs = completedJobs.filter(
+  const thisMonthJobs = jobs.filter(
     (job) => new Date(job.created_at) >= startOfMonth
   );
   const creditsUsedThisMonth = thisMonthJobs.reduce(
@@ -77,7 +79,7 @@ export default async function BillingPage({ searchParams }: PageProps) {
   );
 
   // Recent usage (last 10 transactions)
-  const recentUsage = completedJobs.slice(0, 10);
+  const recentUsage = jobs.slice(0, 10);
 
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
@@ -261,7 +263,7 @@ export default async function BillingPage({ searchParams }: PageProps) {
             </div>
             <div>
               <p className="text-2xl font-bold text-slate-900 dark:text-white">
-                {completedJobs.length}
+                {jobs.length}
               </p>
               <p className="text-sm text-slate-500">Stagings completed</p>
             </div>
@@ -318,12 +320,14 @@ export default async function BillingPage({ searchParams }: PageProps) {
                   className="flex items-center justify-between p-3 rounded-lg bg-slate-50 dark:bg-slate-900"
                 >
                   <div className="flex items-center gap-3">
-                    <div className="h-12 w-12 rounded-lg bg-slate-200 dark:bg-slate-800 overflow-hidden flex-shrink-0">
+                    <div className="relative h-12 w-12 rounded-lg bg-slate-200 dark:bg-slate-800 overflow-hidden flex-shrink-0">
                       {job.staged_image_url ? (
-                        <img
+                        <Image
                           src={job.staged_image_url}
                           alt={`${formatRoomType(job.room_type)} staging`}
-                          className="h-full w-full object-cover"
+                          fill
+                          className="object-cover"
+                          unoptimized
                         />
                       ) : (
                         <div className="h-full w-full flex items-center justify-center">

@@ -2,16 +2,14 @@
 
 import { useState, useRef, useCallback, useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Slider } from "@/components/ui/slider";
-import {
-  Brush,
-  Sparkles,
-  RotateCcw,
-  Circle,
-  Loader2,
-} from "lucide-react";
+import { RotateCcw } from "lucide-react";
 import { useMaskDrawing } from "../hooks/useMaskDrawing";
+import {
+  MaskCanvas,
+  AIDetectionControls,
+  BrushControls,
+  ToolModeToggle,
+} from "./masking";
 
 interface MaskingToolProps {
   imageUrl: string;
@@ -21,18 +19,6 @@ interface MaskingToolProps {
 }
 
 type ToolMode = "ai" | "brush";
-
-// Common furniture/object suggestions
-const QUICK_PROMPTS = [
-  "furniture",
-  "sofa",
-  "table",
-  "chairs",
-  "bed",
-  "rug",
-  "lamp",
-  "curtains",
-];
 
 export function MaskingTool({
   imageUrl,
@@ -139,7 +125,6 @@ export function MaskingTool({
     setSegmentError(null);
 
     try {
-      // Convert image to base64
       let base64: string;
       let mimeType: string;
 
@@ -166,7 +151,6 @@ export function MaskingTool({
         });
       }
 
-      // Call segment API
       const apiResponse = await fetch("/api/segment", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -194,14 +178,12 @@ export function MaskingTool({
     }
   }, [imageUrl]);
 
-  // Handle prompt submission
   const handleDetect = useCallback(() => {
     if (prompt.trim()) {
       runSegmentation(prompt.trim());
     }
   }, [prompt, runSegmentation]);
 
-  // Handle quick prompt click
   const handleQuickPrompt = useCallback((quickPrompt: string) => {
     setPrompt(quickPrompt);
     runSegmentation(quickPrompt);
@@ -265,7 +247,6 @@ export function MaskingTool({
     if (toolMode === "brush") stopDrawing();
   }, [toolMode, stopDrawing]);
 
-  // Clear all
   const handleClear = useCallback(() => {
     setSamMaskUrl(null);
     setSegmentError(null);
@@ -273,7 +254,6 @@ export function MaskingTool({
     clearMask();
   }, [clearMask]);
 
-  // Handle apply
   const handleApply = useCallback(() => {
     if (samMaskUrl) {
       onApply(imageUrl, samMaskUrl);
@@ -283,19 +263,22 @@ export function MaskingTool({
     }
   }, [imageUrl, samMaskUrl, exportMaskForAI, onApply]);
 
-  const hasMask = samMaskUrl || hasDrawn;
+  const hasMask = !!samMaskUrl || hasDrawn;
 
   return (
     <div className="space-y-3">
-      {/* Canvas with image background */}
-      <div
-        ref={containerRef}
-        className="relative aspect-video bg-black/90 rounded-lg overflow-hidden"
-        style={{
-          cursor: toolMode === "brush"
-            ? `url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" width="${brushSize}" height="${brushSize}" viewBox="0 0 ${brushSize} ${brushSize}"><circle cx="${brushSize/2}" cy="${brushSize/2}" r="${brushSize/2 - 1}" fill="none" stroke="${mode === 'stage' ? '%2300c800' : '%23c80000'}" stroke-width="2"/></svg>') ${brushSize/2} ${brushSize/2}, crosshair`
-            : "default"
-        }}
+      <MaskCanvas
+        containerRef={containerRef}
+        canvasRef={canvasRef}
+        imageUrl={imageUrl}
+        displaySize={displaySize}
+        toolMode={toolMode}
+        brushMode={mode}
+        brushSize={brushSize}
+        samMaskUrl={samMaskUrl}
+        hasMask={hasMask}
+        isSegmenting={isSegmenting}
+        segmentPrompt={prompt}
         onMouseDown={handleMouseDown}
         onMouseMove={handleMouseMove}
         onMouseUp={handleMouseUp}
@@ -303,196 +286,37 @@ export function MaskingTool({
         onTouchStart={handleTouchStart}
         onTouchMove={handleTouchMove}
         onTouchEnd={handleTouchEnd}
-      >
-        {/* Background image */}
-        <img
-          src={imageUrl}
-          alt="Mask preview"
-          className="w-full h-full object-contain pointer-events-none"
-        />
-
-        {/* SAM mask overlay */}
-        {samMaskUrl && (
-          <img
-            src={samMaskUrl}
-            alt="Segment mask"
-            className="absolute pointer-events-none opacity-50"
-            style={{
-              left: displaySize.offsetX,
-              top: displaySize.offsetY,
-              width: displaySize.width,
-              height: displaySize.height,
-              mixBlendMode: "multiply",
-            }}
-          />
-        )}
-
-        {/* Brush drawing canvas overlay */}
-        {toolMode === "brush" && (
-          <canvas
-            ref={canvasRef}
-            className="absolute pointer-events-none"
-            style={{
-              left: displaySize.offsetX,
-              top: displaySize.offsetY,
-              width: displaySize.width,
-              height: displaySize.height,
-            }}
-          />
-        )}
-
-        {/* Segmenting overlay */}
-        {isSegmenting && (
-          <div className="absolute inset-0 bg-black/30 flex items-center justify-center">
-            <div className="text-center text-white">
-              <Loader2 className="h-8 w-8 mx-auto mb-2 animate-spin" />
-              <p className="text-sm">Detecting "{prompt}"...</p>
-              <p className="text-xs opacity-70 mt-1">This may take a few seconds</p>
-            </div>
-          </div>
-        )}
-
-        {/* Instructions overlay */}
-        {!hasMask && !isSegmenting && (
-          <div className="absolute inset-0 flex items-center justify-center bg-black/30 pointer-events-none">
-            <div className="text-center text-white">
-              {toolMode === "ai" ? (
-                <>
-                  <Sparkles className="h-8 w-8 mx-auto mb-2 opacity-70" />
-                  <p className="text-sm font-medium">Type what to select</p>
-                  <p className="text-xs opacity-70">e.g., "sofa, table, chairs"</p>
-                </>
-              ) : (
-                <>
-                  <Brush className="h-8 w-8 mx-auto mb-2 opacity-70" />
-                  <p className="text-sm font-medium">Paint areas to mark</p>
-                  <p className="text-xs opacity-70">Green = Stage, Red = Preserve</p>
-                </>
-              )}
-            </div>
-          </div>
-        )}
-      </div>
+      />
 
       {/* Controls */}
       <div className="p-4 bg-muted/30 rounded-lg border space-y-4">
-        {/* Tool Mode Toggle */}
-        <div className="flex items-center gap-2">
-          <span className="text-xs text-muted-foreground w-16">Tool</span>
-          <div className="flex gap-1 flex-1">
-            <Button
-              variant={toolMode === "ai" ? "default" : "outline"}
-              size="sm"
-              onClick={() => setToolMode("ai")}
-              disabled={disabled}
-              className="flex-1 gap-1.5"
-            >
-              <Sparkles className="h-4 w-4" />
-              AI Detect
-            </Button>
-            <Button
-              variant={toolMode === "brush" ? "default" : "outline"}
-              size="sm"
-              onClick={() => setToolMode("brush")}
-              disabled={disabled}
-              className="flex-1 gap-1.5"
-            >
-              <Brush className="h-4 w-4" />
-              Brush
-            </Button>
-          </div>
-        </div>
+        <ToolModeToggle
+          mode={toolMode}
+          onChange={setToolMode}
+          disabled={disabled}
+        />
 
-        {/* AI mode controls */}
         {toolMode === "ai" && (
-          <>
-            {/* Text prompt input */}
-            <div className="flex gap-2">
-              <Input
-                placeholder="Type objects to select (e.g., sofa, table)"
-                value={prompt}
-                onChange={(e) => setPrompt(e.target.value)}
-                onKeyDown={(e) => e.key === "Enter" && handleDetect()}
-                disabled={disabled || isSegmenting}
-                className="flex-1"
-              />
-              <Button
-                size="sm"
-                onClick={handleDetect}
-                disabled={disabled || isSegmenting || !prompt.trim()}
-              >
-                Detect
-              </Button>
-            </div>
-
-            {/* Quick prompts */}
-            <div className="flex flex-wrap gap-1">
-              {QUICK_PROMPTS.map((qp) => (
-                <Button
-                  key={qp}
-                  variant="outline"
-                  size="sm"
-                  onClick={() => handleQuickPrompt(qp)}
-                  disabled={disabled || isSegmenting}
-                  className="text-xs h-7 px-2"
-                >
-                  {qp}
-                </Button>
-              ))}
-            </div>
-          </>
+          <AIDetectionControls
+            prompt={prompt}
+            onPromptChange={setPrompt}
+            onDetect={handleDetect}
+            onQuickPrompt={handleQuickPrompt}
+            isSegmenting={isSegmenting}
+            disabled={disabled}
+          />
         )}
 
-        {/* Brush mode controls */}
         {toolMode === "brush" && (
-          <>
-            {/* Mode Toggle */}
-            <div className="flex items-center gap-2">
-              <span className="text-xs text-muted-foreground w-16">Mode</span>
-              <div className="flex gap-1 flex-1">
-                <Button
-                  variant={mode === "stage" ? "default" : "outline"}
-                  size="sm"
-                  onClick={() => setMode("stage")}
-                  disabled={disabled}
-                  className={`flex-1 gap-1.5 ${mode === "stage" ? "bg-green-600 hover:bg-green-700" : ""}`}
-                >
-                  <div className="w-3 h-3 rounded-full bg-green-500" />
-                  Stage
-                </Button>
-                <Button
-                  variant={mode === "preserve" ? "default" : "outline"}
-                  size="sm"
-                  onClick={() => setMode("preserve")}
-                  disabled={disabled}
-                  className={`flex-1 gap-1.5 ${mode === "preserve" ? "bg-red-600 hover:bg-red-700" : ""}`}
-                >
-                  <div className="w-3 h-3 rounded-full bg-red-500" />
-                  Preserve
-                </Button>
-              </div>
-            </div>
-
-            {/* Brush Size */}
-            <div className="flex items-center gap-3">
-              <span className="text-xs text-muted-foreground w-16">Brush</span>
-              <Circle className="h-3 w-3 text-muted-foreground" />
-              <Slider
-                value={[brushSize]}
-                onValueChange={(v) => setBrushSize(v[0])}
-                min={10}
-                max={100}
-                step={5}
-                disabled={disabled}
-                className="flex-1"
-              />
-              <Circle className="h-5 w-5 text-muted-foreground" />
-              <span className="text-xs text-muted-foreground w-8 text-right">{brushSize}px</span>
-            </div>
-          </>
+          <BrushControls
+            mode={mode}
+            brushSize={brushSize}
+            onModeChange={setMode}
+            onBrushSizeChange={setBrushSize}
+            disabled={disabled}
+          />
         )}
 
-        {/* Error message */}
         {segmentError && (
           <div className="p-2 bg-destructive/10 border border-destructive/20 rounded text-xs text-destructive text-center">
             {segmentError}
@@ -520,7 +344,6 @@ export function MaskingTool({
           </Button>
         </div>
 
-        {/* Help text */}
         <p className="text-xs text-muted-foreground text-center">
           {toolMode === "ai" ? (
             <>Type object names and click <strong>Detect</strong> to auto-select them.</>

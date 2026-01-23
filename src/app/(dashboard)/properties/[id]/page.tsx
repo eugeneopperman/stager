@@ -1,5 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import { notFound } from "next/navigation";
+import Image from "next/image";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -13,8 +14,8 @@ import {
   XCircle,
 } from "lucide-react";
 import Link from "next/link";
-import { PropertyActions } from "./PropertyActions";
-import { StagedImageCard } from "./StagedImageCard";
+import { PropertyActions } from "./_components/PropertyActions";
+import { StagedImageCard } from "./_components/StagedImageCard";
 import { BatchDownloadButton } from "@/components/download/BatchDownloadButton";
 
 interface PropertyDetailPageProps {
@@ -291,12 +292,14 @@ export default async function PropertyDetailPage({ params }: PropertyDetailPageP
                   className="flex items-center justify-between p-3 rounded-lg bg-slate-50 dark:bg-slate-900"
                 >
                   <div className="flex items-center gap-3">
-                    <div className="h-10 w-10 rounded bg-slate-200 dark:bg-slate-800 overflow-hidden">
+                    <div className="relative h-10 w-10 rounded bg-slate-200 dark:bg-slate-800 overflow-hidden">
                       {job.staged_image_url ? (
-                        <img
+                        <Image
                           src={job.staged_image_url}
                           alt=""
-                          className="w-full h-full object-cover"
+                          fill
+                          className="object-cover"
+                          unoptimized
                         />
                       ) : (
                         <div className="w-full h-full flex items-center justify-center">

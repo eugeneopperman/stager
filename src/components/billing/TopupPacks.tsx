@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Coins, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { TOPUP_PACKAGES } from "@/lib/stripe";
+import { TOPUP_PACKAGES } from "@/lib/billing/stripe";
 
 type TopupPackage = (typeof TOPUP_PACKAGES)[number] & { badge?: string };
 
@@ -30,7 +30,7 @@ export function TopupPacks({ className }: TopupPacksProps) {
       const data = await response.json();
 
       if (data.url) {
-        window.location.href = data.url;
+        window.location.assign(data.url);
       } else {
         console.error("No checkout URL returned");
         setLoadingPackage(null);

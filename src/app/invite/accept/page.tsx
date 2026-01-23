@@ -223,7 +223,7 @@ function InviteAcceptContent() {
               Team Invitation
             </CardTitle>
             <CardDescription>
-              You've been invited to join <strong>{invitation?.organizationName}</strong> on Stager
+              You&apos;ve been invited to join <strong>{invitation?.organizationName}</strong> on Stager
             </CardDescription>
           </CardHeader>
 

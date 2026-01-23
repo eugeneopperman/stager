@@ -1,3 +1,4 @@
+import Image from "next/image";
 import { createClient } from "@/lib/supabase/server";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -276,17 +277,19 @@ export default async function DashboardPage() {
                         target="_blank"
                         rel="noopener noreferrer"
                         className={cn(
-                          "h-12 w-12 rounded-lg overflow-hidden flex-shrink-0",
+                          "relative h-12 w-12 rounded-lg overflow-hidden flex-shrink-0",
                           "bg-muted dark:bg-white/10",
                           "ring-1 ring-border/50 dark:ring-white/10",
                           "transition-all duration-200",
                           "hover:ring-2 hover:ring-primary hover:scale-105"
                         )}
                       >
-                        <img
+                        <Image
                           src={job.staged_image_url}
                           alt={`${job.room_type} staged`}
-                          className="h-full w-full object-cover"
+                          fill
+                          className="object-cover"
+                          unoptimized
                         />
                       </a>
                     ) : (

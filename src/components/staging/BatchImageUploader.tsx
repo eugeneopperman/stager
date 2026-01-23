@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useCallback } from "react";
+import Image from "next/image";
 import { cn } from "@/lib/utils";
 import { Upload, X, Images, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -215,10 +216,12 @@ export function BatchImageUploader({
                 "hover:ring-border hover:shadow-md"
               )}
             >
-              <img
+              <Image
                 src={image.preview}
                 alt="Upload preview"
-                className="w-full h-full object-cover"
+                fill
+                className="object-cover"
+                unoptimized
               />
               {!disabled && (
                 <Button

@@ -61,8 +61,6 @@ export class ReplicateProvider extends BaseStagingProvider {
 
     // Use URL if available, otherwise use base64 data URL
     const imageSource = input.imageUrl || `data:${input.mimeType};base64,${input.imageBase64}`;
-    console.log("[ReplicateProvider] Image source type:", input.imageUrl ? "URL" : "base64");
-    console.log("[ReplicateProvider] Image source:", imageSource.substring(0, 100) + "...");
 
     // Prepare the adirik/interior-design model request
     // This model preserves room layout while adding furniture via intelligent inpainting
@@ -75,8 +73,6 @@ export class ReplicateProvider extends BaseStagingProvider {
       num_inference_steps: 75,    // Higher for better quality
     };
 
-    console.log("[ReplicateProvider] Creating prediction with prompt:", prompt.substring(0, 100) + "...");
-
     try {
       const prediction = await this.createPrediction(
         this.model,
@@ -84,7 +80,6 @@ export class ReplicateProvider extends BaseStagingProvider {
         webhookUrl
       );
 
-      console.log("[ReplicateProvider] Prediction created:", prediction.id);
       return {
         jobId: input.jobId || prediction.id,
         predictionId: prediction.id,
@@ -224,15 +219,11 @@ export class ReplicateProvider extends BaseStagingProvider {
         !webhookUrl.includes("\n")) {
       body.webhook = webhookUrl;
       body.webhook_events_filter = ["completed"];
-      console.log("[ReplicateProvider] Webhook ENABLED:", webhookUrl);
     } else {
       // Explicitly ensure no webhook in body
       delete body.webhook;
       delete body.webhook_events_filter;
-      console.log("[ReplicateProvider] Webhook DISABLED - no valid URL provided");
     }
-
-    console.log("[ReplicateProvider] Creating prediction - version:", version, "body keys:", Object.keys(body), "has webhook:", "webhook" in body);
 
     const response = await fetch(`${this.baseUrl}/predictions`, {
       method: "POST",
@@ -244,8 +235,6 @@ export class ReplicateProvider extends BaseStagingProvider {
     });
 
     const responseText = await response.text();
-    console.log("[ReplicateProvider] Response status:", response.status);
-    console.log("[ReplicateProvider] Response body:", responseText.substring(0, 500));
 
     if (!response.ok) {
       throw new Error(`Replicate API error: ${response.status} - ${responseText}`);

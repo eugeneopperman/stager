@@ -1,9 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
-import { isEnterprisePlan, getUserOrganization } from "@/lib/subscription";
+import { isEnterprisePlan, getUserOrganization } from "@/lib/billing/subscription";
 
 // GET - Get current user's organization
-export async function GET(request: NextRequest) {
+export async function GET(_request: NextRequest) {
   try {
     const supabase = await createClient();
     const {

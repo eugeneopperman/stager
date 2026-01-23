@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
-import { createTopupCheckout, TopupPackageId, TOPUP_PACKAGES } from "@/lib/stripe";
+import { createTopupCheckout, TopupPackageId, TOPUP_PACKAGES } from "@/lib/billing/stripe";
 
 export async function POST(request: NextRequest) {
   try {

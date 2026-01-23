@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-require-imports */
 // Script to generate the watermark PNG
 // Run with: node scripts/generate-watermark.js
 

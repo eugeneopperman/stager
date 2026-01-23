@@ -71,8 +71,6 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });
   }
 
-  console.log(`Replicate webhook received: ${payload.id} - ${payload.status}`);
-
   // Use service role client for webhook processing
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
@@ -193,7 +191,6 @@ export async function POST(request: NextRequest) {
         );
       }
 
-      console.log(`Job ${job.id} completed successfully in ${processingTimeMs}ms`);
     } catch (error) {
       console.error(`Failed to process successful prediction ${payload.id}:`, error);
 
@@ -230,8 +227,6 @@ export async function POST(request: NextRequest) {
       `Your ${roomLabel} staging could not be completed. Please try again.`,
       "/history"
     );
-
-    console.log(`Job ${job.id} failed: ${payload.error || payload.status}`);
   }
   // Ignore "starting" and "processing" statuses - they're intermediate
 

@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
-import { getProviderRouter, getReplicateProvider, getDecor8Provider, Decor8Provider } from "@/lib/providers";
+import { getProviderRouter, getReplicateProvider } from "@/lib/providers";
 import {
   type RoomType,
   type FurnitureStyle,
@@ -29,7 +29,6 @@ export async function POST(
 ) {
   const { jobId } = await params;
   const startTime = Date.now();
-  console.log("[Remix API] Request received for job:", jobId);
 
   try {
     const supabase = await createClient();
@@ -40,7 +39,6 @@ export async function POST(
     } = await supabase.auth.getUser();
 
     if (!user) {
-      console.log("[Remix API] Unauthorized - no user");
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
@@ -53,7 +51,6 @@ export async function POST(
       .single();
 
     if (parentError || !parentJob) {
-      console.log("[Remix API] Parent job not found:", jobId);
       return NextResponse.json(
         { error: "Parent job not found" },
         { status: 404 }
@@ -81,8 +78,6 @@ export async function POST(
         { status: 400 }
       );
     }
-
-    console.log("[Remix API] Creating remix with room:", roomType, "style:", style);
 
     // Get or create version group
     const originalImageUrl = parentJob.original_image_url;
@@ -166,15 +161,13 @@ export async function POST(
 
     // Generate a unique job ID for the remix
     const newJobId = crypto.randomUUID();
-    console.log("[Remix API] New job ID:", newJobId);
 
     // Select provider
     const router = getProviderRouter();
     const { provider } = await router.selectProvider();
-    console.log("[Remix API] Provider selected:", provider.providerId);
 
     // Create new staging job for the remix
-    const { data: newJob, error: jobError } = await supabase
+    const { error: jobError } = await supabase
       .from("staging_jobs")
       .insert({
         id: newJobId,
@@ -237,8 +230,6 @@ export async function POST(
 
     // Handle sync provider (Decor8 or Gemini)
     if (provider.supportsSync) {
-      console.log("[Remix API] Using sync provider:", provider.providerId);
-
       const result = await provider.stageImageSync({
         imageBase64,
         mimeType,
@@ -248,7 +239,6 @@ export async function POST(
       });
 
       if (!result.success || !result.imageData) {
-        console.error("[Remix API] Staging failed:", result.error);
         await supabase
           .from("staging_jobs")
           .update({
@@ -334,7 +324,6 @@ export async function POST(
         "/history"
       );
 
-      console.log("[Remix API] Success! Processing time:", Date.now() - startTime, "ms");
       return NextResponse.json({
         success: true,
         jobId: newJobId,
@@ -350,8 +339,6 @@ export async function POST(
     }
 
     // Handle async provider (Stable Diffusion)
-    console.log("[Remix API] Using async provider (Stable Diffusion)");
-
     const appUrl = process.env.NEXT_PUBLIC_APP_URL || "";
     const webhookUrl = appUrl.startsWith("https://")
       ? `${appUrl}/api/webhooks/replicate`

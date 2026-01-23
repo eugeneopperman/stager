@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useCallback } from "react";
+import Image from "next/image";
 import { cn } from "@/lib/utils";
 import { Upload, X, Image as ImageIcon, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -96,12 +97,15 @@ export function ImageUploader({
       <div className={cn(
         "relative rounded-xl overflow-hidden",
         "bg-muted/50 dark:bg-white/5",
-        "ring-1 ring-border/50 dark:ring-white/10"
+        "ring-1 ring-border/50 dark:ring-white/10",
+        "aspect-video"
       )}>
-        <img
+        <Image
           src={preview}
           alt="Uploaded preview"
-          className="w-full h-auto max-h-[500px] object-contain"
+          fill
+          className="object-contain"
+          unoptimized
         />
         {!disabled && (
           <Button
