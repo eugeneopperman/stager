@@ -1,7 +1,18 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 
-export async function updateSession(request: NextRequest) {
+/**
+ * Refreshes the Supabase session cookies on each request.
+ *
+ * Next.js 16 best practice: proxy.ts should only handle routing concerns
+ * (rewrites, redirects, headers, cookie refresh). Auth checks should be
+ * handled in layouts and route handlers.
+ *
+ * This function ONLY refreshes cookies - auth redirects are handled by:
+ * - src/app/(dashboard)/layout.tsx - protects dashboard routes
+ * - src/app/(auth)/layout.tsx - redirects logged-in users from auth pages
+ */
+export async function refreshSession(request: NextRequest) {
   let supabaseResponse = NextResponse.next({
     request,
   });
@@ -29,39 +40,17 @@ export async function updateSession(request: NextRequest) {
     }
   );
 
-  // Do not run code between createServerClient and
+  // IMPORTANT: Do not run code between createServerClient and
   // supabase.auth.getUser(). A simple mistake could make it very hard to debug
   // issues with users being randomly logged out.
 
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  // Define protected routes
-  const protectedPaths = ["/dashboard", "/stage", "/properties", "/history"];
-  const isProtectedPath = protectedPaths.some((path) =>
-    request.nextUrl.pathname.startsWith(path)
-  );
-
-  // Define auth routes (shouldn't be accessible when logged in)
-  const authPaths = ["/login", "/signup"];
-  const isAuthPath = authPaths.some((path) =>
-    request.nextUrl.pathname.startsWith(path)
-  );
-
-  if (!user && isProtectedPath) {
-    // Redirect to login if accessing protected route without auth
-    const url = request.nextUrl.clone();
-    url.pathname = "/login";
-    return NextResponse.redirect(url);
-  }
-
-  if (user && isAuthPath) {
-    // Redirect to dashboard if accessing auth routes while logged in
-    const url = request.nextUrl.clone();
-    url.pathname = "/dashboard";
-    return NextResponse.redirect(url);
-  }
+  // This call refreshes the session and updates cookies if needed
+  await supabase.auth.getUser();
 
   return supabaseResponse;
 }
+
+/**
+ * @deprecated Use refreshSession instead. Auth redirects should be in layouts.
+ */
+export const updateSession = refreshSession;
