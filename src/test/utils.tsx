@@ -1,49 +1,49 @@
-import { ReactElement, ReactNode } from "react";
+import { ReactNode } from "react";
 import { render, RenderOptions } from "@testing-library/react";
-import { TooltipProvider } from "@/components/ui/tooltip";
+import { SWRConfig } from "swr";
 
-// Mock DashboardContext
-const MockDashboardProvider = ({ children }: { children: ReactNode }) => {
-  return <>{children}</>;
-};
+// Re-export everything from testing-library
+export * from "@testing-library/react";
 
-// All providers wrapper
-function AllProviders({ children }: { children: ReactNode }) {
+interface TestWrapperProps {
+  children: ReactNode;
+}
+
+/**
+ * Test wrapper that provides SWR configuration for testing
+ * Disables caching and deduplication for predictable test behavior
+ */
+export function TestWrapper({ children }: TestWrapperProps) {
   return (
-    <TooltipProvider>
-      <MockDashboardProvider>{children}</MockDashboardProvider>
-    </TooltipProvider>
+    <SWRConfig
+      value={{
+        provider: () => new Map(),
+        dedupingInterval: 0,
+        errorRetryCount: 0,
+        revalidateOnFocus: false,
+        revalidateOnReconnect: false,
+      }}
+    >
+      {children}
+    </SWRConfig>
   );
 }
 
-// Custom render with providers
-function customRender(
-  ui: ReactElement,
-  options?: Omit<RenderOptions, "wrapper">
-) {
-  return render(ui, { wrapper: AllProviders, ...options });
+/**
+ * Creates a wrapper component for renderHook
+ */
+export function createTestWrapper() {
+  return function Wrapper({ children }: { children: ReactNode }) {
+    return <TestWrapper>{children}</TestWrapper>;
+  };
 }
 
-// Re-export everything
-export * from "@testing-library/react";
+/**
+ * Custom render function that wraps components with common providers
+ */
+function customRender(ui: React.ReactElement, options?: Omit<RenderOptions, "wrapper">) {
+  return render(ui, { wrapper: TestWrapper, ...options });
+}
+
+// Override the default render with our custom one
 export { customRender as render };
-
-// Helper to create a mock file
-export function createMockFile(
-  name = "test.jpg",
-  type = "image/jpeg",
-  size = 1024
-): File {
-  const blob = new Blob(["x".repeat(size)], { type });
-  return new File([blob], name, { type });
-}
-
-// Helper to create a mock data URL
-export function createMockDataUrl(): string {
-  return "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==";
-}
-
-// Helper to wait for async operations
-export function waitForAsync(ms = 0): Promise<void> {
-  return new Promise((resolve) => setTimeout(resolve, ms));
-}

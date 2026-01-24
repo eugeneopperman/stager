@@ -1,5 +1,40 @@
 import { http, HttpResponse } from "msw";
 
+// Notifications mock data
+const mockNotifications = [
+  {
+    id: "notif-1",
+    user_id: "user-1",
+    type: "staging_complete",
+    title: "Staging Complete",
+    message: "Your living room staging is ready",
+    read: false,
+    created_at: "2024-01-15T10:00:00Z",
+  },
+  {
+    id: "notif-2",
+    user_id: "user-1",
+    type: "credits_low",
+    title: "Low Credits",
+    message: "You have 5 credits remaining",
+    read: true,
+    created_at: "2024-01-14T10:00:00Z",
+  },
+];
+
+// Team invitations mock data
+const mockInvitations = [
+  {
+    id: "inv-1",
+    email: "newuser@example.com",
+    role: "member",
+    credits_allocated: 10,
+    status: "pending",
+    expires_at: "2024-02-15T10:00:00Z",
+    created_at: "2024-01-15T10:00:00Z",
+  },
+];
+
 // Default mock responses
 const mockStagingResponse = {
   jobId: "test-job-id",
@@ -61,9 +96,15 @@ export const handlers = [
     return HttpResponse.json({ error: "Invalid action" }, { status: 400 });
   }),
 
-  // Versions API
-  http.get("/api/staging/versions", () => {
-    return HttpResponse.json(mockVersionsResponse);
+  // Versions API - matches /api/staging/versions?jobId=xxx
+  http.get("/api/staging/versions", ({ request }) => {
+    const url = new URL(request.url);
+    const jobId = url.searchParams.get("jobId");
+    // Return versions if jobId is provided
+    if (jobId) {
+      return HttpResponse.json(mockVersionsResponse);
+    }
+    return HttpResponse.json({ versions: [], totalVersions: 0 });
   }),
 
   // Remix API
@@ -73,6 +114,35 @@ export const handlers = [
       stagedImageUrl: "https://example.com/remixed.png",
     });
   }),
+
+  // Notifications API
+  http.get("/api/notifications", () => {
+    return HttpResponse.json({
+      notifications: mockNotifications,
+      unreadCount: mockNotifications.filter((n) => !n.read).length,
+    });
+  }),
+
+  http.patch("/api/notifications/:id/read", ({ params }) => {
+    return HttpResponse.json({ success: true, id: params.id });
+  }),
+
+  http.post("/api/notifications/mark-all-read", () => {
+    return HttpResponse.json({ success: true, count: 1 });
+  }),
+
+  // Team Invitations API
+  http.get("/api/team/invitations", () => {
+    return HttpResponse.json({ invitations: mockInvitations });
+  }),
+
+  http.post("/api/team/invitations/:id/resend", ({ params }) => {
+    return HttpResponse.json({ success: true, id: params.id });
+  }),
+
+  http.delete("/api/team/invitations/:id", ({ params }) => {
+    return HttpResponse.json({ success: true, id: params.id });
+  }),
 ];
 
 // Export mock data for use in tests
@@ -81,4 +151,6 @@ export const mocks = {
   asyncStaging: mockAsyncStagingResponse,
   jobStatus: mockJobStatusResponse,
   versions: mockVersionsResponse,
+  notifications: mockNotifications,
+  invitations: mockInvitations,
 };
