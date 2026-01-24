@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
-import { createSubscriptionCheckout, PlanSlug, PLAN_CONFIG } from "@/lib/billing/stripe";
+import { createSubscriptionCheckout } from "@/lib/billing/stripe";
+import { validateRequest, checkoutRequestSchema } from "@/lib/schemas";
 
 export async function POST(request: NextRequest) {
   try {
@@ -13,19 +14,14 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
+    // Validate request body
     const body = await request.json();
-    const { planSlug } = body as { planSlug: PlanSlug };
-
-    if (!planSlug || !PLAN_CONFIG[planSlug]) {
-      return NextResponse.json({ error: "Invalid plan" }, { status: 400 });
+    const validation = validateRequest(checkoutRequestSchema, body);
+    if (!validation.success) {
+      return validation.response;
     }
 
-    if (planSlug === "free") {
-      return NextResponse.json(
-        { error: "Cannot checkout for free plan" },
-        { status: 400 }
-      );
-    }
+    const { planSlug } = validation.data;
 
     // Get user profile for Stripe customer ID
     const { data: profile } = await supabase

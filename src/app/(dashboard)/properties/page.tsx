@@ -3,6 +3,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Building2, ImageIcon } from "lucide-react";
 import { CreatePropertyButton } from "./_components/CreatePropertyButton";
 import { PropertiesListClient } from "./_components/PropertiesListClient";
+import { GalleryErrorBoundary } from "@/components/error-boundary";
 import { cn } from "@/lib/utils";
 
 export default async function PropertiesPage() {
@@ -103,7 +104,9 @@ export default async function PropertiesPage() {
 
       {/* Properties List with Search & Filter */}
       <div className="animate-in fade-in slide-in-from-bottom-4 duration-500 delay-200">
-        <PropertiesListClient properties={propertiesWithCounts} />
+        <GalleryErrorBoundary>
+          <PropertiesListClient properties={propertiesWithCounts} />
+        </GalleryErrorBoundary>
       </div>
     </div>
   );

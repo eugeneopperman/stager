@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import { validateRequest, segmentRequestSchema } from "@/lib/schemas";
 
 /**
  * POST /api/segment
@@ -21,26 +22,14 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    // Parse request body
+    // Parse and validate request body
     const body = await request.json();
-    const {
-      image,
-      mimeType,
-      prompt,
-      negativePrompt: _negativePrompt,
-    } = body as {
-      image: string; // base64 image data
-      mimeType: string;
-      prompt: string; // What to select, e.g., "sofa, table, chairs"
-      negativePrompt?: string; // What to exclude
-    };
-
-    if (!image || !mimeType || !prompt) {
-      return NextResponse.json(
-        { error: "Missing required fields: image, mimeType, prompt" },
-        { status: 400 }
-      );
+    const validation = validateRequest(segmentRequestSchema, body);
+    if (!validation.success) {
+      return validation.response;
     }
+
+    const { image, mimeType, prompt } = validation.data;
 
     const apiToken = process.env.REPLICATE_API_TOKEN;
     if (!apiToken) {

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
-import { createTopupCheckout, TopupPackageId, TOPUP_PACKAGES } from "@/lib/billing/stripe";
+import { createTopupCheckout, TOPUP_PACKAGES } from "@/lib/billing/stripe";
+import { validateRequest, topupRequestSchema } from "@/lib/schemas";
 
 export async function POST(request: NextRequest) {
   try {
@@ -13,13 +14,15 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
+    // Validate request body
     const body = await request.json();
-    const { packageId } = body as { packageId: TopupPackageId };
-
-    const pkg = TOPUP_PACKAGES.find((p) => p.id === packageId);
-    if (!pkg) {
-      return NextResponse.json({ error: "Invalid package" }, { status: 400 });
+    const validation = validateRequest(topupRequestSchema, body);
+    if (!validation.success) {
+      return validation.response;
     }
+
+    const { packageId } = validation.data;
+    const pkg = TOPUP_PACKAGES.find((p) => p.id === packageId)!;
 
     // Get user profile for Stripe customer ID and organization
     const { data: profile } = await supabase

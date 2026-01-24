@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect } from "react";
 import { Bell, CheckCheck, ImageIcon, CreditCard, X, Loader2, Trash2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -16,15 +16,8 @@ import {
 } from "@/components/ui/tooltip";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { createClient } from "@/lib/supabase/client";
-import {
-  getNotifications,
-  getUnreadCount,
-  markAsRead,
-  markAllAsRead,
-  deleteNotification,
-  deleteAllNotifications,
-  formatRelativeTime,
-} from "@/lib/notifications";
+import { formatRelativeTime } from "@/lib/notifications";
+import { useNotificationsSWR } from "@/hooks/useNotificationsSWR";
 import type { Notification, NotificationType } from "@/lib/database.types";
 import { useRouter } from "next/navigation";
 
@@ -43,9 +36,6 @@ const notificationColors: Record<NotificationType, string> = {
 export function NotificationDropdown() {
   const router = useRouter();
   const [open, setOpen] = useState(false);
-  const [notifications, setNotifications] = useState<Notification[]>([]);
-  const [unreadCount, setUnreadCount] = useState(0);
-  const [isLoading, setIsLoading] = useState(false);
   const [userId, setUserId] = useState<string | null>(null);
 
   const supabase = createClient();
@@ -61,31 +51,23 @@ export function NotificationDropdown() {
     getUser();
   }, [supabase.auth]);
 
-  // Fetch unread count periodically
-  const fetchUnreadCount = useCallback(async () => {
-    if (!userId) return;
-    const count = await getUnreadCount(supabase, userId);
-    setUnreadCount(count);
-  }, [supabase, userId]);
-
-  useEffect(() => {
-    if (userId) {
-      // eslint-disable-next-line react-hooks/set-state-in-effect -- Fetching data on mount is valid
-      void fetchUnreadCount();
-      // Poll every 30 seconds
-      const interval = setInterval(() => void fetchUnreadCount(), 30000);
-      return () => clearInterval(interval);
-    }
-  }, [userId, fetchUnreadCount]);
+  // Use SWR hook for notifications
+  const {
+    notifications,
+    unreadCount,
+    isLoadingNotifications,
+    refetch,
+    markAsRead,
+    markAllAsRead,
+    deleteNotification,
+    deleteAllNotifications,
+  } = useNotificationsSWR(userId);
 
   // Fetch notifications when opening
   const handleOpenChange = async (isOpen: boolean) => {
     setOpen(isOpen);
     if (isOpen && userId) {
-      setIsLoading(true);
-      const data = await getNotifications(supabase, userId);
-      setNotifications(data);
-      setIsLoading(false);
+      await refetch();
     }
   };
 
@@ -93,13 +75,7 @@ export function NotificationDropdown() {
   const handleNotificationClick = async (notification: Notification) => {
     // Mark as read
     if (!notification.is_read) {
-      await markAsRead(supabase, notification.id);
-      setNotifications((prev) =>
-        prev.map((n) =>
-          n.id === notification.id ? { ...n, is_read: true } : n
-        )
-      );
-      setUnreadCount((prev) => Math.max(0, prev - 1));
+      await markAsRead(notification.id);
     }
 
     // Navigate if link exists
@@ -109,35 +85,13 @@ export function NotificationDropdown() {
     }
   };
 
-  // Mark all as read
-  const handleMarkAllAsRead = async () => {
-    if (!userId) return;
-    await markAllAsRead(supabase, userId);
-    setNotifications((prev) =>
-      prev.map((n) => ({ ...n, is_read: true }))
-    );
-    setUnreadCount(0);
-  };
-
-  // Delete single notification
+  // Handle delete notification
   const handleDeleteNotification = async (
     e: React.MouseEvent,
     notification: Notification
   ) => {
-    e.stopPropagation(); // Prevent triggering the notification click
-    await deleteNotification(supabase, notification.id);
-    setNotifications((prev) => prev.filter((n) => n.id !== notification.id));
-    if (!notification.is_read) {
-      setUnreadCount((prev) => Math.max(0, prev - 1));
-    }
-  };
-
-  // Clear all notifications
-  const handleClearAll = async () => {
-    if (!userId) return;
-    await deleteAllNotifications(supabase, userId);
-    setNotifications([]);
-    setUnreadCount(0);
+    e.stopPropagation();
+    await deleteNotification(notification);
   };
 
   return (
@@ -190,7 +144,7 @@ export function NotificationDropdown() {
                     variant="ghost"
                     size="icon"
                     className="h-7 w-7 text-muted-foreground hover:text-foreground"
-                    onClick={handleMarkAllAsRead}
+                    onClick={markAllAsRead}
                   >
                     <CheckCheck className="h-4 w-4" />
                   </Button>
@@ -207,7 +161,7 @@ export function NotificationDropdown() {
                     variant="ghost"
                     size="icon"
                     className="h-7 w-7 text-muted-foreground hover:text-destructive"
-                    onClick={handleClearAll}
+                    onClick={deleteAllNotifications}
                   >
                     <Trash2 className="h-4 w-4" />
                   </Button>
@@ -222,7 +176,7 @@ export function NotificationDropdown() {
 
         {/* Content */}
         <ScrollArea className="max-h-80">
-          {isLoading ? (
+          {isLoadingNotifications ? (
             <div className="flex items-center justify-center py-8">
               <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
             </div>

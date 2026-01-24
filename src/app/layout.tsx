@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { Outfit, Lato } from "next/font/google";
 import { ThemeProvider } from "@/components/providers/ThemeProvider";
+import { SWRProvider } from "@/components/providers/SWRProvider";
 import { Toaster } from "@/components/ui/sonner";
 import { VersionBadge } from "@/components/layout/VersionBadge";
 import "./globals.css";
@@ -45,9 +46,11 @@ export default function RootLayout({
           enableSystem
           disableTransitionOnChange
         >
-          {children}
-          <Toaster position="bottom-right" />
-          <VersionBadge />
+          <SWRProvider>
+            {children}
+            <Toaster position="bottom-right" />
+            <VersionBadge />
+          </SWRProvider>
         </ThemeProvider>
       </body>
     </html>

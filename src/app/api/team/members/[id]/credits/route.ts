@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import { validateRequest, memberCreditsSchema } from "@/lib/schemas";
 
 interface RouteParams {
   params: Promise<{ id: string }>;
@@ -18,15 +19,14 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
+    // Validate request body
     const body = await request.json();
-    const { credits } = body as { credits: number };
-
-    if (typeof credits !== "number" || credits < 0) {
-      return NextResponse.json(
-        { error: "Valid credit amount required" },
-        { status: 400 }
-      );
+    const validation = validateRequest(memberCreditsSchema, body);
+    if (!validation.success) {
+      return validation.response;
     }
+
+    const { credits } = validation.data;
 
     // Check if user owns an organization
     const { data: org, error: orgError } = await supabase

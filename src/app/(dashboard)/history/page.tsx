@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { ImagePlus } from "lucide-react";
 import Link from "next/link";
 import { HistoryPageClient } from "./_components/HistoryPageClient";
+import { GalleryErrorBoundary } from "@/components/error-boundary";
 
 export default async function HistoryPage() {
   const supabase = await createClient();
@@ -48,7 +49,9 @@ export default async function HistoryPage() {
 
       {/* Stats + Jobs List */}
       {jobs && jobs.length > 0 ? (
-        <HistoryPageClient jobs={jobs} properties={properties || []} />
+        <GalleryErrorBoundary>
+          <HistoryPageClient jobs={jobs} properties={properties || []} />
+        </GalleryErrorBoundary>
       ) : (
         <Card className="animate-in fade-in slide-in-from-bottom-4 duration-500 delay-250">
           <CardContent className="flex flex-col items-center justify-center py-16">

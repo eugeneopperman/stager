@@ -5,6 +5,7 @@ import {
   generateInvitationToken,
   getInvitationExpiryDate,
 } from "@/lib/notifications/email";
+import { validateRequest, teamInviteRequestSchema } from "@/lib/schemas";
 
 // POST - Invite a member to organization by email
 export async function POST(request: NextRequest) {
@@ -18,20 +19,14 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
+    // Validate request body
     const body = await request.json();
-    const { email, initialCredits = 0 } = body as {
-      email: string;
-      initialCredits?: number;
-    };
-
-    if (!email || !email.includes("@")) {
-      return NextResponse.json(
-        { error: "Valid email is required" },
-        { status: 400 }
-      );
+    const validation = validateRequest(teamInviteRequestSchema, body);
+    if (!validation.success) {
+      return validation.response;
     }
 
-    const normalizedEmail = email.toLowerCase().trim();
+    const { email: normalizedEmail, initialCredits } = validation.data;
 
     // Check if user owns an organization
     const { data: org, error: orgError } = await supabase

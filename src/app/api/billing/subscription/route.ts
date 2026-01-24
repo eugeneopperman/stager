@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { getUserSubscription, getUserPlan, getUserCredits } from "@/lib/billing/subscription";
 import { cancelSubscriptionAtPeriodEnd, resumeSubscription } from "@/lib/billing/stripe";
+import { validateRequest, subscriptionActionSchema } from "@/lib/schemas";
 
 /**
  * GET /api/billing/subscription
@@ -56,15 +57,14 @@ export async function PATCH(request: NextRequest) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
+    // Validate request body
     const body = await request.json();
-    const { action } = body as { action: "cancel" | "resume" };
-
-    if (action !== "cancel" && action !== "resume") {
-      return NextResponse.json(
-        { error: "Invalid action. Must be 'cancel' or 'resume'" },
-        { status: 400 }
-      );
+    const validation = validateRequest(subscriptionActionSchema, body);
+    if (!validation.success) {
+      return validation.response;
     }
+
+    const { action } = validation.data;
 
     // Get user's subscription
     const { data: subscription, error } = await supabase

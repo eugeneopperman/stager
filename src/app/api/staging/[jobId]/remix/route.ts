@@ -2,13 +2,12 @@ import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { getProviderRouter, getReplicateProvider } from "@/lib/providers";
 import {
-  type RoomType,
-  type FurnitureStyle,
   FREE_REMIXES_PER_IMAGE,
   CREDITS_PER_REMIX,
   ROOM_TYPES,
 } from "@/lib/constants";
 import { createNotification } from "@/lib/notifications";
+import { validateRequest, remixRequestSchema } from "@/lib/schemas";
 import crypto from "crypto";
 
 /**
@@ -64,20 +63,14 @@ export async function POST(
       );
     }
 
-    // Parse request body
+    // Parse and validate request body
     const body = await request.json();
-    const { roomType, style, propertyId } = body as {
-      roomType: RoomType;
-      style: FurnitureStyle;
-      propertyId?: string;
-    };
-
-    if (!roomType || !style) {
-      return NextResponse.json(
-        { error: "Room type and style are required" },
-        { status: 400 }
-      );
+    const validation = validateRequest(remixRequestSchema, body);
+    if (!validation.success) {
+      return validation.response;
     }
+
+    const { roomType, style, propertyId } = validation.data;
 
     // Get or create version group
     const originalImageUrl = parentJob.original_image_url;

@@ -5,6 +5,7 @@ import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { StagingWizard } from "@/components/staging/wizard";
 import { QuickStageLayout } from "@/components/staging/QuickStageLayout";
+import { StagingErrorBoundary } from "@/components/error-boundary";
 import { Layers, Wand2, Zap } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -97,7 +98,9 @@ export default function StagePage() {
       </div>
 
       {/* Content based on mode */}
-      {mode === "guided" ? <StagingWizard /> : <QuickStageLayout />}
+      <StagingErrorBoundary>
+        {mode === "guided" ? <StagingWizard /> : <QuickStageLayout />}
+      </StagingErrorBoundary>
     </div>
   );
 }

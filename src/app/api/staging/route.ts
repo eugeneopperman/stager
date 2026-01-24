@@ -1,9 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { getProviderRouter, getReplicateProvider, Decor8Provider } from "@/lib/providers";
-import { type RoomType, type FurnitureStyle, CREDITS_PER_STAGING, ROOM_TYPES } from "@/lib/constants";
+import { CREDITS_PER_STAGING, ROOM_TYPES } from "@/lib/constants";
 import { createNotification } from "@/lib/notifications";
 import { getUserCredits, deductCredits, logCreditTransaction } from "@/lib/billing/subscription";
+import { validateRequest, stagingRequestSchema } from "@/lib/schemas";
 
 /**
  * POST /api/staging
@@ -36,32 +37,22 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Parse request body
+    // Parse and validate request body
     const body = await request.json();
+    const validation = validateRequest(stagingRequestSchema, body);
+    if (!validation.success) {
+      return validation.response;
+    }
+
     const {
       image,
       mimeType,
       roomType,
       style,
       propertyId,
-      declutterFirst = false, // If true, remove furniture before staging
+      declutterFirst, // If true, remove furniture before staging
       mask, // Optional B/W mask image (base64) - white = areas to stage, black = preserve
-    } = body as {
-      image: string;
-      mimeType: string;
-      roomType: RoomType;
-      style: FurnitureStyle;
-      propertyId?: string;
-      declutterFirst?: boolean;
-      mask?: string;
-    };
-
-    if (!image || !mimeType || !roomType || !style) {
-      return NextResponse.json(
-        { error: "Missing required fields" },
-        { status: 400 }
-      );
-    }
+    } = validation.data;
 
     // Generate a unique job ID
     const jobId = crypto.randomUUID();

@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { getDecor8Provider } from "@/lib/providers";
-import { type RoomType, type FurnitureStyle } from "@/lib/constants";
+import { validateRequest, declutterRequestSchema } from "@/lib/schemas";
 
 /**
  * POST /api/declutter
@@ -24,36 +24,14 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    // Parse request body
+    // Parse and validate request body
     const body = await request.json();
-    const {
-      image,
-      mimeType,
-      roomType,
-      style,
-      stageAfter = false, // If true, stage the decluttered room
-    } = body as {
-      image: string;
-      mimeType: string;
-      roomType?: RoomType;
-      style?: FurnitureStyle;
-      stageAfter?: boolean;
-    };
-
-    if (!image || !mimeType) {
-      return NextResponse.json(
-        { error: "Missing required fields: image, mimeType" },
-        { status: 400 }
-      );
+    const validation = validateRequest(declutterRequestSchema, body);
+    if (!validation.success) {
+      return validation.response;
     }
 
-    // If stageAfter is true, we need roomType and style
-    if (stageAfter && (!roomType || !style)) {
-      return NextResponse.json(
-        { error: "roomType and style required when stageAfter is true" },
-        { status: 400 }
-      );
-    }
+    const { image, mimeType, roomType, style, stageAfter } = validation.data;
 
     const decor8Provider = getDecor8Provider();
 
