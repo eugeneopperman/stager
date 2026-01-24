@@ -1,0 +1,539 @@
+openapi: 3.0.3
+info:
+  title: Stager API
+  description: |
+    API for AI-powered virtual staging of real estate photos.
+
+    ## Authentication
+    All endpoints require authentication via Supabase Auth. Include the session cookie or Authorization header with your requests.
+
+    ## Rate Limiting
+    - Standard endpoints: 100 requests/minute
+    - Staging endpoints: 20 requests/minute
+    - Email endpoints: 3 requests/5 minutes
+    - Billing endpoints: 5 requests/hour
+
+    Rate limit headers are included in responses:
+    - `X-RateLimit-Limit`: Maximum requests allowed
+    - `X-RateLimit-Remaining`: Remaining requests
+    - `X-RateLimit-Reset`: Unix timestamp when limit resets
+  version: 1.132.0
+  contact:
+    name: Stager Support
+servers:
+  - url: /api
+    description: API routes
+
+tags:
+  - name: Staging
+    description: AI virtual staging operations
+  - name: Properties
+    description: Property management
+  - name: Billing
+    description: Subscription and credits
+  - name: Team
+    description: Team and organization management
+  - name: Search
+    description: Global search
+
+paths:
+  /staging:
+    post:
+      tags: [Staging]
+      summary: Stage a room image
+      description: |
+        Upload an image and stage it with AI-generated furniture.
+        Costs 1 credit per staging operation.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/StagingRequest'
+      responses:
+        '200':
+          description: Staging completed successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StagingResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '402':
+          $ref: '#/components/responses/InsufficientCredits'
+        '429':
+          $ref: '#/components/responses/RateLimited'
+
+  /staging/{jobId}:
+    get:
+      tags: [Staging]
+      summary: Get staging job status
+      parameters:
+        - name: jobId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Job status retrieved
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StagingJob'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /staging/{jobId}/remix:
+    post:
+      tags: [Staging]
+      summary: Create a remix of an existing staging
+      description: Generate a new version with different style/room type
+      parameters:
+        - name: jobId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RemixRequest'
+      responses:
+        '200':
+          description: Remix created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StagingResponse'
+
+  /staging/versions:
+    get:
+      tags: [Staging]
+      summary: Get all versions of a staging job
+      parameters:
+        - name: jobId
+          in: query
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Versions retrieved
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VersionsResponse'
+
+  /properties:
+    get:
+      tags: [Properties]
+      summary: List user's properties
+      responses:
+        '200':
+          description: Properties list
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  properties:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Property'
+    post:
+      tags: [Properties]
+      summary: Create a new property
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreatePropertyRequest'
+      responses:
+        '200':
+          description: Property created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Property'
+
+  /billing/checkout:
+    post:
+      tags: [Billing]
+      summary: Create Stripe checkout session
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [planSlug]
+              properties:
+                planSlug:
+                  type: string
+                  enum: [standard, professional, enterprise]
+      responses:
+        '200':
+          description: Checkout session created
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  url:
+                    type: string
+                    format: uri
+
+  /billing/topup:
+    post:
+      tags: [Billing]
+      summary: Purchase credit top-up
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [packageId]
+              properties:
+                packageId:
+                  type: string
+                  enum: [topup_10, topup_30, topup_100]
+      responses:
+        '200':
+          description: Top-up checkout created
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  url:
+                    type: string
+                    format: uri
+
+  /team/invite:
+    post:
+      tags: [Team]
+      summary: Invite a team member
+      description: Send email invitation to join organization
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TeamInviteRequest'
+      responses:
+        '200':
+          description: Invitation sent
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TeamInvitation'
+        '429':
+          $ref: '#/components/responses/RateLimited'
+
+  /team/invitations:
+    get:
+      tags: [Team]
+      summary: List pending invitations
+      responses:
+        '200':
+          description: Invitations list
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  invitations:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/TeamInvitation'
+
+  /search:
+    get:
+      tags: [Search]
+      summary: Global search
+      parameters:
+        - name: q
+          in: query
+          required: true
+          schema:
+            type: string
+            minLength: 2
+      responses:
+        '200':
+          description: Search results
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SearchResults'
+
+components:
+  schemas:
+    StagingRequest:
+      type: object
+      required: [image, mimeType, roomType, style]
+      properties:
+        image:
+          type: string
+          description: Base64-encoded image data
+        mimeType:
+          type: string
+          enum: [image/jpeg, image/png, image/webp]
+        roomType:
+          $ref: '#/components/schemas/RoomType'
+        style:
+          $ref: '#/components/schemas/FurnitureStyle'
+        propertyId:
+          type: string
+          format: uuid
+          nullable: true
+        declutterFirst:
+          type: boolean
+          default: false
+        mask:
+          type: string
+          description: Base64-encoded mask image (white=stage, black=preserve)
+
+    StagingResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+        jobId:
+          type: string
+          format: uuid
+        stagedImageUrl:
+          type: string
+          format: uri
+        provider:
+          type: string
+        async:
+          type: boolean
+
+    StagingJob:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        status:
+          type: string
+          enum: [pending, processing, completed, failed]
+        room_type:
+          $ref: '#/components/schemas/RoomType'
+        style:
+          $ref: '#/components/schemas/FurnitureStyle'
+        original_image_url:
+          type: string
+          format: uri
+        staged_image_url:
+          type: string
+          format: uri
+          nullable: true
+        created_at:
+          type: string
+          format: date-time
+        completed_at:
+          type: string
+          format: date-time
+          nullable: true
+
+    RemixRequest:
+      type: object
+      required: [roomType, style]
+      properties:
+        roomType:
+          $ref: '#/components/schemas/RoomType'
+        style:
+          $ref: '#/components/schemas/FurnitureStyle'
+
+    VersionsResponse:
+      type: object
+      properties:
+        versions:
+          type: array
+          items:
+            $ref: '#/components/schemas/StagingJob'
+        totalVersions:
+          type: integer
+
+    RoomType:
+      type: string
+      enum:
+        - living-room
+        - bedroom
+        - dining-room
+        - kitchen
+        - home-office
+        - bathroom
+        - outdoor-patio
+
+    FurnitureStyle:
+      type: string
+      enum:
+        - modern
+        - traditional
+        - minimalist
+        - mid-century
+        - scandinavian
+        - industrial
+        - coastal
+        - farmhouse
+        - luxury
+
+    Property:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        address:
+          type: string
+        staging_count:
+          type: integer
+        created_at:
+          type: string
+          format: date-time
+
+    CreatePropertyRequest:
+      type: object
+      required: [name]
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 100
+        address:
+          type: string
+          maxLength: 200
+
+    TeamInviteRequest:
+      type: object
+      required: [email]
+      properties:
+        email:
+          type: string
+          format: email
+        initialCredits:
+          type: integer
+          minimum: 0
+          default: 0
+
+    TeamInvitation:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        email:
+          type: string
+          format: email
+        status:
+          type: string
+          enum: [pending, accepted, expired, revoked]
+        initial_credits:
+          type: integer
+        expires_at:
+          type: string
+          format: date-time
+        created_at:
+          type: string
+          format: date-time
+
+    SearchResults:
+      type: object
+      properties:
+        properties:
+          type: array
+          items:
+            $ref: '#/components/schemas/Property'
+        stagingJobs:
+          type: array
+          items:
+            $ref: '#/components/schemas/StagingJob'
+
+    ActionableError:
+      type: object
+      properties:
+        error:
+          type: string
+        code:
+          type: string
+        suggestion:
+          type: string
+        action:
+          type: object
+          properties:
+            label:
+              type: string
+            href:
+              type: string
+
+  responses:
+    Unauthorized:
+      description: Authentication required
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ActionableError'
+          example:
+            error: "You must be logged in to perform this action."
+            code: "UNAUTHORIZED"
+            suggestion: "Please log in or create an account to continue."
+            action:
+              label: "Log In"
+              href: "/login"
+
+    InsufficientCredits:
+      description: Not enough credits
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ActionableError'
+          example:
+            error: "You need 1 credits but only have 0 available."
+            code: "INSUFFICIENT_CREDITS"
+            suggestion: "Purchase more credits or upgrade your plan to continue staging."
+            action:
+              label: "Get Credits"
+              href: "/billing"
+
+    RateLimited:
+      description: Too many requests
+      headers:
+        X-RateLimit-Limit:
+          schema:
+            type: integer
+        X-RateLimit-Remaining:
+          schema:
+            type: integer
+        X-RateLimit-Reset:
+          schema:
+            type: integer
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ActionableError'
+          example:
+            error: "Too many requests. Please slow down."
+            code: "RATE_LIMITED"
+            suggestion: "Try again in 1 minute."
+
+    NotFound:
+      description: Resource not found
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ActionableError'
+          example:
+            error: "The requested resource could not be found."
+            code: "NOT_FOUND"
