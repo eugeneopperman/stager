@@ -36,6 +36,7 @@
     "@sentry/nextjs": "^10.36.0",
     "@supabase/ssr": "^0.8.0",
     "@supabase/supabase-js": "^2.90.1",
+    "@upstash/qstash": "^2.8.4",
     "@upstash/ratelimit": "^2.0.8",
     "@upstash/redis": "^1.36.1",
     "@vercel/analytics": "^1.6.1",
