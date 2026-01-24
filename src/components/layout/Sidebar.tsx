@@ -29,7 +29,8 @@ export function Sidebar({
   const { isCollapsed, toggleCollapsed } = useSidebar();
 
   return (
-    <div
+    <nav
+      aria-label="Main navigation"
       className={cn(
         "flex h-full flex-col",
         "transition-all duration-300 ease-out",
@@ -70,6 +71,6 @@ export function Sidebar({
         {/* User Avatar with Dropdown */}
         <SidebarUserMenu user={user} isCollapsed={isCollapsed} />
       </div>
-    </div>
+    </nav>
   );
 }

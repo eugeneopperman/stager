@@ -65,6 +65,8 @@ export function VersionThumbnailStrip({
                 <button
                   onClick={() => isCompleted && onVersionSelect(version)}
                   disabled={!isCompleted}
+                  aria-label={`${formatRoomType(version.room_type)} - ${formatStyle(version.style)}${isPrimary ? " (primary)" : ""}${isSelected ? " (selected)" : ""}`}
+                  aria-current={isSelected ? "true" : undefined}
                   className={cn(
                     "relative w-[50px] h-[50px] rounded-lg overflow-hidden",
                     "transition-all duration-200",
@@ -119,10 +121,11 @@ export function VersionThumbnailStrip({
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <button
+                    aria-label={`Version options for ${formatRoomType(version.room_type)} - ${formatStyle(version.style)}`}
                     className={cn(
                       "absolute -top-1 -right-1 p-0.5 rounded-full",
                       "bg-black/60 backdrop-blur-sm text-white",
-                      "opacity-0 group-hover:opacity-100",
+                      "opacity-0 group-hover:opacity-100 focus:opacity-100",
                       "transition-opacity duration-200",
                       "hover:bg-black/80",
                       "focus:outline-none focus:ring-2 focus:ring-primary"

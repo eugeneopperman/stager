@@ -31,6 +31,7 @@ export const RemixButton = forwardRef<HTMLButtonElement, RemixButtonProps>(
               ref={ref}
               onClick={onClick}
               disabled={disabled || isLoading}
+              aria-label="Remix with different style"
               className={cn(
                 "p-1.5 rounded-full transition-colors",
                 "hover:bg-white/20 text-white",

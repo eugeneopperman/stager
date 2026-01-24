@@ -49,19 +49,21 @@ export const SearchBar = memo(
               <Input
                 ref={inputRef}
                 placeholder="Search properties, staging jobs..."
+                aria-label="Search properties and staging jobs"
                 className="border-0 bg-transparent shadow-none focus-visible:ring-0 focus-visible:border-0 px-0 h-10 dark:bg-transparent hover:bg-transparent dark:hover:bg-transparent"
                 value={query}
                 onChange={onChange}
                 onFocus={onFocus}
               />
               {isSearching ? (
-                <Loader2 className="h-4 w-4 text-muted-foreground animate-spin shrink-0" />
+                <Loader2 className="h-4 w-4 text-muted-foreground animate-spin shrink-0" aria-label="Searching" />
               ) : (
                 <Button
                   variant="ghost"
                   size="icon"
                   className="h-8 w-8 shrink-0"
                   onClick={onClose}
+                  aria-label="Close search"
                 >
                   <X className="h-4 w-4" />
                 </Button>
@@ -73,6 +75,7 @@ export const SearchBar = memo(
               size="icon"
               className="h-10 w-10 rounded-full"
               onClick={onOpen}
+              aria-label="Open search"
             >
               <Search className="h-5 w-5" />
             </Button>

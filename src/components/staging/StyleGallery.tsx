@@ -58,6 +58,8 @@ export function StyleGallery({
               type="button"
               onClick={() => handleToggle(style.id)}
               disabled={isDisabled}
+              aria-label={`${style.label} style${isSelected ? " (selected)" : ""}${isDisabled && !isSelected ? " (max styles reached)" : ""}`}
+              aria-pressed={isSelected}
               className={cn(
                 "group relative aspect-[4/3] overflow-hidden rounded-xl",
                 "border-2 transition-all duration-300",
