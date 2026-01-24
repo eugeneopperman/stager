@@ -107,8 +107,9 @@ export function NotificationDropdown() {
             "shadow-lg",
             "hover:bg-card"
           )}
+          aria-label={`Notifications${unreadCount > 0 ? `, ${unreadCount} unread` : ""}`}
         >
-          <Bell className="h-5 w-5" />
+          <Bell className="h-5 w-5" aria-hidden="true" />
           {unreadCount > 0 && (
             <span
               className={cn(
@@ -118,6 +119,7 @@ export function NotificationDropdown() {
                 "text-xs font-semibold",
                 "ring-2 ring-card"
               )}
+              aria-hidden="true"
             >
               {unreadCount > 9 ? "9+" : unreadCount}
             </span>
@@ -177,8 +179,9 @@ export function NotificationDropdown() {
         {/* Content */}
         <ScrollArea className="max-h-80">
           {isLoadingNotifications ? (
-            <div className="flex items-center justify-center py-8">
-              <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+            <div className="flex items-center justify-center py-8" role="status" aria-live="polite">
+              <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" aria-hidden="true" />
+              <span className="sr-only">Loading notifications...</span>
             </div>
           ) : notifications.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-8 px-4 text-center">

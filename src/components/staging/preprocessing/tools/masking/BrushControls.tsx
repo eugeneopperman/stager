@@ -32,9 +32,10 @@ export function BrushControls({
             size="sm"
             onClick={() => onModeChange("stage")}
             disabled={disabled}
+            aria-pressed={mode === "stage"}
             className={`flex-1 gap-1.5 ${mode === "stage" ? "bg-green-600 hover:bg-green-700" : ""}`}
           >
-            <div className="w-3 h-3 rounded-full bg-green-500" />
+            <div className="w-3 h-3 rounded-full bg-green-500" aria-hidden="true" />
             Stage
           </Button>
           <Button
@@ -42,9 +43,10 @@ export function BrushControls({
             size="sm"
             onClick={() => onModeChange("preserve")}
             disabled={disabled}
+            aria-pressed={mode === "preserve"}
             className={`flex-1 gap-1.5 ${mode === "preserve" ? "bg-red-600 hover:bg-red-700" : ""}`}
           >
-            <div className="w-3 h-3 rounded-full bg-red-500" />
+            <div className="w-3 h-3 rounded-full bg-red-500" aria-hidden="true" />
             Preserve
           </Button>
         </div>
@@ -52,8 +54,8 @@ export function BrushControls({
 
       {/* Brush Size */}
       <div className="flex items-center gap-3">
-        <span className="text-xs text-muted-foreground w-16">Brush</span>
-        <Circle className="h-3 w-3 text-muted-foreground" />
+        <span id="brush-size-label" className="text-xs text-muted-foreground w-16">Brush</span>
+        <Circle className="h-3 w-3 text-muted-foreground" aria-hidden="true" />
         <Slider
           value={[brushSize]}
           onValueChange={(v) => onBrushSizeChange(v[0])}
@@ -62,9 +64,11 @@ export function BrushControls({
           step={5}
           disabled={disabled}
           className="flex-1"
+          aria-labelledby="brush-size-label"
+          aria-valuetext={`${brushSize} pixels`}
         />
-        <Circle className="h-5 w-5 text-muted-foreground" />
-        <span className="text-xs text-muted-foreground w-8 text-right">{brushSize}px</span>
+        <Circle className="h-5 w-5 text-muted-foreground" aria-hidden="true" />
+        <span className="text-xs text-muted-foreground w-8 text-right" aria-hidden="true">{brushSize}px</span>
       </div>
     </>
   );

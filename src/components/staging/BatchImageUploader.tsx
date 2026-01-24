@@ -153,11 +153,11 @@ export function BatchImageUploader({
               )}
             >
               {isDragging ? (
-                <Upload className="h-6 w-6 text-primary" />
+                <Upload className="h-6 w-6 text-primary" aria-hidden="true" />
               ) : images.length === 0 ? (
-                <Images className="h-6 w-6 text-muted-foreground" />
+                <Images className="h-6 w-6 text-muted-foreground" aria-hidden="true" />
               ) : (
-                <Plus className="h-6 w-6 text-muted-foreground" />
+                <Plus className="h-6 w-6 text-muted-foreground" aria-hidden="true" />
               )}
             </div>
             <p className="text-sm font-medium text-foreground mb-1">
@@ -199,7 +199,7 @@ export function BatchImageUploader({
 
       {/* Error Message */}
       {error && (
-        <p className="text-sm text-destructive">{error}</p>
+        <p className="text-sm text-destructive" role="alert" aria-live="assertive">{error}</p>
       )}
 
       {/* Image Grid */}
@@ -218,7 +218,7 @@ export function BatchImageUploader({
             >
               <Image
                 src={image.preview}
-                alt="Upload preview"
+                alt={`Uploaded room photo ${images.indexOf(image) + 1} of ${images.length}`}
                 fill
                 className="object-cover"
                 unoptimized
@@ -234,8 +234,9 @@ export function BatchImageUploader({
                     "scale-90 group-hover:scale-100"
                   )}
                   onClick={() => onImageRemove(image.id)}
+                  aria-label={`Remove image ${images.indexOf(image) + 1}`}
                 >
-                  <X className="h-3 w-3" />
+                  <X className="h-3 w-3" aria-hidden="true" />
                 </Button>
               )}
             </div>

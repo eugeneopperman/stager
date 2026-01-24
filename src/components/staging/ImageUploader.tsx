@@ -102,7 +102,7 @@ export function ImageUploader({
       )}>
         <Image
           src={preview}
-          alt="Uploaded preview"
+          alt="Uploaded room photo ready for staging"
           fill
           className="object-contain"
           unoptimized
@@ -113,21 +113,22 @@ export function ImageUploader({
             size="icon"
             className="absolute top-4 right-4 shadow-lg"
             onClick={onImageClear}
+            aria-label="Remove uploaded image"
           >
-            <X className="h-4 w-4" />
+            <X className="h-4 w-4" aria-hidden="true" />
           </Button>
         )}
         {disabled && (
           <div className={cn(
             "absolute inset-0 flex items-center justify-center",
             "bg-black/40 backdrop-blur-sm"
-          )}>
+          )} role="status" aria-live="polite">
             <div className={cn(
               "flex items-center gap-3 px-5 py-3 rounded-xl",
               "bg-background/80 backdrop-blur-md",
               "border border-border/50 shadow-xl"
             )}>
-              <Loader2 className="h-5 w-5 animate-spin text-primary" />
+              <Loader2 className="h-5 w-5 animate-spin text-primary" aria-hidden="true" />
               <span className="text-sm font-medium">Processing...</span>
             </div>
           </div>
@@ -165,9 +166,9 @@ export function ImageUploader({
             )}
           >
             {isDragging ? (
-              <Upload className="h-10 w-10 text-primary" />
+              <Upload className="h-10 w-10 text-primary" aria-hidden="true" />
             ) : (
-              <ImageIcon className="h-10 w-10 text-muted-foreground" />
+              <ImageIcon className="h-10 w-10 text-muted-foreground" aria-hidden="true" />
             )}
           </div>
           <p className="text-lg font-medium text-foreground mb-1">
@@ -189,7 +190,7 @@ export function ImageUploader({
         />
       </label>
       {error && (
-        <p className="mt-2 text-sm text-destructive">{error}</p>
+        <p className="mt-2 text-sm text-destructive" role="alert" aria-live="assertive">{error}</p>
       )}
     </div>
   );

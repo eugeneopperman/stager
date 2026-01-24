@@ -35,7 +35,7 @@ export function FloatingControls() {
   );
 
   return (
-    <div className="fixed top-3 right-3 sm:top-4 sm:right-6 z-50 flex items-center gap-2">
+    <nav className="fixed top-3 right-3 sm:top-4 sm:right-6 z-50 flex items-center gap-2" aria-label="Quick actions">
       {/* Search */}
       <div ref={searchRef} className="relative">
         <SearchBar
@@ -62,6 +62,6 @@ export function FloatingControls() {
 
       {/* Notifications */}
       <NotificationDropdown />
-    </div>
+    </nav>
   );
 }

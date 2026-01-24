@@ -20,15 +20,15 @@ export function CreditDisplay({
   const percentUsed = creditsToUse > 0 ? Math.min((creditsToUse / credits) * 100, 100) : 0;
 
   return (
-    <div className={cn("space-y-2", className)}>
+    <div className={cn("space-y-2", className)} role="status" aria-live="polite">
       <div className="flex items-center justify-between text-sm">
         <div className="flex items-center gap-1.5">
           {!hasEnoughCredits ? (
-            <AlertTriangle className="h-3.5 w-3.5 text-destructive" />
+            <AlertTriangle className="h-3.5 w-3.5 text-destructive" aria-hidden="true" />
           ) : isLowCredits ? (
-            <AlertTriangle className="h-3.5 w-3.5 text-amber-500" />
+            <AlertTriangle className="h-3.5 w-3.5 text-amber-500" aria-hidden="true" />
           ) : (
-            <CreditCard className="h-3.5 w-3.5 text-muted-foreground" />
+            <CreditCard className="h-3.5 w-3.5 text-muted-foreground" aria-hidden="true" />
           )}
           <span className={cn(
             "font-medium",

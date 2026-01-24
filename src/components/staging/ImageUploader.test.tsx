@@ -53,7 +53,7 @@ describe("ImageUploader", () => {
         />
       );
 
-      const img = screen.getByAltText("Uploaded preview");
+      const img = screen.getByAltText("Uploaded room photo ready for staging");
       expect(img).toBeInTheDocument();
       expect(img).toHaveAttribute("src", "data:image/png;base64,abc123");
     });

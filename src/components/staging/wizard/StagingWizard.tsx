@@ -202,9 +202,9 @@ export function StagingWizard() {
 
       {/* Error alert */}
       {error && (
-        <Card className="max-w-2xl mx-auto border-destructive bg-destructive/10">
+        <Card className="max-w-2xl mx-auto border-destructive bg-destructive/10" role="alert" aria-live="assertive">
           <CardContent className="flex items-center gap-3 p-4">
-            <AlertCircle className="h-5 w-5 text-destructive shrink-0" />
+            <AlertCircle className="h-5 w-5 text-destructive shrink-0" aria-hidden="true" />
             <div className="flex-1">
               <p className="font-medium text-destructive">{error}</p>
             </div>

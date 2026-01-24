@@ -36,17 +36,22 @@ export function WizardStepIndicator({
   const currentIndex = getStepIndex(currentStep);
 
   return (
-    <div className={cn("w-full", className)}>
-      <div className="flex items-center justify-between">
+    <nav className={cn("w-full", className)} aria-label="Staging wizard progress">
+      <ol className="flex items-center justify-between" role="list">
         {STEPS.map((step, index) => {
           const isCompleted = currentIndex > step.number;
           const isCurrent = currentIndex === step.number;
           const isUpcoming = currentIndex < step.number;
 
           const isLastStep = index === STEPS.length - 1;
+          const stepStatus = isCompleted ? "completed" : isCurrent ? "current" : "upcoming";
 
           return (
-            <div key={step.id} className={cn("flex items-center", !isLastStep && "flex-1")}>
+            <li
+              key={step.id}
+              className={cn("flex items-center", !isLastStep && "flex-1")}
+              aria-current={isCurrent ? "step" : undefined}
+            >
               {/* Step indicator */}
               <div className="flex flex-col items-center gap-2">
                 <div
@@ -56,6 +61,7 @@ export function WizardStepIndicator({
                     isCurrent && "border-primary bg-primary/10 text-primary ring-4 ring-primary/20",
                     isUpcoming && "border-border bg-muted text-muted-foreground"
                   )}
+                  aria-hidden="true"
                 >
                   {isCompleted ? (
                     <Check className="h-5 w-5" />
@@ -73,12 +79,28 @@ export function WizardStepIndicator({
                   )}
                 >
                   {step.label}
+                  <span className="sr-only">
+                    {stepStatus === "completed"
+                      ? " (completed)"
+                      : stepStatus === "current"
+                      ? " (current step)"
+                      : ""}
+                  </span>
+                </span>
+                {/* Screen reader only label for mobile */}
+                <span className="sr-only sm:hidden">
+                  Step {step.number}: {step.label}
+                  {stepStatus === "completed"
+                    ? " (completed)"
+                    : stepStatus === "current"
+                    ? " (current step)"
+                    : ""}
                 </span>
               </div>
 
               {/* Connector line (except for last step) */}
               {!isLastStep && (
-                <div className="flex-1 px-2 sm:px-4">
+                <div className="flex-1 px-2 sm:px-4" aria-hidden="true">
                   <div
                     className={cn(
                       "h-0.5 w-full rounded-full transition-colors duration-300",
@@ -91,10 +113,10 @@ export function WizardStepIndicator({
                   />
                 </div>
               )}
-            </div>
+            </li>
           );
         })}
-      </div>
-    </div>
+      </ol>
+    </nav>
   );
 }

@@ -7,7 +7,6 @@ import {
   useEffect,
   useCallback,
   useRef,
-  useSyncExternalStore,
   type ReactNode,
 } from "react";
 
@@ -34,76 +33,92 @@ interface SidebarProviderProps {
   children: ReactNode;
 }
 
-// Helper to read from localStorage
-function getStoredCollapsed(): boolean {
-  if (typeof window === "undefined") return false;
-  return localStorage.getItem(STORAGE_KEY_COLLAPSED) === "true";
+// Safe localStorage read helper
+function safeGetItem(key: string, defaultValue: boolean): boolean {
+  if (typeof window === "undefined") return defaultValue;
+  try {
+    const value = localStorage.getItem(key);
+    return value === "true";
+  } catch {
+    return defaultValue;
+  }
 }
 
-function getStoredAutoHide(): boolean {
-  if (typeof window === "undefined") return false;
-  return localStorage.getItem(STORAGE_KEY_AUTOHIDE) === "true";
-}
-
-function subscribeToStorage(callback: () => void) {
-  window.addEventListener("storage", callback);
-  return () => window.removeEventListener("storage", callback);
+// Safe localStorage write helper
+function safeSetItem(key: string, value: boolean): void {
+  if (typeof window === "undefined") return;
+  try {
+    localStorage.setItem(key, String(value));
+  } catch {
+    // Ignore storage errors (e.g., quota exceeded, private browsing)
+  }
 }
 
 export function SidebarProvider({ children }: SidebarProviderProps) {
-  // Read initial values from localStorage via useSyncExternalStore
-  const storedCollapsed = useSyncExternalStore(
-    subscribeToStorage,
-    getStoredCollapsed,
-    () => false
-  );
-  const storedAutoHide = useSyncExternalStore(
-    subscribeToStorage,
-    getStoredAutoHide,
-    () => false
-  );
-  const mounted = useSyncExternalStore(
-    () => () => {},
-    () => true,
-    () => false
-  );
+  // Track if component is mounted (client-side)
+  const [isMounted, setIsMounted] = useState(false);
 
-  // Initialize state from localStorage (client-side only)
-  const [isCollapsed, setIsCollapsed] = useState(storedCollapsed);
-  const [isAutoHide, setIsAutoHide] = useState(storedAutoHide);
+  // Initialize state with defaults (will be hydrated on mount)
+  const [isCollapsed, setIsCollapsed] = useState(false);
+  const [isAutoHide, setIsAutoHide] = useState(false);
   const [isHovered, setIsHovered] = useState(false);
 
   // Timeout ref for delayed hide
   const hideTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
-  // Sync state when stored values change
-  useEffect(() => {
-    if (mounted) {
-      // eslint-disable-next-line react-hooks/set-state-in-effect -- Syncing state with external store is valid
-      setIsCollapsed(storedCollapsed);
-    }
-  }, [storedCollapsed, mounted]);
+  // Ref to track if we've hydrated from localStorage
+  const hasHydrated = useRef(false);
 
+  // Hydrate state from localStorage on mount (only once)
   useEffect(() => {
-    if (mounted) {
-      // eslint-disable-next-line react-hooks/set-state-in-effect -- Syncing state with external store is valid
-      setIsAutoHide(storedAutoHide);
+    if (!hasHydrated.current) {
+      hasHydrated.current = true;
+      setIsCollapsed(safeGetItem(STORAGE_KEY_COLLAPSED, false));
+      setIsAutoHide(safeGetItem(STORAGE_KEY_AUTOHIDE, false));
     }
-  }, [storedAutoHide, mounted]);
+    setIsMounted(true);
+  }, []);
 
-  // Persist collapsed state
+  // Persist collapsed state to localStorage (skip initial render)
+  const isCollapsedRef = useRef(isCollapsed);
   useEffect(() => {
-    if (mounted) {
-      localStorage.setItem(STORAGE_KEY_COLLAPSED, String(isCollapsed));
+    // Skip if this is the hydration update
+    if (!isMounted) return;
+    // Skip if value hasn't actually changed from user action
+    if (isCollapsedRef.current === isCollapsed && hasHydrated.current) {
+      isCollapsedRef.current = isCollapsed;
+      return;
     }
-  }, [isCollapsed, mounted]);
+    isCollapsedRef.current = isCollapsed;
+    safeSetItem(STORAGE_KEY_COLLAPSED, isCollapsed);
+  }, [isCollapsed, isMounted]);
 
-  // Persist auto-hide state
+  // Persist auto-hide state to localStorage
+  const isAutoHideRef = useRef(isAutoHide);
   useEffect(() => {
-    if (mounted) {
-      localStorage.setItem(STORAGE_KEY_AUTOHIDE, String(isAutoHide));
+    if (!isMounted) return;
+    if (isAutoHideRef.current === isAutoHide && hasHydrated.current) {
+      isAutoHideRef.current = isAutoHide;
+      return;
     }
-  }, [isAutoHide, mounted]);
+    isAutoHideRef.current = isAutoHide;
+    safeSetItem(STORAGE_KEY_AUTOHIDE, isAutoHide);
+  }, [isAutoHide, isMounted]);
+
+  // Listen for storage events from other tabs
+  useEffect(() => {
+    const handleStorageChange = (e: StorageEvent) => {
+      if (e.key === STORAGE_KEY_COLLAPSED && e.newValue !== null) {
+        setIsCollapsed(e.newValue === "true");
+      }
+      if (e.key === STORAGE_KEY_AUTOHIDE && e.newValue !== null) {
+        setIsAutoHide(e.newValue === "true");
+      }
+    };
+
+    window.addEventListener("storage", handleStorageChange);
+    return () => window.removeEventListener("storage", handleStorageChange);
+  }, []);
 
   const toggleCollapsed = useCallback(() => {
     setIsCollapsed((prev) => !prev);

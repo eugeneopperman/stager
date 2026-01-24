@@ -32,6 +32,10 @@ export const SearchResults = memo(function SearchResults({
   hasResults,
   onResultClick,
 }: SearchResultsProps) {
+  const totalResults = results
+    ? results.properties.length + results.stagingJobs.length
+    : 0;
+
   return (
     <div
       className={cn(
@@ -42,10 +46,21 @@ export const SearchResults = memo(function SearchResults({
         "rounded-2xl shadow-xl dark:shadow-black/40",
         "animate-in fade-in-0 slide-in-from-top-2 duration-200"
       )}
+      role="region"
+      aria-label="Search results"
     >
+      {/* Screen reader announcement for results */}
+      <div className="sr-only" aria-live="polite" aria-atomic="true">
+        {isSearching
+          ? "Searching..."
+          : hasResults
+          ? `Found ${totalResults} result${totalResults !== 1 ? "s" : ""}`
+          : `No results found for "${searchQuery}"`}
+      </div>
+
       {isSearching ? (
-        <div className="p-4 text-center text-muted-foreground">
-          <Loader2 className="h-5 w-5 animate-spin mx-auto mb-2" />
+        <div className="p-4 text-center text-muted-foreground" role="status">
+          <Loader2 className="h-5 w-5 animate-spin mx-auto mb-2" aria-hidden="true" />
           Searching...
         </div>
       ) : hasResults && results ? (

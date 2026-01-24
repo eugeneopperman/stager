@@ -27,8 +27,8 @@ export function ProcessingIndicator({
     return (
       <Card>
         <CardContent className="p-4">
-          <div className="flex items-center gap-3">
-            <Loader2 className="h-5 w-5 animate-spin text-primary" />
+          <div className="flex items-center gap-3" role="status" aria-live="polite">
+            <Loader2 className="h-5 w-5 animate-spin text-primary" aria-hidden="true" />
             <div className="flex-1">
               <p className="font-medium text-sm">
                 Generating {variations.length > 1 ? "variations" : "staging"}...
@@ -80,9 +80,9 @@ export function ProcessingIndicator({
   return (
     <Card>
       <CardContent className="p-8">
-        <div className="text-center space-y-6">
+        <div className="text-center space-y-6" role="status" aria-live="polite">
           <div className="inline-flex p-4 rounded-full bg-primary/10">
-            <Loader2 className="h-8 w-8 animate-spin text-primary" />
+            <Loader2 className="h-8 w-8 animate-spin text-primary" aria-hidden="true" />
           </div>
 
           <div>

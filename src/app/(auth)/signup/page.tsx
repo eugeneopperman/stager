@@ -147,10 +147,10 @@ function SignupContent() {
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-950 dark:to-slate-900 p-4">
-      <div className="w-full max-w-md">
+      <main className="w-full max-w-md">
         <div className="text-center mb-8">
           <Link href="/" className="inline-flex items-center gap-2 text-2xl font-bold text-slate-900 dark:text-white">
-            <Home className="h-8 w-8 text-blue-600" />
+            <Home className="h-8 w-8 text-blue-600" aria-hidden="true" />
             Stager
           </Link>
           <p className="text-slate-600 dark:text-slate-400 mt-2">
@@ -160,7 +160,7 @@ function SignupContent() {
 
         <Card>
           <CardHeader>
-            <CardTitle>Create an account</CardTitle>
+            <CardTitle as="h1">Create an account</CardTitle>
             <CardDescription>
               {invitation
                 ? `Join ${invitation.organizationName} on Stager`
@@ -173,7 +173,7 @@ function SignupContent() {
             <div className="px-6 pb-4">
               <div className="flex items-center gap-3 p-3 rounded-lg bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-900">
                 <div className="p-2 rounded-lg bg-blue-100 dark:bg-blue-900">
-                  <Users className="h-5 w-5 text-blue-600" />
+                  <Users className="h-5 w-5 text-blue-600" aria-hidden="true" />
                 </div>
                 <div>
                   <p className="font-medium text-blue-800 dark:text-blue-200">
@@ -187,7 +187,7 @@ function SignupContent() {
               {invitation.initialCredits > 0 && (
                 <div className="flex items-center gap-3 p-3 mt-2 rounded-lg bg-green-50 dark:bg-green-950/30 border border-green-200 dark:border-green-900">
                   <div className="p-2 rounded-lg bg-green-100 dark:bg-green-900">
-                    <Coins className="h-5 w-5 text-green-600" />
+                    <Coins className="h-5 w-5 text-green-600" aria-hidden="true" />
                   </div>
                   <div>
                     <p className="font-medium text-green-800 dark:text-green-200">
@@ -202,15 +202,23 @@ function SignupContent() {
             </div>
           )}
 
-          <form onSubmit={handleSignup}>
+          <form onSubmit={handleSignup} noValidate>
             <CardContent className="space-y-4">
               {error && (
-                <div className="p-3 text-sm text-red-600 bg-red-50 dark:bg-red-950/50 dark:text-red-400 rounded-lg">
+                <div
+                  id="signup-error"
+                  role="alert"
+                  aria-live="assertive"
+                  className="p-3 text-sm text-red-700 bg-red-50 dark:bg-red-950/50 dark:text-red-300 rounded-lg"
+                >
                   {error}
                 </div>
               )}
               <div className="space-y-2">
-                <Label htmlFor="fullName">Full Name</Label>
+                <Label htmlFor="fullName">
+                  Full Name <span aria-hidden="true" className="text-destructive">*</span>
+                  <span className="sr-only">(required)</span>
+                </Label>
                 <Input
                   id="fullName"
                   type="text"
@@ -218,11 +226,17 @@ function SignupContent() {
                   value={fullName}
                   onChange={(e) => setFullName(e.target.value)}
                   required
+                  aria-required="true"
+                  aria-invalid={!!error}
+                  aria-describedby={error ? "signup-error" : undefined}
                   disabled={loading}
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="email">Email</Label>
+                <Label htmlFor="email">
+                  Email <span aria-hidden="true" className="text-destructive">*</span>
+                  <span className="sr-only">(required)</span>
+                </Label>
                 <Input
                   id="email"
                   type="email"
@@ -230,16 +244,22 @@ function SignupContent() {
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   required
+                  aria-required="true"
+                  aria-invalid={!!error}
+                  aria-describedby={invitation ? "email-invitation-note signup-error" : error ? "signup-error" : undefined}
                   disabled={loading || !!invitation}
                 />
                 {invitation && (
-                  <p className="text-xs text-muted-foreground">
+                  <p id="email-invitation-note" className="text-xs text-muted-foreground">
                     This email is linked to your team invitation
                   </p>
                 )}
               </div>
               <div className="space-y-2">
-                <Label htmlFor="password">Password</Label>
+                <Label htmlFor="password">
+                  Password <span aria-hidden="true" className="text-destructive">*</span>
+                  <span className="sr-only">(required)</span>
+                </Label>
                 <Input
                   id="password"
                   type="password"
@@ -247,11 +267,17 @@ function SignupContent() {
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   required
+                  aria-required="true"
+                  aria-invalid={!!error}
+                  aria-describedby={error ? "signup-error" : undefined}
                   disabled={loading}
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="confirmPassword">Confirm Password</Label>
+                <Label htmlFor="confirmPassword">
+                  Confirm Password <span aria-hidden="true" className="text-destructive">*</span>
+                  <span className="sr-only">(required)</span>
+                </Label>
                 <Input
                   id="confirmPassword"
                   type="password"
@@ -259,6 +285,9 @@ function SignupContent() {
                   value={confirmPassword}
                   onChange={(e) => setConfirmPassword(e.target.value)}
                   required
+                  aria-required="true"
+                  aria-invalid={!!error}
+                  aria-describedby={error ? "signup-error" : undefined}
                   disabled={loading}
                 />
               </div>
@@ -267,8 +296,8 @@ function SignupContent() {
               <Button type="submit" className="w-full" disabled={loading}>
                 {loading ? (
                   <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Creating account...
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" aria-hidden="true" />
+                    <span>Creating account...</span>
                   </>
                 ) : invitation ? (
                   "Create account & join team"
@@ -292,7 +321,7 @@ function SignupContent() {
             </CardFooter>
           </form>
         </Card>
-      </div>
+      </main>
     </div>
   );
 }
