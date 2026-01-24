@@ -88,11 +88,9 @@ useEffect(() => {
 | `ImageUploader.tsx` | Single image upload with drag-drop |
 | `BatchImageUploader.tsx` | Multi-image upload (up to 10) |
 | `BatchImageCard.tsx` | Per-image config card with room type dropdown |
-| `StyleSelector.tsx` | Single style selection (legacy) |
-| `MultiStyleSelector.tsx` | Multi-style selection (up to 3) |
+| `StyleSelector.tsx` | Single style selection |
 | `StyleGallery.tsx` | Visual style grid with thumbnail images |
 | `PropertySelector.tsx` | Property dropdown with inline create |
-| `RoomTypeSelector.tsx` | Room type button grid (legacy) |
 | `RoomTypeDropdown.tsx` | Compact room type dropdown with icons |
 | `CreditDisplay.tsx` | Inline credit usage progress bar |
 | `QuickStageLayout.tsx` | Original two-panel layout for Quick mode |
@@ -710,6 +708,83 @@ When using Supabase joins, the related data may come as an array instead of a si
 // Handle both cases
 const orgData = invitation.organization;
 const org = Array.isArray(orgData) ? orgData[0] : orgData;
+```
+
+---
+
+## Service Architecture
+
+### Staging Services (`/src/lib/staging/`)
+Modular services for staging operations, extracted for testability:
+
+| Service | Purpose |
+|---------|---------|
+| `job.service.ts` | Job CRUD (createStagingJob, getStagingJob, updateJobStatus, etc.) |
+| `storage.service.ts` | Image upload/download (uploadOriginalImage, uploadStagedImage, downloadAndUploadImage) |
+| `processor.service.ts` | Provider orchestration (selectProvider, processSyncStaging, processAsyncStaging) |
+| `notifications.service.ts` | Staging notifications (notifyStagingComplete, notifyStagingFailed, notifyLowCredits) |
+
+### Team Services (`/src/lib/team/`)
+Modular services for team management:
+
+| Service | Purpose |
+|---------|---------|
+| `organization.service.ts` | Org queries (getOwnedOrganization, getUserPlanLimits, getPendingInvitationsCount) |
+| `validation.service.ts` | Capacity/credit checks (validateTeamCapacity, validateCreditAllocation) |
+| `invitation.service.ts` | Invitation CRUD (createInvitation, sendInvitationEmail, deleteInvitation) |
+
+---
+
+## API Testing Patterns
+
+### Mock Setup Pattern
+For API route tests, use this Supabase mock pattern:
+
+```typescript
+const mockGetUser = vi.fn();
+const mockFrom = vi.fn();
+const mockStorage = vi.fn();
+
+vi.mock("@/lib/supabase/server", () => ({
+  createClient: vi.fn(() =>
+    Promise.resolve({
+      auth: { getUser: mockGetUser },
+      from: mockFrom,
+      storage: { from: mockStorage },
+    })
+  ),
+}));
+```
+
+### Rate Limiter Mock Pattern
+Reset rate limiter mocks in beforeEach to prevent state leakage:
+
+```typescript
+const mockStagingRateLimiter = vi.fn();
+vi.mock("@/lib/rate-limit", () => ({
+  rateLimiters: {
+    staging: (id: string) => mockStagingRateLimiter(id),
+  },
+}));
+
+beforeEach(() => {
+  mockStagingRateLimiter.mockReturnValue({
+    allowed: true,
+    remaining: 19,
+    resetTime: Date.now() + 60000,
+    limit: 20,
+  });
+});
+```
+
+### Chained Mock Pattern
+For Supabase queries with multiple `.eq()` calls:
+
+```typescript
+// For .update().eq().eq() chains
+const mockSecondEq = vi.fn().mockResolvedValue({ error: null });
+const mockFirstEq = vi.fn(() => ({ eq: mockSecondEq }));
+const mockUpdate = vi.fn(() => ({ eq: mockFirstEq }));
 ```
 
 ---

@@ -211,10 +211,11 @@ The staging prompt is designed to:
 - Test image upload with various formats/sizes
 - Validate AI staging quality
 
-### Automated Testing (Future)
-- Unit tests for utility functions
-- Integration tests for API routes
-- E2E tests for critical user flows
+### Automated Testing
+- Unit tests for utility functions and hooks
+- API route tests with Vitest + MSW mocking
+- 234+ passing tests covering hooks, components, and API routes
+- E2E tests for critical user flows (planned)
 
 ### Test Checklist
 - [x] Signup flow works correctly
@@ -411,6 +412,7 @@ version_groups:
 | 1.106 | 2025-01-21 | Billing page: add thumbnails to Usage History entries |
 | 1.108 | 2025-01-21 | Subscription Plans & Team Management: plans table, organizations, credit allocation |
 | 1.109 | 2025-01-23 | Email-Based Team Invitations: Resend integration, invitation tokens, accept flow |
+| 1.136 | 2025-01-23 | API tests, dead code removal, service extraction: 46 new tests, modular staging/team services |
 | 1.0.0 | TBD | MVP release |
 
 ---
