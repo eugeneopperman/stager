@@ -8,12 +8,15 @@ import { DashboardProvider } from "@/contexts/DashboardContext";
 import { SidebarProvider, useSidebar } from "@/contexts/SidebarContext";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import { useObservability } from "@/lib/observability/hooks";
 
 interface DashboardShellProps {
   children: React.ReactNode;
   user?: {
+    id?: string;
     email?: string;
     full_name?: string;
+    plan?: string;
   };
   credits?: number;
   isEnterprise?: boolean;
@@ -22,6 +25,9 @@ interface DashboardShellProps {
 function DashboardContent({ children, user, credits = 0, isEnterprise = false }: DashboardShellProps) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const { isCollapsed, isAutoHide, isHovered, setHovered } = useSidebar();
+
+  // Identify user for observability (Sentry)
+  useObservability(user?.id ? { id: user.id, email: user.email, plan: user.plan } : null);
 
   // Calculate sidebar width for layout
   const sidebarWidth = isCollapsed ? "w-16" : "w-64";

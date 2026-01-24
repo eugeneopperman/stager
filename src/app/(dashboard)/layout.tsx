@@ -31,8 +31,10 @@ export default async function DashboardLayout({
   return (
     <DashboardShell
       user={{
+        id: user.id,
         email: user.email,
         full_name: profile?.full_name || undefined,
+        plan: planSlug || undefined,
       }}
       credits={profile?.credits_remaining || 0}
       isEnterprise={isEnterprise}
