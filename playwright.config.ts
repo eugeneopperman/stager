@@ -1,4 +1,7 @@
 import { defineConfig, devices } from "@playwright/test";
+import path from "path";
+
+const AUTH_FILE = path.join(__dirname, "e2e/.auth/user.json");
 
 /**
  * Playwright configuration for E2E tests
@@ -16,6 +19,10 @@ export default defineConfig({
   workers: process.env.CI ? 1 : undefined,
   // Reporter to use
   reporter: [["html", { open: "never" }], ["list"]],
+
+  // Global setup - runs once before all tests for authentication
+  globalSetup: "./e2e/global-setup.ts",
+
   // Shared settings for all the projects below
   use: {
     // Base URL to use in actions like `await page.goto('/')`
@@ -24,23 +31,38 @@ export default defineConfig({
     trace: "on-first-retry",
     // Screenshot on failure
     screenshot: "only-on-failure",
+    // Viewport
+    viewport: { width: 1280, height: 720 },
   },
 
-  // Configure projects for major browsers
+  // Configure projects for different scenarios
   projects: [
+    // Unauthenticated tests (landing, auth pages)
     {
-      name: "chromium",
+      name: "unauthenticated",
+      testMatch: /\/(auth|landing)\.spec\.ts$/,
       use: { ...devices["Desktop Chrome"] },
     },
-    // Uncomment for additional browser coverage
-    // {
-    //   name: "firefox",
-    //   use: { ...devices["Desktop Firefox"] },
-    // },
-    // {
-    //   name: "webkit",
-    //   use: { ...devices["Desktop Safari"] },
-    // },
+
+    // Authenticated tests (dashboard, staging, properties, etc.)
+    {
+      name: "authenticated",
+      testIgnore: /\/(auth|landing)\.spec\.ts$/,
+      use: {
+        ...devices["Desktop Chrome"],
+        storageState: AUTH_FILE,
+      },
+    },
+
+    // Mobile tests
+    {
+      name: "mobile",
+      testMatch: /\.mobile\.spec\.ts$/,
+      use: {
+        ...devices["iPhone 13"],
+        storageState: AUTH_FILE,
+      },
+    },
   ],
 
   // Run local dev server before starting the tests

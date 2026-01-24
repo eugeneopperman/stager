@@ -17,7 +17,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Rate limiting - sensitive financial operation
-    const rateLimitResult = rateLimiters.sensitive(getClientIdentifier(request, user.id));
+    const rateLimitResult = await rateLimiters.sensitive(getClientIdentifier(request, user.id));
     if (!rateLimitResult.allowed) {
       return NextResponse.json(
         { error: "Too many checkout attempts. Please wait before trying again." },

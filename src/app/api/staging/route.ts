@@ -30,7 +30,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Rate limiting - staging is resource-intensive
-    const rateLimitResult = rateLimiters.staging(getClientIdentifier(request, user.id));
+    const rateLimitResult = await rateLimiters.staging(getClientIdentifier(request, user.id));
     if (!rateLimitResult.allowed) {
       const response = respondWithError(ActionableErrors.stagingRateLimited());
       // Add rate limit headers

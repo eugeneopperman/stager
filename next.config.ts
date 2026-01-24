@@ -11,6 +11,34 @@ const nextConfig: NextConfig = {
       },
     ],
   },
+
+  // API versioning - supports both /api/v1/* and /api/*
+  async rewrites() {
+    return {
+      beforeFiles: [
+        // Map /api/v1/* to /api/* for versioned API access
+        {
+          source: "/api/v1/:path*",
+          destination: "/api/:path*",
+        },
+      ],
+      afterFiles: [],
+      fallback: [],
+    };
+  },
+
+  // Add API version headers to all API responses
+  async headers() {
+    return [
+      {
+        source: "/api/:path*",
+        headers: [
+          { key: "X-API-Version", value: "1" },
+          { key: "X-API-Deprecated", value: "false" },
+        ],
+      },
+    ];
+  },
 };
 
 // Sentry configuration

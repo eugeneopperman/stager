@@ -23,7 +23,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Rate limiting - prevent email abuse
-    const rateLimitResult = rateLimiters.email(getClientIdentifier(request, user.id));
+    const rateLimitResult = await rateLimiters.email(getClientIdentifier(request, user.id));
     if (!rateLimitResult.allowed) {
       const resetInSeconds = Math.ceil((rateLimitResult.resetTime - Date.now()) / 1000);
       const response = respondWithError(ActionableErrors.rateLimited(resetInSeconds));

@@ -1,7 +1,16 @@
 /**
- * Simple in-memory rate limiter for API routes
- * For production with multiple instances, use Redis-based rate limiting
+ * Rate Limiting Module
+ *
+ * Supports both Redis-backed (distributed) and in-memory (single instance) rate limiting.
+ * Automatically uses Redis when configured, falls back to in-memory otherwise.
+ *
+ * For production with multiple instances, configure Redis:
+ * - UPSTASH_REDIS_REST_URL
+ * - UPSTASH_REDIS_REST_TOKEN
  */
+
+import { Ratelimit } from "@upstash/ratelimit";
+import { getRedisClient, isRedisConfigured } from "./redis";
 
 interface RateLimitConfig {
   /** Maximum number of requests allowed in the interval */
@@ -10,12 +19,19 @@ interface RateLimitConfig {
   interval: number;
 }
 
+interface RateLimitResult {
+  allowed: boolean;
+  remaining: number;
+  resetTime: number;
+  limit: number;
+}
+
 interface RateLimitEntry {
   count: number;
   resetTime: number;
 }
 
-// In-memory store for rate limiting
+// In-memory store for fallback rate limiting
 const rateLimitStore = new Map<string, RateLimitEntry>();
 
 // Cleanup old entries periodically
@@ -35,20 +51,9 @@ function cleanupExpiredEntries() {
 }
 
 /**
- * Check if a request should be rate limited
- * @param identifier - Unique identifier (e.g., IP address, user ID)
- * @param config - Rate limit configuration
- * @returns Object with allowed status and rate limit info
+ * In-memory rate limiter (fallback when Redis not configured)
  */
-export function rateLimit(
-  identifier: string,
-  config: RateLimitConfig
-): {
-  allowed: boolean;
-  remaining: number;
-  resetTime: number;
-  limit: number;
-} {
+function inMemoryRateLimit(identifier: string, config: RateLimitConfig): RateLimitResult {
   cleanupExpiredEntries();
 
   const now = Date.now();
@@ -90,6 +95,102 @@ export function rateLimit(
   };
 }
 
+// Cache for Upstash rate limiters (keyed by config)
+const upstashLimiters = new Map<string, Ratelimit>();
+
+/**
+ * Get or create an Upstash rate limiter for a specific configuration
+ */
+function getUpstashLimiter(config: RateLimitConfig): Ratelimit | null {
+  const redis = getRedisClient();
+  if (!redis) return null;
+
+  const cacheKey = `${config.limit}:${config.interval}`;
+
+  if (!upstashLimiters.has(cacheKey)) {
+    // Convert interval to duration string for Upstash
+    const durationMs = config.interval;
+    let duration: `${number} ms` | `${number} s` | `${number} m` | `${number} h` | `${number} d`;
+
+    if (durationMs >= 24 * 60 * 60 * 1000) {
+      duration = `${Math.floor(durationMs / (24 * 60 * 60 * 1000))} d`;
+    } else if (durationMs >= 60 * 60 * 1000) {
+      duration = `${Math.floor(durationMs / (60 * 60 * 1000))} h`;
+    } else if (durationMs >= 60 * 1000) {
+      duration = `${Math.floor(durationMs / (60 * 1000))} m`;
+    } else if (durationMs >= 1000) {
+      duration = `${Math.floor(durationMs / 1000)} s`;
+    } else {
+      duration = `${durationMs} ms`;
+    }
+
+    const limiter = new Ratelimit({
+      redis,
+      limiter: Ratelimit.slidingWindow(config.limit, duration),
+      analytics: true,
+      prefix: "stager:ratelimit",
+    });
+
+    upstashLimiters.set(cacheKey, limiter);
+  }
+
+  return upstashLimiters.get(cacheKey)!;
+}
+
+/**
+ * Redis-backed rate limiter
+ */
+async function redisRateLimit(identifier: string, config: RateLimitConfig): Promise<RateLimitResult> {
+  const limiter = getUpstashLimiter(config);
+
+  if (!limiter) {
+    // Fallback to in-memory if Redis not available
+    return inMemoryRateLimit(identifier, config);
+  }
+
+  try {
+    const result = await limiter.limit(identifier);
+
+    return {
+      allowed: result.success,
+      remaining: result.remaining,
+      resetTime: result.reset,
+      limit: config.limit,
+    };
+  } catch (error) {
+    console.error("Redis rate limit error, falling back to in-memory:", error);
+    return inMemoryRateLimit(identifier, config);
+  }
+}
+
+/**
+ * Check if a request should be rate limited
+ *
+ * Uses Redis when configured, falls back to in-memory otherwise.
+ *
+ * @param identifier - Unique identifier (e.g., IP address, user ID)
+ * @param config - Rate limit configuration
+ * @returns Object with allowed status and rate limit info
+ */
+export async function rateLimit(
+  identifier: string,
+  config: RateLimitConfig
+): Promise<RateLimitResult> {
+  if (isRedisConfigured()) {
+    return redisRateLimit(identifier, config);
+  }
+  return inMemoryRateLimit(identifier, config);
+}
+
+/**
+ * Synchronous rate limit check (in-memory only, for backwards compatibility)
+ *
+ * @deprecated Use the async rateLimit() function instead
+ */
+export function rateLimitSync(identifier: string, config: RateLimitConfig): RateLimitResult {
+  return inMemoryRateLimit(identifier, config);
+}
+
 /**
  * Pre-configured rate limiters for common use cases
  */
@@ -118,7 +219,7 @@ export const rateLimiters = {
 /**
  * Get rate limit headers for response
  */
-export function getRateLimitHeaders(result: ReturnType<typeof rateLimit>): Record<string, string> {
+export function getRateLimitHeaders(result: RateLimitResult): Record<string, string> {
   return {
     "X-RateLimit-Limit": result.limit.toString(),
     "X-RateLimit-Remaining": result.remaining.toString(),
@@ -150,4 +251,11 @@ export function getClientIdentifier(request: Request, userId?: string): string {
 
   // Fallback - shouldn't happen in production with proper proxy setup
   return "ip:unknown";
+}
+
+/**
+ * Check which rate limiting backend is active
+ */
+export function getRateLimitBackend(): "redis" | "memory" {
+  return isRedisConfigured() ? "redis" : "memory";
 }
