@@ -6,6 +6,7 @@ import {
   getInvitationExpiryDate,
 } from "@/lib/notifications/email";
 import { validateRequest, teamInviteRequestSchema } from "@/lib/schemas";
+import { rateLimiters, getRateLimitHeaders, getClientIdentifier } from "@/lib/rate-limit";
 
 // POST - Invite a member to organization by email
 export async function POST(request: NextRequest) {
@@ -17,6 +18,15 @@ export async function POST(request: NextRequest) {
 
     if (!user) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    // Rate limiting - prevent email abuse
+    const rateLimitResult = rateLimiters.email(getClientIdentifier(request, user.id));
+    if (!rateLimitResult.allowed) {
+      return NextResponse.json(
+        { error: "Too many invitations sent. Please wait a few minutes before sending more." },
+        { status: 429, headers: getRateLimitHeaders(rateLimitResult) }
+      );
     }
 
     // Validate request body

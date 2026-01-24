@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { createSubscriptionCheckout } from "@/lib/billing/stripe";
 import { validateRequest, checkoutRequestSchema } from "@/lib/schemas";
+import { rateLimiters, getRateLimitHeaders, getClientIdentifier } from "@/lib/rate-limit";
 
 export async function POST(request: NextRequest) {
   try {
@@ -12,6 +13,15 @@ export async function POST(request: NextRequest) {
 
     if (!user) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    // Rate limiting - sensitive financial operation
+    const rateLimitResult = rateLimiters.sensitive(getClientIdentifier(request, user.id));
+    if (!rateLimitResult.allowed) {
+      return NextResponse.json(
+        { error: "Too many checkout attempts. Please wait before trying again." },
+        { status: 429, headers: getRateLimitHeaders(rateLimitResult) }
+      );
     }
 
     // Validate request body

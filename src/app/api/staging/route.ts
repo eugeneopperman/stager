@@ -5,6 +5,7 @@ import { CREDITS_PER_STAGING, ROOM_TYPES } from "@/lib/constants";
 import { createNotification } from "@/lib/notifications";
 import { getUserCredits, deductCredits, logCreditTransaction } from "@/lib/billing/subscription";
 import { validateRequest, stagingRequestSchema } from "@/lib/schemas";
+import { rateLimiters, getRateLimitHeaders, getClientIdentifier } from "@/lib/rate-limit";
 
 /**
  * POST /api/staging
@@ -25,6 +26,15 @@ export async function POST(request: NextRequest) {
 
     if (!user) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    // Rate limiting - staging is resource-intensive
+    const rateLimitResult = rateLimiters.staging(getClientIdentifier(request, user.id));
+    if (!rateLimitResult.allowed) {
+      return NextResponse.json(
+        { error: "Too many staging requests. Please wait before trying again." },
+        { status: 429, headers: getRateLimitHeaders(rateLimitResult) }
+      );
     }
 
     // Get user credits (handles both personal and team credits)
