@@ -6,6 +6,7 @@ import { createNotification } from "@/lib/notifications";
 import { getUserCredits, deductCredits, logCreditTransaction } from "@/lib/billing/subscription";
 import { validateRequest, stagingRequestSchema } from "@/lib/schemas";
 import { rateLimiters, getRateLimitHeaders, getClientIdentifier } from "@/lib/rate-limit";
+import { ActionableErrors, respondWithError } from "@/lib/errors";
 
 /**
  * POST /api/staging
@@ -25,25 +26,26 @@ export async function POST(request: NextRequest) {
     } = await supabase.auth.getUser();
 
     if (!user) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+      return respondWithError(ActionableErrors.unauthorized());
     }
 
     // Rate limiting - staging is resource-intensive
     const rateLimitResult = rateLimiters.staging(getClientIdentifier(request, user.id));
     if (!rateLimitResult.allowed) {
-      return NextResponse.json(
-        { error: "Too many staging requests. Please wait before trying again." },
-        { status: 429, headers: getRateLimitHeaders(rateLimitResult) }
-      );
+      const response = respondWithError(ActionableErrors.stagingRateLimited());
+      // Add rate limit headers
+      Object.entries(getRateLimitHeaders(rateLimitResult)).forEach(([key, value]) => {
+        response.headers.set(key, value);
+      });
+      return response;
     }
 
     // Get user credits (handles both personal and team credits)
     const creditInfo = await getUserCredits(user.id);
 
     if (creditInfo.available < CREDITS_PER_STAGING) {
-      return NextResponse.json(
-        { error: "Insufficient credits. Please upgrade your plan." },
-        { status: 402 }
+      return respondWithError(
+        ActionableErrors.insufficientCredits(CREDITS_PER_STAGING, creditInfo.available)
       );
     }
 
@@ -172,10 +174,7 @@ export async function POST(request: NextRequest) {
           "/history"
         );
 
-        return NextResponse.json(
-          { error: result.error || "Failed to stage image" },
-          { status: 500 }
-        );
+        return respondWithError(ActionableErrors.stagingFailed());
       }
 
       // Upload staged image

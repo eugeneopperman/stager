@@ -7,6 +7,7 @@ import {
 } from "@/lib/notifications/email";
 import { validateRequest, teamInviteRequestSchema } from "@/lib/schemas";
 import { rateLimiters, getRateLimitHeaders, getClientIdentifier } from "@/lib/rate-limit";
+import { ActionableErrors, respondWithError } from "@/lib/errors";
 
 // POST - Invite a member to organization by email
 export async function POST(request: NextRequest) {
@@ -17,16 +18,18 @@ export async function POST(request: NextRequest) {
     } = await supabase.auth.getUser();
 
     if (!user) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+      return respondWithError(ActionableErrors.unauthorized());
     }
 
     // Rate limiting - prevent email abuse
     const rateLimitResult = rateLimiters.email(getClientIdentifier(request, user.id));
     if (!rateLimitResult.allowed) {
-      return NextResponse.json(
-        { error: "Too many invitations sent. Please wait a few minutes before sending more." },
-        { status: 429, headers: getRateLimitHeaders(rateLimitResult) }
-      );
+      const resetInSeconds = Math.ceil((rateLimitResult.resetTime - Date.now()) / 1000);
+      const response = respondWithError(ActionableErrors.rateLimited(resetInSeconds));
+      Object.entries(getRateLimitHeaders(rateLimitResult)).forEach(([key, value]) => {
+        response.headers.set(key, value);
+      });
+      return response;
     }
 
     // Validate request body
@@ -46,10 +49,7 @@ export async function POST(request: NextRequest) {
       .single();
 
     if (orgError || !org) {
-      return NextResponse.json(
-        { error: "You must be an organization owner to invite members" },
-        { status: 403 }
-      );
+      return respondWithError(ActionableErrors.teamMemberOnly());
     }
 
     // Get plan limits
@@ -78,12 +78,7 @@ export async function POST(request: NextRequest) {
       currentMembers + (pendingInvitationsCount || 0);
 
     if (totalPendingAndCurrent >= maxMembers) {
-      return NextResponse.json(
-        {
-          error: `Maximum team size reached (${maxMembers} members including pending invitations)`,
-        },
-        { status: 400 }
-      );
+      return respondWithError(ActionableErrors.teamFull(maxMembers));
     }
 
     // Check available credits
@@ -106,13 +101,7 @@ export async function POST(request: NextRequest) {
       .single();
 
     if (existingInvitation) {
-      return NextResponse.json(
-        {
-          error:
-            "An invitation has already been sent to this email. You can resend or revoke it.",
-        },
-        { status: 400 }
-      );
+      return respondWithError(ActionableErrors.invitationExists(normalizedEmail));
     }
 
     // Check if user already exists and is a member
@@ -200,10 +189,7 @@ export async function POST(request: NextRequest) {
       // Delete the invitation if email fails
       await supabase.from("team_invitations").delete().eq("id", invitation.id);
 
-      return NextResponse.json(
-        { error: "Failed to send invitation email. Please try again." },
-        { status: 500 }
-      );
+      return respondWithError(ActionableErrors.emailFailed());
     }
 
     return NextResponse.json({
