@@ -3,6 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import { createSubscriptionCheckout } from "@/lib/billing/stripe";
 import { validateRequest, checkoutRequestSchema } from "@/lib/schemas";
 import { rateLimiters, getRateLimitHeaders, getClientIdentifier } from "@/lib/rate-limit";
+import { logBillingEvent, AuditEventType } from "@/lib/audit/audit-log.service";
 
 export async function POST(request: NextRequest) {
   try {
@@ -49,6 +50,19 @@ export async function POST(request: NextRequest) {
       customerId: profile?.stripe_customer_id || undefined,
       successUrl: `${baseUrl}/billing?success=true&plan=${planSlug}`,
       cancelUrl: `${baseUrl}/billing?canceled=true`,
+    });
+
+    // Audit log: checkout session created
+    await logBillingEvent(supabase, {
+      userId: user.id,
+      eventType: AuditEventType.BILLING_CHECKOUT_CREATED,
+      resourceId: session.id,
+      action: "created",
+      newValues: {
+        planSlug,
+        sessionId: session.id,
+      },
+      request,
     });
 
     return NextResponse.json({ url: session.url });

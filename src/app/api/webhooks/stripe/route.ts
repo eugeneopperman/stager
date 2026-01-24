@@ -149,16 +149,11 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
       { onConflict: "user_id" }
     );
 
-    // Update profile with plan
-    await supabaseAdmin
-      .from("profiles")
-      .update({ plan_id: plan.id })
-      .eq("id", userId);
-
-    // Allocate credits
+    // Consolidated profile update: plan_id, credits, and reset timestamp
     await supabaseAdmin
       .from("profiles")
       .update({
+        plan_id: plan.id,
         credits_remaining: plan.credits_per_month,
         credits_reset_at: new Date().toISOString(),
       })
@@ -195,26 +190,24 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
         .single();
 
       if (org) {
-        // Add owner as member
-        await supabaseAdmin.from("organization_members").insert({
-          organization_id: org.id,
-          user_id: userId,
-          role: "owner",
-          allocated_credits: plan.credits_per_month,
-          joined_at: new Date().toISOString(),
-        });
-
-        // Update subscription with org reference
-        await supabaseAdmin
-          .from("subscriptions")
-          .update({ id: org.id })
-          .eq("user_id", userId);
-
-        // Update profile with org
-        await supabaseAdmin
-          .from("profiles")
-          .update({ organization_id: org.id })
-          .eq("id", userId);
+        // Batch: Add owner as member, update subscription, update profile
+        await Promise.all([
+          supabaseAdmin.from("organization_members").insert({
+            organization_id: org.id,
+            user_id: userId,
+            role: "owner",
+            allocated_credits: plan.credits_per_month,
+            joined_at: new Date().toISOString(),
+          }),
+          supabaseAdmin
+            .from("subscriptions")
+            .update({ id: org.id })
+            .eq("user_id", userId),
+          supabaseAdmin
+            .from("profiles")
+            .update({ organization_id: org.id })
+            .eq("id", userId),
+        ]);
       }
     }
   }

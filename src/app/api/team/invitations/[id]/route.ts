@@ -5,6 +5,7 @@ import {
   generateInvitationToken,
   getInvitationExpiryDate,
 } from "@/lib/notifications/email";
+import { logTeamEvent, AuditEventType } from "@/lib/audit/audit-log.service";
 
 /**
  * POST /api/team/invitations/[id]
@@ -108,6 +109,20 @@ export async function POST(
       );
     }
 
+    // Audit log: invitation resent
+    await logTeamEvent(supabase, {
+      userId: user.id,
+      organizationId: org.id,
+      eventType: AuditEventType.TEAM_INVITATION_RESENT,
+      resourceId: invitation.id,
+      action: "updated",
+      details: {
+        inviteeEmail: invitation.email,
+        newExpiresAt: newExpiresAt.toISOString(),
+      },
+      request,
+    });
+
     return NextResponse.json({
       message: "Invitation resent successfully",
       invitation: {
@@ -191,6 +206,17 @@ export async function DELETE(
         { status: 500 }
       );
     }
+
+    // Audit log: invitation revoked
+    await logTeamEvent(supabase, {
+      userId: user.id,
+      organizationId: org.id,
+      eventType: AuditEventType.TEAM_INVITATION_REVOKED,
+      resourceId: id,
+      action: "updated",
+      details: { status: "revoked" },
+      request,
+    });
 
     return NextResponse.json({
       message: "Invitation revoked successfully",

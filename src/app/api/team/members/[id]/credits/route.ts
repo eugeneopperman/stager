@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { validateRequest, memberCreditsSchema } from "@/lib/schemas";
+import { logTeamEvent, AuditEventType } from "@/lib/audit/audit-log.service";
 
 interface RouteParams {
   params: Promise<{ id: string }>;
@@ -111,6 +112,22 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
       description: creditsDifference > 0
         ? `Allocated ${creditsDifference} credits`
         : `Returned ${Math.abs(creditsDifference)} credits to pool`,
+    });
+
+    // Audit log: credits allocated
+    await logTeamEvent(supabase, {
+      userId: user.id,
+      organizationId: org.id,
+      eventType: AuditEventType.TEAM_CREDITS_ALLOCATED,
+      resourceId: memberId,
+      action: "updated",
+      details: {
+        targetUserId: member.user_id,
+        previousAllocation: currentAllocation,
+        newAllocation: credits,
+        creditsDifference,
+      },
+      request,
     });
 
     return NextResponse.json({

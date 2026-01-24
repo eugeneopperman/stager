@@ -12,12 +12,15 @@ test.describe("Landing Page", () => {
     await page.goto("/");
 
     // Should have login and signup links
-    const loginLink = page.getByRole("link", { name: /log in|sign in/i });
+    const loginLink = page.getByRole("link", { name: /log in|sign in/i }).first();
     const signupLink = page.getByRole("link", {
       name: /get started|sign up/i,
-    });
+    }).first();
 
-    await expect(loginLink.or(signupLink)).toBeVisible();
+    // At least one should be visible
+    const hasLogin = await loginLink.isVisible().catch(() => false);
+    const hasSignup = await signupLink.isVisible().catch(() => false);
+    expect(hasLogin || hasSignup).toBeTruthy();
   });
 
   test("should navigate to login page", async ({ page }) => {

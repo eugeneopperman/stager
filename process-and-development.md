@@ -214,8 +214,9 @@ The staging prompt is designed to:
 ### Automated Testing
 - Unit tests for utility functions and hooks
 - API route tests with Vitest + MSW mocking
-- 234+ passing tests covering hooks, components, and API routes
-- E2E tests for critical user flows (planned)
+- Component tests for CreditDisplay, RoomTypeDropdown, PlanCard, WizardStepIndicator
+- 277 passing tests covering hooks, components, and API routes
+- E2E tests with Playwright (11 test files, 103 tests)
 
 ### Test Checklist
 - [x] Signup flow works correctly
@@ -353,10 +354,14 @@ version_groups:
 - White-label options
 
 ### Technical Improvements
-- Add comprehensive error tracking (Sentry)
+- ✅ Comprehensive error tracking (Sentry - client, server, edge)
+- ✅ Audit logging for security/compliance
+- ✅ Webhook signature validation (Replicate, Stripe)
+- ✅ Request tracing with X-Request-ID headers
+- ✅ OpenAPI 3.0 documentation
 - Implement analytics (PostHog, Mixpanel)
-- Add performance monitoring
 - Consider CDN for image delivery
+- Add database transactions for multi-table writes
 
 ---
 
@@ -413,6 +418,7 @@ version_groups:
 | 1.108 | 2025-01-21 | Subscription Plans & Team Management: plans table, organizations, credit allocation |
 | 1.109 | 2025-01-23 | Email-Based Team Invitations: Resend integration, invitation tokens, accept flow |
 | 1.136 | 2025-01-23 | API tests, dead code removal, service extraction: 46 new tests, modular staging/team services |
+| 1.137 | 2025-01-24 | Codebase improvements: OpenAPI docs, E2E tests, Sentry, audit logging, query optimization, component tests (277 total tests) |
 | 1.0.0 | TBD | MVP release |
 
 ---

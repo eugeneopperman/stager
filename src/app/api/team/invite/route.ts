@@ -8,6 +8,7 @@ import {
 import { validateRequest, teamInviteRequestSchema } from "@/lib/schemas";
 import { rateLimiters, getRateLimitHeaders, getClientIdentifier } from "@/lib/rate-limit";
 import { ActionableErrors, respondWithError } from "@/lib/errors";
+import { logTeamEvent, AuditEventType, getRequestContext } from "@/lib/audit/audit-log.service";
 
 // POST - Invite a member to organization by email
 export async function POST(request: NextRequest) {
@@ -104,28 +105,6 @@ export async function POST(request: NextRequest) {
       return respondWithError(ActionableErrors.invitationExists(normalizedEmail));
     }
 
-    // Check if user already exists and is a member
-    // Use service role to look up auth.users by email
-    const { data: _existingUserProfile } = await supabase
-      .from("profiles")
-      .select("id")
-      .eq("id", user.id)
-      .single();
-
-    // Try to find the user by checking if any profile exists with this email
-    // We need to use a workaround since we can't directly query auth.users
-    // Instead, check if an invitation was previously accepted by this email
-    const { data: _existingMemberByEmail } = await supabase
-      .from("organization_members")
-      .select(
-        `
-        id,
-        user_id,
-        profile:profiles!inner(id)
-      `
-      )
-      .eq("organization_id", org.id);
-
     // Get owner profile for inviter name
     const { data: ownerProfile } = await supabase
       .from("profiles")
@@ -191,6 +170,21 @@ export async function POST(request: NextRequest) {
 
       return respondWithError(ActionableErrors.emailFailed());
     }
+
+    // Audit log: team invitation created
+    await logTeamEvent(supabase, {
+      userId: user.id,
+      organizationId: org.id,
+      eventType: AuditEventType.TEAM_INVITATION_CREATED,
+      resourceId: invitation.id,
+      action: "created",
+      details: {
+        inviteeEmail: normalizedEmail,
+        initialCredits,
+        expiresAt: expiresAt.toISOString(),
+      },
+      request,
+    });
 
     return NextResponse.json({
       message: "Invitation sent successfully",

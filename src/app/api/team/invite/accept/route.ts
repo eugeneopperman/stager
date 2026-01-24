@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { createClient as createServiceClient } from "@supabase/supabase-js";
+import { logTeamEvent, AuditEventType } from "@/lib/audit/audit-log.service";
 
 // POST - Accept an invitation
 export async function POST(request: NextRequest) {
@@ -188,6 +189,20 @@ export async function POST(request: NextRequest) {
         accepted_at: new Date().toISOString(),
       })
       .eq("id", invitation.id);
+
+    // Audit log: invitation accepted
+    await logTeamEvent(serviceClient, {
+      userId: user.id,
+      organizationId: org.id,
+      eventType: AuditEventType.TEAM_INVITATION_ACCEPTED,
+      resourceId: invitation.id,
+      action: "updated",
+      details: {
+        inviteeEmail: invitation.email,
+        allocatedCredits: invitation.initial_credits,
+      },
+      request,
+    });
 
     return NextResponse.json({
       message: "Successfully joined the organization!",

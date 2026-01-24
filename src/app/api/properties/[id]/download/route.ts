@@ -18,29 +18,45 @@ export async function GET(
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  // Fetch property (with user check for security)
+  // Fetch property with completed staging jobs in one query using join
   const { data: property, error: propertyError } = await supabase
     .from("properties")
-    .select("*")
+    .select(`
+      *,
+      staging_jobs!inner(*)
+    `)
     .eq("id", id)
     .eq("user_id", user.id)
+    .eq("staging_jobs.status", "completed")
+    .order("created_at", { ascending: true, referencedTable: "staging_jobs" })
     .single();
 
   if (propertyError || !property) {
-    return NextResponse.json({ error: "Property not found" }, { status: 404 });
+    // Check if property exists but has no completed jobs
+    const { data: propertyOnly } = await supabase
+      .from("properties")
+      .select("id")
+      .eq("id", id)
+      .eq("user_id", user.id)
+      .single();
+
+    if (!propertyOnly) {
+      return NextResponse.json({ error: "Property not found" }, { status: 404 });
+    }
+    return NextResponse.json({ error: "No completed images to download" }, { status: 400 });
   }
 
-  // Fetch all completed staging jobs for this property
-  const { data: stagingJobs, error: jobsError } = await supabase
-    .from("staging_jobs")
-    .select("*")
-    .eq("property_id", id)
-    .eq("status", "completed")
-    .order("created_at", { ascending: true });
-
-  if (jobsError) {
-    return NextResponse.json({ error: "Failed to fetch staging jobs" }, { status: 500 });
+  interface StagingJob {
+    id: string;
+    version_group_id: string | null;
+    is_primary_version: boolean;
+    staged_image_url: string | null;
+    room_type: string;
+    style: string;
+    created_at: string;
   }
+
+  const stagingJobs = property.staging_jobs as StagingJob[];
 
   if (!stagingJobs || stagingJobs.length === 0) {
     return NextResponse.json({ error: "No completed images to download" }, { status: 400 });
@@ -49,8 +65,8 @@ export async function GET(
   // Filter to only include primary versions when there are version groups
   // For jobs without version groups, include them all
   // For jobs with version groups, only include the primary version (or first if no primary)
-  const versionGroupJobs = new Map<string, typeof stagingJobs>();
-  const jobsWithoutVersionGroup: typeof stagingJobs = [];
+  const versionGroupJobs = new Map<string, StagingJob[]>();
+  const jobsWithoutVersionGroup: StagingJob[] = [];
 
   for (const job of stagingJobs) {
     if (job.version_group_id) {
@@ -63,7 +79,7 @@ export async function GET(
   }
 
   // For each version group, select the primary version (or first completed if no primary)
-  const filteredJobs = [...jobsWithoutVersionGroup];
+  const filteredJobs: StagingJob[] = [...jobsWithoutVersionGroup];
   for (const [, groupJobs] of versionGroupJobs) {
     const primaryJob = groupJobs.find((j) => j.is_primary_version);
     if (primaryJob) {

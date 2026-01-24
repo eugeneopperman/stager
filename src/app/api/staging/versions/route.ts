@@ -29,12 +29,12 @@ export async function GET(request: NextRequest) {
     );
   }
 
-  // If jobId is provided, first get the version_group_id from that job
+  // If jobId is provided, first get the job with its version group
   let actualGroupId = groupId;
   if (jobId && !groupId) {
     const { data: job, error: jobError } = await supabase
       .from("staging_jobs")
-      .select("version_group_id")
+      .select("*, version_group:version_groups(*)")
       .eq("id", jobId)
       .eq("user_id", user.id)
       .single();
@@ -48,30 +48,27 @@ export async function GET(request: NextRequest) {
 
     if (!job.version_group_id) {
       // This job doesn't have a version group yet - return just this job
-      const { data: singleJob } = await supabase
-        .from("staging_jobs")
-        .select("*")
-        .eq("id", jobId)
-        .eq("user_id", user.id)
-        .single();
-
       return NextResponse.json({
-        versions: singleJob ? [singleJob] : [],
+        versions: [job],
         versionGroup: null,
         freeRemixesRemaining: FREE_REMIXES_PER_IMAGE,
-        totalVersions: singleJob ? 1 : 0,
+        totalVersions: 1,
       });
     }
 
     actualGroupId = job.version_group_id;
   }
 
-  // Fetch the version group
+  // Fetch version group with all its staging jobs in one query using join
   const { data: versionGroup, error: groupError } = await supabase
     .from("version_groups")
-    .select("*")
+    .select(`
+      *,
+      staging_jobs(*)
+    `)
     .eq("id", actualGroupId)
     .eq("user_id", user.id)
+    .order("created_at", { ascending: true, referencedTable: "staging_jobs" })
     .single();
 
   if (groupError || !versionGroup) {
@@ -81,21 +78,10 @@ export async function GET(request: NextRequest) {
     );
   }
 
-  // Fetch all staging jobs in this version group
-  const { data: versions, error: versionsError } = await supabase
-    .from("staging_jobs")
-    .select("*")
-    .eq("version_group_id", actualGroupId)
-    .eq("user_id", user.id)
-    .order("created_at", { ascending: true });
-
-  if (versionsError) {
-    console.error("[Versions API] Error fetching versions:", versionsError);
-    return NextResponse.json(
-      { error: "Failed to fetch versions" },
-      { status: 500 }
-    );
-  }
+  // Extract versions from joined data and filter by user_id
+  const versions = (versionGroup.staging_jobs || []).filter(
+    (job: { user_id: string }) => job.user_id === user.id
+  );
 
   const freeRemixesUsed = versionGroup.free_remixes_used || 0;
   const freeRemixesRemaining = Math.max(0, FREE_REMIXES_PER_IMAGE - freeRemixesUsed);

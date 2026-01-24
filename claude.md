@@ -258,6 +258,27 @@ NEXT_PUBLIC_APP_URL=http://localhost:3000
 | `src/app/api/team/invite/accept/route.ts` | Validate and accept invitation |
 | `src/app/invite/accept/page.tsx` | Invitation accept page for users |
 | `src/app/(dashboard)/team/TeamPageClient.tsx` | Team management page |
+| `src/lib/staging/job.service.ts` | Staging job CRUD operations |
+| `src/lib/staging/storage.service.ts` | Image upload/download to Supabase Storage |
+| `src/lib/staging/processor.service.ts` | Provider orchestration for staging |
+| `src/lib/staging/notifications.service.ts` | Staging-related notifications |
+| `src/lib/team/organization.service.ts` | Organization queries and limits |
+| `src/lib/team/validation.service.ts` | Team capacity and credit validation |
+| `src/lib/team/invitation.service.ts` | Invitation CRUD and email sending |
+| `src/app/api/staging/route.test.ts` | API tests for staging POST endpoint |
+| `src/app/api/staging/[jobId]/route.test.ts` | API tests for staging job GET/PATCH |
+| `src/app/api/team/invite/route.test.ts` | API tests for team invite endpoint |
+| `src/lib/audit/audit-log.service.ts` | Audit logging service with event types and helpers |
+| `src/lib/billing/credits.service.ts` | Centralized credit deduction service |
+| `src/lib/webhooks/validation.ts` | Webhook signature validation (Replicate, Stripe) |
+| `src/lib/api/request-id.ts` | X-Request-ID header utilities for tracing |
+| `supabase/migrations/010_audit_logs.sql` | Audit logs table with RLS and retention |
+| `docs/api/openapi.yaml` | OpenAPI 3.0 API documentation |
+| `docs/IMPROVEMENTS.md` | Codebase improvements tracker |
+| `sentry.client.config.ts` | Sentry client-side error tracking |
+| `sentry.server.config.ts` | Sentry server-side error tracking |
+| `sentry.edge.config.ts` | Sentry edge runtime error tracking |
+| `e2e/*.spec.ts` | Playwright E2E tests (11 files) |
 
 ## Commands
 

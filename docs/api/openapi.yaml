@@ -2,48 +2,78 @@ openapi: 3.0.3
 info:
   title: Stager API
   description: |
-    API for AI-powered virtual staging of real estate photos.
+    API for Stager - AI-Powered Virtual Staging Platform for Real Estate.
 
     ## Authentication
-    All endpoints require authentication via Supabase Auth. Include the session cookie or Authorization header with your requests.
+    All endpoints (except webhooks) require authentication via Supabase Auth session cookies.
+    Unauthenticated requests return `401 Unauthorized`.
 
     ## Rate Limiting
-    - Standard endpoints: 100 requests/minute
-    - Staging endpoints: 20 requests/minute
-    - Email endpoints: 3 requests/5 minutes
-    - Billing endpoints: 5 requests/hour
+    Resource-intensive endpoints are rate-limited:
+    - **Staging:** 20 requests/minute
+    - **Email:** 10 requests/minute
+    - **Auth:** 5 requests/minute
 
     Rate limit headers are included in responses:
     - `X-RateLimit-Limit`: Maximum requests allowed
-    - `X-RateLimit-Remaining`: Remaining requests
+    - `X-RateLimit-Remaining`: Requests remaining in window
     - `X-RateLimit-Reset`: Unix timestamp when limit resets
-  version: 1.132.0
+
+    ## Error Responses
+    All errors follow a consistent format with actionable suggestions:
+    ```json
+    {
+      "error": "Human-readable message",
+      "code": "ERROR_CODE",
+      "suggestion": "Actionable suggestion for the user",
+      "action": { "label": "Button label", "href": "/path" },
+      "details": { "field": "value" }
+    }
+    ```
+
+    ## Credits
+    - Staging costs 1 credit per image
+    - First 2 remixes per original image are free
+    - Additional remixes cost 1 credit each
+  version: 1.136.0
   contact:
     name: Stager Support
+
 servers:
-  - url: /api
-    description: API routes
+  - url: https://stager-tau.vercel.app/api
+    description: Production
+  - url: http://localhost:3000/api
+    description: Local Development
 
 tags:
   - name: Staging
-    description: AI virtual staging operations
-  - name: Properties
-    description: Property management
+    description: AI-powered image staging operations
   - name: Billing
-    description: Subscription and credits
+    description: Subscriptions, credits, and payments
   - name: Team
     description: Team and organization management
   - name: Search
-    description: Global search
+    description: Global search functionality
+  - name: Properties
+    description: Property management
+  - name: Account
+    description: User account operations
+  - name: Webhooks
+    description: External service callbacks (no auth required)
 
 paths:
+  # ============ STAGING ============
   /staging:
     post:
       tags: [Staging]
-      summary: Stage a room image
+      summary: Create a staging job
       description: |
-        Upload an image and stage it with AI-generated furniture.
-        Costs 1 credit per staging operation.
+        Stage a room image with AI. Uploads the original image, processes it through
+        the selected AI provider (Gemini or Stable Diffusion), and returns the staged result.
+
+        **Credits:** Deducts 1 credit per successful staging.
+        **Rate Limit:** 20 requests per minute.
+      operationId: createStagingJob
       requestBody:
         required: true
         content:
@@ -52,51 +82,110 @@ paths:
               $ref: '#/components/schemas/StagingRequest'
       responses:
         '200':
-          description: Staging completed successfully
+          description: Staging job created successfully
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/StagingResponse'
+                oneOf:
+                  - $ref: '#/components/schemas/StagingSyncResponse'
+                  - $ref: '#/components/schemas/StagingAsyncResponse'
+        '400':
+          $ref: '#/components/responses/ValidationError'
         '401':
           $ref: '#/components/responses/Unauthorized'
         '402':
           $ref: '#/components/responses/InsufficientCredits'
         '429':
           $ref: '#/components/responses/RateLimited'
+        '500':
+          $ref: '#/components/responses/InternalError'
 
   /staging/{jobId}:
     get:
       tags: [Staging]
       summary: Get staging job status
+      description: |
+        Get the current status of a staging job. For async jobs (Stable Diffusion),
+        includes progress information and estimated time remaining.
+
+        For processing jobs, also checks external provider status and may update
+        the job if it has completed.
+      operationId: getStagingJob
       parameters:
-        - name: jobId
-          in: path
-          required: true
-          schema:
-            type: string
-            format: uuid
+        - $ref: '#/components/parameters/JobId'
       responses:
         '200':
           description: Job status retrieved
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/StagingJob'
+                $ref: '#/components/schemas/StagingJobStatus'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+    patch:
+      tags: [Staging]
+      summary: Update staging job
+      description: |
+        Update a staging job. Currently supports:
+        - `set-primary`: Mark this version as the primary version in its group
+      operationId: updateStagingJob
+      parameters:
+        - $ref: '#/components/parameters/JobId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [action]
+              properties:
+                action:
+                  type: string
+                  enum: [set-primary]
+                  description: Action to perform
+      responses:
+        '200':
+          description: Job updated successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  jobId:
+                    type: string
+                    format: uuid
+                  versionGroupId:
+                    type: string
+                    format: uuid
+                  message:
+                    type: string
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
         '404':
           $ref: '#/components/responses/NotFound'
 
   /staging/{jobId}/remix:
     post:
       tags: [Staging]
-      summary: Create a remix of an existing staging
-      description: Generate a new version with different style/room type
+      summary: Create a remix of a staging job
+      description: |
+        Create a new version of an existing staged image with different room type or style.
+        Uses the original image from the parent job.
+
+        **Free Remixes:** First 2 remixes per original image are free.
+        **Credits:** 1 credit per remix after free tier.
+
+        The new job is linked to a version group for easy navigation between versions.
+      operationId: createRemix
       parameters:
-        - name: jobId
-          in: path
-          required: true
-          schema:
-            type: string
-            format: uuid
+        - $ref: '#/components/parameters/JobId'
       requestBody:
         required: true
         content:
@@ -109,12 +198,35 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/StagingResponse'
+                allOf:
+                  - $ref: '#/components/schemas/StagingSyncResponse'
+                  - type: object
+                    properties:
+                      isFreeRemix:
+                        type: boolean
+                        description: Whether this remix was free
+                      freeRemixesRemaining:
+                        type: integer
+                        description: Free remixes remaining for this original image
+                      versionGroupId:
+                        type: string
+                        format: uuid
+                        description: ID of the version group
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '402':
+          $ref: '#/components/responses/InsufficientCredits'
+        '404':
+          $ref: '#/components/responses/NotFound'
 
   /staging/versions:
     get:
       tags: [Staging]
-      summary: Get all versions of a staging job
+      summary: Get all versions for a staging job
+      description: Fetch all versions (remixes) linked to the same original image via version group.
+      operationId: getStagingVersions
       parameters:
         - name: jobId
           in: query
@@ -122,51 +234,86 @@ paths:
           schema:
             type: string
             format: uuid
+          description: ID of any job in the version group
       responses:
         '200':
           description: Versions retrieved
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/VersionsResponse'
+                type: object
+                properties:
+                  versions:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/StagingJobSummary'
+                  versionGroupId:
+                    type: string
+                    format: uuid
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
 
-  /properties:
+  # ============ BILLING ============
+  /billing/subscription:
     get:
-      tags: [Properties]
-      summary: List user's properties
+      tags: [Billing]
+      summary: Get subscription status
+      description: Get the current user's subscription, plan details, and credit balance.
+      operationId: getSubscription
       responses:
         '200':
-          description: Properties list
+          description: Subscription info retrieved
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  properties:
-                    type: array
-                    items:
-                      $ref: '#/components/schemas/Property'
-    post:
-      tags: [Properties]
-      summary: Create a new property
+                $ref: '#/components/schemas/SubscriptionInfo'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+    patch:
+      tags: [Billing]
+      summary: Update subscription
+      description: |
+        Cancel subscription at period end or resume a canceled subscription.
+        - `cancel`: Subscription will end at current period end
+        - `resume`: Reactivate a subscription scheduled for cancellation
+      operationId: updateSubscription
       requestBody:
         required: true
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/CreatePropertyRequest'
+              type: object
+              required: [action]
+              properties:
+                action:
+                  type: string
+                  enum: [cancel, resume]
       responses:
         '200':
-          description: Property created
+          description: Subscription updated
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Property'
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  message:
+                    type: string
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
 
   /billing/checkout:
     post:
       tags: [Billing]
-      summary: Create Stripe checkout session
+      summary: Create checkout session
+      description: Create a Stripe checkout session for subscribing to a plan.
+      operationId: createCheckout
       requestBody:
         required: true
         content:
@@ -178,6 +325,7 @@ paths:
                 planSlug:
                   type: string
                   enum: [standard, professional, enterprise]
+                  description: Plan to subscribe to (cannot be 'free')
       responses:
         '200':
           description: Checkout session created
@@ -189,11 +337,18 @@ paths:
                   url:
                     type: string
                     format: uri
+                    description: Stripe checkout URL to redirect user
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
 
   /billing/topup:
     post:
       tags: [Billing]
       summary: Purchase credit top-up
+      description: Create a Stripe checkout session for a one-time credit purchase.
+      operationId: createTopup
       requestBody:
         required: true
         content:
@@ -204,10 +359,15 @@ paths:
               properties:
                 packageId:
                   type: string
-                  enum: [topup_10, topup_30, topup_100]
+                  enum: [topup_10, topup_25, topup_50]
+                  description: |
+                    Credit package to purchase:
+                    - topup_10: 10 credits
+                    - topup_25: 25 credits
+                    - topup_50: 50 credits
       responses:
         '200':
-          description: Top-up checkout created
+          description: Checkout session created
           content:
             application/json:
               schema:
@@ -216,12 +376,58 @@ paths:
                   url:
                     type: string
                     format: uri
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /billing/portal:
+    post:
+      tags: [Billing]
+      summary: Create billing portal session
+      description: Create a Stripe customer portal session for managing subscription and payment methods.
+      operationId: createPortalSession
+      responses:
+        '200':
+          description: Portal session created
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  url:
+                    type: string
+                    format: uri
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  # ============ TEAM ============
+  /team:
+    get:
+      tags: [Team]
+      summary: Get team information
+      description: Get the user's organization, team members, and settings.
+      operationId: getTeam
+      responses:
+        '200':
+          description: Team info retrieved
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TeamInfo'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
 
   /team/invite:
     post:
       tags: [Team]
-      summary: Invite a team member
-      description: Send email invitation to join organization
+      summary: Invite team member
+      description: |
+        Send an email invitation to join the organization.
+        Only organization owners can invite members.
+
+        **Rate Limit:** 10 emails per minute.
+      operationId: inviteTeamMember
       requestBody:
         required: true
         content:
@@ -234,17 +440,98 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/TeamInvitation'
+                type: object
+                properties:
+                  message:
+                    type: string
+                  invitation:
+                    $ref: '#/components/schemas/Invitation'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '409':
+          description: Invitation already exists or team full
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
         '429':
           $ref: '#/components/responses/RateLimited'
+
+  /team/invite/accept:
+    get:
+      tags: [Team]
+      summary: Validate invitation token
+      description: Check if an invitation token is valid and not expired.
+      operationId: validateInvitation
+      parameters:
+        - name: token
+          in: query
+          required: true
+          schema:
+            type: string
+          description: Invitation token from email link
+      responses:
+        '200':
+          description: Token is valid
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  valid:
+                    type: boolean
+                  invitation:
+                    $ref: '#/components/schemas/InvitationDetails'
+        '400':
+          description: Invalid or expired token
+
+    post:
+      tags: [Team]
+      summary: Accept invitation
+      description: Accept an invitation and join the organization. User must be authenticated.
+      operationId: acceptInvitation
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [token]
+              properties:
+                token:
+                  type: string
+                  description: Invitation token
+      responses:
+        '200':
+          description: Invitation accepted
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  organizationId:
+                    type: string
+                    format: uuid
+        '400':
+          description: Invalid or expired token
+        '401':
+          $ref: '#/components/responses/Unauthorized'
 
   /team/invitations:
     get:
       tags: [Team]
       summary: List pending invitations
+      description: Get all pending invitations for the organization. Only organization owners can view.
+      operationId: listInvitations
       responses:
         '200':
-          description: Invitations list
+          description: Invitations retrieved
           content:
             application/json:
               schema:
@@ -253,12 +540,114 @@ paths:
                   invitations:
                     type: array
                     items:
-                      $ref: '#/components/schemas/TeamInvitation'
+                      $ref: '#/components/schemas/Invitation'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
 
+  /team/invitations/{id}:
+    delete:
+      tags: [Team]
+      summary: Revoke invitation
+      description: Revoke a pending invitation. The token will no longer be valid.
+      operationId: revokeInvitation
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Invitation revoked
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /team/members/{id}:
+    delete:
+      tags: [Team]
+      summary: Remove team member
+      description: Remove a member from the organization. Only organization owners can remove members.
+      operationId: removeTeamMember
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: Member ID (organization_members.id, not user ID)
+      responses:
+        '200':
+          description: Member removed
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /team/members/{id}/credits:
+    patch:
+      tags: [Team]
+      summary: Allocate credits to member
+      description: |
+        Update the credit allocation for a team member.
+        Credits are transferred from the organization's unallocated pool.
+      operationId: allocateMemberCredits
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [credits]
+              properties:
+                credits:
+                  type: integer
+                  minimum: 0
+                  description: New credit allocation for the member
+      responses:
+        '200':
+          description: Credits allocated
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  newBalance:
+                    type: integer
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+
+  # ============ SEARCH ============
   /search:
     get:
       tags: [Search]
       summary: Global search
+      description: |
+        Search across properties (by address/description) and staging jobs (by room type/style).
+        Returns up to 5 results per category.
+      operationId: globalSearch
       parameters:
         - name: q
           in: query
@@ -266,114 +655,177 @@ paths:
           schema:
             type: string
             minLength: 2
+          description: Search query (minimum 2 characters)
       responses:
         '200':
           description: Search results
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/SearchResults'
+                type: object
+                properties:
+                  properties:
+                    type: array
+                    maxItems: 5
+                    items:
+                      $ref: '#/components/schemas/PropertySummary'
+                  stagingJobs:
+                    type: array
+                    maxItems: 5
+                    items:
+                      $ref: '#/components/schemas/StagingJobSummary'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  # ============ PROPERTIES ============
+  /properties/{id}/download:
+    get:
+      tags: [Properties]
+      summary: Download property images as ZIP
+      description: Download all staged images for a property as a ZIP file.
+      operationId: downloadPropertyImages
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: Property ID
+      responses:
+        '200':
+          description: ZIP file download
+          content:
+            application/zip:
+              schema:
+                type: string
+                format: binary
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  # ============ ACCOUNT ============
+  /account/delete:
+    delete:
+      tags: [Account]
+      summary: Delete account
+      description: |
+        Permanently delete the user account and all associated data including:
+        - Profile
+        - Properties
+        - Staging jobs
+        - Stored images
+        - Team memberships
+
+        This action cannot be undone.
+      operationId: deleteAccount
+      responses:
+        '200':
+          description: Account deleted
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  message:
+                    type: string
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  # ============ WEBHOOKS ============
+  /webhooks/stripe:
+    post:
+      tags: [Webhooks]
+      summary: Stripe webhook
+      description: |
+        Receives Stripe webhook events for subscription and payment updates.
+
+        **Authentication:** Validates Stripe signature header (no user auth required).
+
+        Handled events:
+        - `checkout.session.completed`: Process new subscription or top-up
+        - `customer.subscription.updated`: Update subscription status
+        - `customer.subscription.deleted`: Handle subscription cancellation
+        - `invoice.payment_succeeded`: Credit renewal
+        - `invoice.payment_failed`: Handle failed payments
+      operationId: stripeWebhook
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        '200':
+          description: Webhook processed
+        '400':
+          description: Invalid signature or payload
+
+  /webhooks/replicate:
+    post:
+      tags: [Webhooks]
+      summary: Replicate webhook
+      description: |
+        Receives Replicate webhook callbacks when async staging jobs complete.
+
+        **Note:** Currently does not validate webhook signature (improvement needed).
+      operationId: replicateWebhook
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                id:
+                  type: string
+                  description: Prediction ID
+                status:
+                  type: string
+                  enum: [succeeded, failed, canceled]
+                output:
+                  oneOf:
+                    - type: string
+                    - type: array
+                      items:
+                        type: string
+                  description: Output image URL(s)
+                error:
+                  type: string
+                  description: Error message if failed
+      responses:
+        '200':
+          description: Webhook processed
 
 components:
+  parameters:
+    JobId:
+      name: jobId
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+      description: Staging job ID
+
   schemas:
-    StagingRequest:
-      type: object
-      required: [image, mimeType, roomType, style]
-      properties:
-        image:
-          type: string
-          description: Base64-encoded image data
-        mimeType:
-          type: string
-          enum: [image/jpeg, image/png, image/webp]
-        roomType:
-          $ref: '#/components/schemas/RoomType'
-        style:
-          $ref: '#/components/schemas/FurnitureStyle'
-        propertyId:
-          type: string
-          format: uuid
-          nullable: true
-        declutterFirst:
-          type: boolean
-          default: false
-        mask:
-          type: string
-          description: Base64-encoded mask image (white=stage, black=preserve)
-
-    StagingResponse:
-      type: object
-      properties:
-        success:
-          type: boolean
-        jobId:
-          type: string
-          format: uuid
-        stagedImageUrl:
-          type: string
-          format: uri
-        provider:
-          type: string
-        async:
-          type: boolean
-
-    StagingJob:
-      type: object
-      properties:
-        id:
-          type: string
-          format: uuid
-        status:
-          type: string
-          enum: [pending, processing, completed, failed]
-        room_type:
-          $ref: '#/components/schemas/RoomType'
-        style:
-          $ref: '#/components/schemas/FurnitureStyle'
-        original_image_url:
-          type: string
-          format: uri
-        staged_image_url:
-          type: string
-          format: uri
-          nullable: true
-        created_at:
-          type: string
-          format: date-time
-        completed_at:
-          type: string
-          format: date-time
-          nullable: true
-
-    RemixRequest:
-      type: object
-      required: [roomType, style]
-      properties:
-        roomType:
-          $ref: '#/components/schemas/RoomType'
-        style:
-          $ref: '#/components/schemas/FurnitureStyle'
-
-    VersionsResponse:
-      type: object
-      properties:
-        versions:
-          type: array
-          items:
-            $ref: '#/components/schemas/StagingJob'
-        totalVersions:
-          type: integer
-
+    # ---- Enums ----
     RoomType:
       type: string
       enum:
         - living-room
-        - bedroom
+        - bedroom-master
+        - bedroom-guest
+        - bedroom-kids
         - dining-room
         - kitchen
         - home-office
         - bathroom
         - outdoor-patio
+      description: Type of room being staged
 
     FurnitureStyle:
       type: string
@@ -387,34 +839,94 @@ components:
         - coastal
         - farmhouse
         - luxury
+      description: Furniture style for staging
 
-    Property:
+    ImageMimeType:
+      type: string
+      enum:
+        - image/png
+        - image/jpeg
+        - image/jpg
+        - image/webp
+      description: Supported image formats
+
+    JobStatus:
+      type: string
+      enum:
+        - pending
+        - queued
+        - preprocessing
+        - processing
+        - uploading
+        - completed
+        - failed
+      description: Current status of a staging job
+
+    ErrorCode:
+      type: string
+      enum:
+        - UNAUTHORIZED
+        - SESSION_EXPIRED
+        - FORBIDDEN
+        - NOT_OWNER
+        - INSUFFICIENT_PERMISSIONS
+        - INSUFFICIENT_CREDITS
+        - PAYMENT_REQUIRED
+        - RATE_LIMITED
+        - VALIDATION_ERROR
+        - INVALID_INPUT
+        - NOT_FOUND
+        - ALREADY_EXISTS
+        - CONFLICT
+        - PROVIDER_ERROR
+        - EMAIL_ERROR
+        - INTERNAL_ERROR
+        - SERVICE_UNAVAILABLE
+      description: Standardized error codes
+
+    # ---- Request Schemas ----
+    StagingRequest:
       type: object
+      required: [image, mimeType, roomType, style]
       properties:
-        id:
+        image:
+          type: string
+          format: byte
+          description: Base64-encoded image data (no data URI prefix)
+        mimeType:
+          $ref: '#/components/schemas/ImageMimeType'
+        roomType:
+          $ref: '#/components/schemas/RoomType'
+        style:
+          $ref: '#/components/schemas/FurnitureStyle'
+        propertyId:
           type: string
           format: uuid
-        name:
+          description: Optional property to associate the staged image with
+        declutterFirst:
+          type: boolean
+          default: false
+          description: Remove existing furniture before staging (Decor8 provider only)
+        mask:
           type: string
-        address:
-          type: string
-        staging_count:
-          type: integer
-        created_at:
-          type: string
-          format: date-time
+          format: byte
+          description: |
+            Optional B/W mask image (base64):
+            - White areas: Stage with furniture
+            - Black areas: Preserve as-is
 
-    CreatePropertyRequest:
+    RemixRequest:
       type: object
-      required: [name]
+      required: [roomType, style]
       properties:
-        name:
+        roomType:
+          $ref: '#/components/schemas/RoomType'
+        style:
+          $ref: '#/components/schemas/FurnitureStyle'
+        propertyId:
           type: string
-          minLength: 1
-          maxLength: 100
-        address:
-          type: string
-          maxLength: 200
+          format: uuid
+          description: Override property association
 
     TeamInviteRequest:
       type: object
@@ -423,12 +935,268 @@ components:
         email:
           type: string
           format: email
+          maxLength: 254
+          description: Email address to invite
         initialCredits:
           type: integer
           minimum: 0
           default: 0
+          description: Credits to allocate from organization pool
 
-    TeamInvitation:
+    # ---- Response Schemas ----
+    ErrorResponse:
+      type: object
+      required: [error, code]
+      properties:
+        error:
+          type: string
+          description: Human-readable error message
+        code:
+          $ref: '#/components/schemas/ErrorCode'
+        suggestion:
+          type: string
+          description: Actionable suggestion for the user
+        action:
+          type: object
+          description: Optional CTA button
+          properties:
+            label:
+              type: string
+            href:
+              type: string
+        details:
+          type: object
+          additionalProperties: true
+          description: Additional context about the error
+
+    StagingSyncResponse:
+      type: object
+      description: Response for synchronous staging (Gemini/Decor8)
+      properties:
+        success:
+          type: boolean
+        jobId:
+          type: string
+          format: uuid
+        stagedImageUrl:
+          type: string
+          format: uri
+          description: URL of the staged image
+        provider:
+          type: string
+          enum: [gemini, decor8]
+        async:
+          type: boolean
+          example: false
+
+    StagingAsyncResponse:
+      type: object
+      description: Response for asynchronous staging (Stable Diffusion)
+      properties:
+        success:
+          type: boolean
+        jobId:
+          type: string
+          format: uuid
+        status:
+          type: string
+          example: processing
+        provider:
+          type: string
+          enum: [stable-diffusion]
+        async:
+          type: boolean
+          example: true
+        predictionId:
+          type: string
+          description: Replicate prediction ID
+        estimatedTimeSeconds:
+          type: integer
+          description: Estimated processing time
+        pollUrl:
+          type: string
+          description: URL to poll for status updates
+
+    StagingJobStatus:
+      type: object
+      properties:
+        jobId:
+          type: string
+          format: uuid
+        status:
+          $ref: '#/components/schemas/JobStatus'
+        progress:
+          type: object
+          properties:
+            step:
+              type: string
+              description: Current step name
+            stepNumber:
+              type: integer
+              description: Current step number (1-4)
+            totalSteps:
+              type: integer
+              example: 4
+            message:
+              type: string
+              description: Human-readable progress message
+        provider:
+          type: string
+        estimatedTimeRemaining:
+          type: integer
+          nullable: true
+          description: Seconds remaining (null when completed/failed)
+        stagedImageUrl:
+          type: string
+          format: uri
+          nullable: true
+        originalImageUrl:
+          type: string
+          format: uri
+        error:
+          type: string
+          nullable: true
+        roomType:
+          $ref: '#/components/schemas/RoomType'
+        style:
+          $ref: '#/components/schemas/FurnitureStyle'
+        createdAt:
+          type: string
+          format: date-time
+        completedAt:
+          type: string
+          format: date-time
+          nullable: true
+        processingTimeMs:
+          type: integer
+          nullable: true
+        versionGroupId:
+          type: string
+          format: uuid
+          nullable: true
+        isPrimaryVersion:
+          type: boolean
+        parentJobId:
+          type: string
+          format: uuid
+          nullable: true
+
+    StagingJobSummary:
+      type: object
+      description: Abbreviated staging job for lists and search results
+      properties:
+        id:
+          type: string
+          format: uuid
+        roomType:
+          $ref: '#/components/schemas/RoomType'
+        style:
+          $ref: '#/components/schemas/FurnitureStyle'
+        stagedImageUrl:
+          type: string
+          format: uri
+        status:
+          $ref: '#/components/schemas/JobStatus'
+        createdAt:
+          type: string
+          format: date-time
+        property:
+          type: object
+          nullable: true
+          properties:
+            id:
+              type: string
+              format: uuid
+            address:
+              type: string
+
+    SubscriptionInfo:
+      type: object
+      properties:
+        subscription:
+          type: object
+          nullable: true
+          description: null if on free plan
+          properties:
+            id:
+              type: string
+              format: uuid
+            status:
+              type: string
+              enum: [active, canceled, past_due, trialing]
+            currentPeriodEnd:
+              type: string
+              format: date-time
+            cancelAtPeriodEnd:
+              type: boolean
+        plan:
+          type: object
+          properties:
+            slug:
+              type: string
+              enum: [free, standard, professional, enterprise]
+            name:
+              type: string
+            monthlyCredits:
+              type: integer
+            maxTeamMembers:
+              type: integer
+        credits:
+          type: object
+          properties:
+            available:
+              type: integer
+              description: Total available credits
+            source:
+              type: string
+              enum: [personal, team]
+              description: Where credits come from
+
+    TeamInfo:
+      type: object
+      properties:
+        organization:
+          type: object
+          nullable: true
+          description: null if user doesn't own/belong to an organization
+          properties:
+            id:
+              type: string
+              format: uuid
+            name:
+              type: string
+            unallocatedCredits:
+              type: integer
+              description: Credits available to distribute to members
+        members:
+          type: array
+          items:
+            type: object
+            properties:
+              id:
+                type: string
+                format: uuid
+                description: Member record ID
+              userId:
+                type: string
+                format: uuid
+              role:
+                type: string
+                enum: [owner, admin, member]
+              allocatedCredits:
+                type: integer
+              profile:
+                type: object
+                properties:
+                  fullName:
+                    type: string
+                  email:
+                    type: string
+        isOwner:
+          type: boolean
+          description: Whether current user owns the organization
+
+    Invitation:
       type: object
       properties:
         id:
@@ -437,46 +1205,43 @@ components:
         email:
           type: string
           format: email
-        status:
-          type: string
-          enum: [pending, accepted, expired, revoked]
-        initial_credits:
+        initialCredits:
           type: integer
-        expires_at:
+        expiresAt:
           type: string
           format: date-time
-        created_at:
+        createdAt:
           type: string
           format: date-time
 
-    SearchResults:
+    InvitationDetails:
       type: object
+      description: Full invitation details for accept page
       properties:
-        properties:
-          type: array
-          items:
-            $ref: '#/components/schemas/Property'
-        stagingJobs:
-          type: array
-          items:
-            $ref: '#/components/schemas/StagingJob'
+        email:
+          type: string
+          format: email
+        organizationName:
+          type: string
+        inviterName:
+          type: string
+        initialCredits:
+          type: integer
+        expiresAt:
+          type: string
+          format: date-time
 
-    ActionableError:
+    PropertySummary:
       type: object
       properties:
-        error:
+        id:
           type: string
-        code:
+          format: uuid
+        address:
           type: string
-        suggestion:
+        description:
           type: string
-        action:
-          type: object
-          properties:
-            label:
-              type: string
-            href:
-              type: string
+          nullable: true
 
   responses:
     Unauthorized:
@@ -484,7 +1249,7 @@ components:
       content:
         application/json:
           schema:
-            $ref: '#/components/schemas/ActionableError'
+            $ref: '#/components/schemas/ErrorResponse'
           example:
             error: "You must be logged in to perform this action."
             code: "UNAUTHORIZED"
@@ -493,12 +1258,48 @@ components:
               label: "Log In"
               href: "/login"
 
-    InsufficientCredits:
-      description: Not enough credits
+    Forbidden:
+      description: Insufficient permissions
       content:
         application/json:
           schema:
-            $ref: '#/components/schemas/ActionableError'
+            $ref: '#/components/schemas/ErrorResponse'
+          example:
+            error: "This action is restricted to organization owners."
+            code: "INSUFFICIENT_PERMISSIONS"
+            suggestion: "Contact your organization owner for assistance."
+
+    NotFound:
+      description: Resource not found
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          example:
+            error: "The requested resource could not be found."
+            code: "NOT_FOUND"
+
+    ValidationError:
+      description: Invalid request data
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          example:
+            error: "Please fix the errors in your submission."
+            code: "VALIDATION_ERROR"
+            suggestion: "Review the highlighted fields and correct any issues."
+            details:
+              fields:
+                - field: "email"
+                  message: "Invalid email format"
+
+    InsufficientCredits:
+      description: Not enough credits (HTTP 402)
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
           example:
             error: "You need 1 credits but only have 0 available."
             code: "INSUFFICIENT_CREDITS"
@@ -506,34 +1307,43 @@ components:
             action:
               label: "Get Credits"
               href: "/billing"
+            details:
+              required: 1
+              available: 0
 
     RateLimited:
-      description: Too many requests
+      description: Too many requests (HTTP 429)
       headers:
         X-RateLimit-Limit:
           schema:
             type: integer
+          description: Maximum requests per window
         X-RateLimit-Remaining:
           schema:
             type: integer
+          description: Remaining requests
         X-RateLimit-Reset:
           schema:
             type: integer
+          description: Unix timestamp when limit resets
       content:
         application/json:
           schema:
-            $ref: '#/components/schemas/ActionableError'
+            $ref: '#/components/schemas/ErrorResponse'
           example:
             error: "Too many requests. Please slow down."
             code: "RATE_LIMITED"
             suggestion: "Try again in 1 minute."
+            details:
+              resetInSeconds: 60
 
-    NotFound:
-      description: Resource not found
+    InternalError:
+      description: Server error (HTTP 500)
       content:
         application/json:
           schema:
-            $ref: '#/components/schemas/ActionableError'
+            $ref: '#/components/schemas/ErrorResponse'
           example:
-            error: "The requested resource could not be found."
-            code: "NOT_FOUND"
+            error: "An unexpected error occurred."
+            code: "INTERNAL_ERROR"
+            suggestion: "Please try again. If the problem persists, contact support."

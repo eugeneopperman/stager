@@ -1,8 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
-import crypto from "crypto";
 import { CREDITS_PER_STAGING, ROOM_TYPES } from "@/lib/constants";
 import { createNotification } from "@/lib/notifications";
+import { validateReplicateWebhook } from "@/lib/webhooks/validation";
+import { deductCredits } from "@/lib/billing/credits.service";
+import { getRequestId, REQUEST_ID_HEADER } from "@/lib/api/request-id";
 
 /**
  * Replicate webhook payload structure
@@ -18,32 +20,6 @@ interface ReplicateWebhookPayload {
 }
 
 /**
- * Verify Replicate webhook signature
- * https://replicate.com/docs/webhooks#verifying-webhooks
- */
-function verifyWebhookSignature(
-  payload: string,
-  signature: string | null,
-  webhookSecret: string
-): boolean {
-  if (!signature || !webhookSecret) {
-    // If no secret configured, skip verification (development mode)
-    console.warn("Webhook signature verification skipped - no secret configured");
-    return true;
-  }
-
-  const expectedSignature = crypto
-    .createHmac("sha256", webhookSecret)
-    .update(payload)
-    .digest("hex");
-
-  return crypto.timingSafeEqual(
-    Buffer.from(signature),
-    Buffer.from(`sha256=${expectedSignature}`)
-  );
-}
-
-/**
  * POST /api/webhooks/replicate
  *
  * Receives completion callbacks from Replicate API.
@@ -51,16 +27,24 @@ function verifyWebhookSignature(
  */
 export async function POST(request: NextRequest) {
   const startTime = Date.now();
+  const requestId = getRequestId(request);
 
   // Get raw body for signature verification
   const rawBody = await request.text();
   const signature = request.headers.get("webhook-signature");
-  const webhookSecret = process.env.REPLICATE_WEBHOOK_SECRET || "";
 
-  // Verify signature
-  if (!verifyWebhookSignature(rawBody, signature, webhookSecret)) {
-    console.error("Invalid webhook signature");
-    return NextResponse.json({ error: "Invalid signature" }, { status: 401 });
+  // Verify webhook signature
+  const validation = validateReplicateWebhook(
+    rawBody,
+    signature,
+    process.env.REPLICATE_WEBHOOK_SECRET
+  );
+
+  if (!validation.valid) {
+    console.error(`[${requestId}] Invalid webhook signature:`, validation.error);
+    const response = NextResponse.json({ error: "Invalid signature" }, { status: 401 });
+    response.headers.set(REQUEST_ID_HEADER, requestId);
+    return response;
   }
 
   // Parse payload
@@ -144,29 +128,9 @@ export async function POST(request: NextRequest) {
         })
         .eq("id", job.id);
 
-      // Deduct credits
-      await supabase.rpc("deduct_credits", {
-        user_id: job.user_id,
-        amount: CREDITS_PER_STAGING,
-      });
-
-      // Fallback if RPC doesn't exist - direct update
-      const { data: profile } = await supabase
-        .from("profiles")
-        .select("credits_remaining")
-        .eq("id", job.user_id)
-        .single();
-
-      let newCredits = 0;
-      if (profile) {
-        newCredits = Math.max(0, profile.credits_remaining - CREDITS_PER_STAGING);
-        await supabase
-          .from("profiles")
-          .update({
-            credits_remaining: newCredits,
-          })
-          .eq("id", job.user_id);
-      }
+      // Deduct credits using centralized service
+      const creditResult = await deductCredits(supabase, job.user_id, CREDITS_PER_STAGING);
+      const newCredits = creditResult.newBalance;
 
       // Create staging completion notification
       const roomLabel = ROOM_TYPES.find((r) => r.id === job.room_type)?.label || job.room_type;
@@ -230,5 +194,7 @@ export async function POST(request: NextRequest) {
   }
   // Ignore "starting" and "processing" statuses - they're intermediate
 
-  return NextResponse.json({ success: true });
+  const response = NextResponse.json({ success: true });
+  response.headers.set(REQUEST_ID_HEADER, requestId);
+  return response;
 }

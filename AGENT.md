@@ -789,6 +789,95 @@ const mockUpdate = vi.fn(() => ({ eq: mockFirstEq }));
 
 ---
 
+## Infrastructure Services
+
+### Audit Logging (`/src/lib/audit/`)
+Comprehensive audit trail for security-sensitive operations:
+
+| File | Purpose |
+|------|---------|
+| `audit-log.service.ts` | Event types, createAuditLog, logTeamEvent, logBillingEvent, logAccountEvent |
+
+**Database:** `supabase/migrations/010_audit_logs.sql`
+- Immutable log entries with RLS policies
+- 365-day default retention
+- Indexed for user, org, event_type, request_id queries
+
+**Logged Events:**
+- Team: invitation created/accepted/revoked/resent, member removed, credits allocated
+- Billing: checkout created, subscription events
+- Account: deleted, password changed, profile updated
+- Staging: job created, credits deducted
+
+### Webhook Validation (`/src/lib/webhooks/`)
+| File | Purpose |
+|------|---------|
+| `validation.ts` | validateReplicateWebhook (HMAC-SHA256), validateStripeWebhook |
+
+**Pattern:** Timestamp + signature validation to prevent replay attacks.
+
+### Request Tracing (`/src/lib/api/`)
+| File | Purpose |
+|------|---------|
+| `request-id.ts` | getRequestId, withRequestId - X-Request-ID header utilities |
+
+### Billing Services (`/src/lib/billing/`)
+| File | Purpose |
+|------|---------|
+| `credits.service.ts` | Centralized deductCredits with pre-check and atomic updates |
+| `stripe.ts` | Stripe client, checkout session creation |
+| `subscription.ts` | Subscription CRUD operations |
+
+---
+
+## Query Optimization Patterns
+
+### Join Queries
+Instead of multiple sequential queries, use Supabase joins:
+
+```typescript
+// BAD - 2 queries
+const { data: property } = await supabase.from("properties").select("*").eq("id", id);
+const { data: jobs } = await supabase.from("staging_jobs").select("*").eq("property_id", id);
+
+// GOOD - 1 query with join
+const { data: property } = await supabase
+  .from("properties")
+  .select("*, staging_jobs(*)")
+  .eq("id", id)
+  .single();
+```
+
+### Consolidated Updates
+Batch multiple updates to the same table:
+
+```typescript
+// BAD - 3 queries
+await supabase.from("profiles").update({ plan_id }).eq("id", userId);
+await supabase.from("profiles").update({ credits_remaining }).eq("id", userId);
+await supabase.from("profiles").update({ credits_reset_at }).eq("id", userId);
+
+// GOOD - 1 query
+await supabase.from("profiles").update({
+  plan_id,
+  credits_remaining,
+  credits_reset_at: new Date().toISOString(),
+}).eq("id", userId);
+```
+
+### Parallel Independent Operations
+Use Promise.all for independent writes:
+
+```typescript
+await Promise.all([
+  supabase.from("organization_members").insert({ ... }),
+  supabase.from("subscriptions").update({ ... }).eq("user_id", userId),
+  supabase.from("profiles").update({ ... }).eq("id", userId),
+]);
+```
+
+---
+
 ## Session Continuity Tips
 
 1. Read `CLAUDE.md` for project overview and conventions

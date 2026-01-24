@@ -1,8 +1,9 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { createClient as createAdminClient } from "@supabase/supabase-js";
+import { logAccountEvent, AuditEventType } from "@/lib/audit/audit-log.service";
 
-export async function DELETE() {
+export async function DELETE(request: NextRequest) {
   try {
     const supabase = await createClient();
 
@@ -14,6 +15,25 @@ export async function DELETE() {
     if (!user) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
+
+    // Audit log: account deletion initiated (log before deletion to capture user ID)
+    // Use admin client to bypass RLS since we're about to delete the user
+    const adminClient = createAdminClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.SUPABASE_SERVICE_ROLE_KEY!,
+      { auth: { autoRefreshToken: false, persistSession: false } }
+    );
+
+    await logAccountEvent(adminClient, {
+      userId: user.id,
+      eventType: AuditEventType.ACCOUNT_DELETED,
+      action: "deleted",
+      details: {
+        email: user.email,
+        deletedAt: new Date().toISOString(),
+      },
+      request,
+    });
 
     // Delete user data from database (cascade will handle related records)
     // The profiles table has ON DELETE CASCADE, so deleting profile will cascade
@@ -44,27 +64,13 @@ export async function DELETE() {
       );
     }
 
-    // Delete the user from Supabase Auth
-    // Note: This requires the service role key
-    const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+    // Delete the user from Supabase Auth (reuse adminClient from audit log)
+    const { error: deleteUserError } = await adminClient.auth.admin.deleteUser(user.id);
 
-    if (serviceRoleKey) {
-      const adminClient = createAdminClient(
-        process.env.NEXT_PUBLIC_SUPABASE_URL!,
-        serviceRoleKey,
-        { auth: { autoRefreshToken: false, persistSession: false } }
-      );
-
-      const { error: deleteUserError } = await adminClient.auth.admin.deleteUser(user.id);
-
-      if (deleteUserError) {
-        console.error("Failed to delete auth user:", deleteUserError);
-        // Profile is already deleted, so we'll still return success
-        // The auth user will be orphaned but that's acceptable
-      }
-    } else {
-      console.warn("SUPABASE_SERVICE_ROLE_KEY not set - user auth record not deleted");
-      // Profile data is deleted, user just won't be able to log in to this orphaned account
+    if (deleteUserError) {
+      console.error("Failed to delete auth user:", deleteUserError);
+      // Profile is already deleted, so we'll still return success
+      // The auth user will be orphaned but that's acceptable
     }
 
     return NextResponse.json({ success: true });

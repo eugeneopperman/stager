@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import { logTeamEvent, AuditEventType } from "@/lib/audit/audit-log.service";
 
 interface RouteParams {
   params: Promise<{ id: string }>;
@@ -87,6 +88,20 @@ export async function DELETE(request: NextRequest, { params }: RouteParams) {
       .from("profiles")
       .update({ organization_id: null })
       .eq("id", member.user_id);
+
+    // Audit log: member removed
+    await logTeamEvent(supabase, {
+      userId: user.id,
+      organizationId: org.id,
+      eventType: AuditEventType.TEAM_MEMBER_REMOVED,
+      resourceId: memberId,
+      action: "deleted",
+      details: {
+        removedUserId: member.user_id,
+        creditsReturned: unusedCredits > 0 ? unusedCredits : 0,
+      },
+      request,
+    });
 
     return NextResponse.json({ message: "Member removed successfully" });
   } catch (error) {
