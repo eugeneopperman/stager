@@ -28,8 +28,17 @@ function InviteAcceptContent() {
   const [success, setSuccess] = useState<string | null>(null);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [userEmail, setUserEmail] = useState<string | null>(null);
+  const [isMounted, setIsMounted] = useState(false);
+
+  // Wait for client-side hydration before checking token
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
 
   useEffect(() => {
+    // Don't run until client-side hydration is complete
+    if (!isMounted) return;
+
     async function validateAndCheckAuth() {
       if (!token) {
         setError("Invalid invitation link. No token provided.");
@@ -68,7 +77,7 @@ function InviteAcceptContent() {
     }
 
     validateAndCheckAuth();
-  }, [token]);
+  }, [token, isMounted]);
 
   const handleAccept = async () => {
     if (!token) return;
