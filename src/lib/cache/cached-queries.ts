@@ -144,7 +144,9 @@ export async function getUserSubscriptionWithCache(
     return null;
   }
 
-  const planSlug = (data.plan as { slug: string } | null)?.slug || null;
+  // Handle Supabase's typed response (could be array or object depending on types)
+  const planData = data.plan as { slug: string } | { slug: string }[] | null;
+  const planSlug = Array.isArray(planData) ? planData[0]?.slug : planData?.slug || null;
 
   const subscription: Omit<CachedSubscription, "cachedAt"> = {
     id: data.id,
@@ -274,14 +276,19 @@ export async function getTeamMembersWithCache(
     )
     .eq("organization_id", organizationId);
 
-  const members: CachedTeamMember[] = (data || []).map((m) => ({
-    id: m.id,
-    userId: m.user_id,
-    email: (m.profile as { email: string } | null)?.email || "",
-    fullName: (m.profile as { full_name: string | null } | null)?.full_name || null,
-    role: m.role,
-    credits: m.allocated_credits,
-  }));
+  const members: CachedTeamMember[] = (data || []).map((m) => {
+    // Handle Supabase's typed response (could be array or object)
+    const profileData = m.profile as { email: string; full_name: string | null } | { email: string; full_name: string | null }[] | null;
+    const profile = Array.isArray(profileData) ? profileData[0] : profileData;
+    return {
+      id: m.id,
+      userId: m.user_id,
+      email: profile?.email || "",
+      fullName: profile?.full_name || null,
+      role: m.role,
+      credits: m.allocated_credits,
+    };
+  });
 
   // Cache the result
   await setCachedTeamMembers(organizationId, members);

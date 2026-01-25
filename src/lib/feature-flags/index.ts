@@ -319,10 +319,10 @@ export function createFlagContext(user?: {
  * Get all feature flag definitions (for admin UI)
  */
 export function getFeatureFlagDefinitions() {
-  return Object.entries(FEATURE_FLAGS).map(([key, value]) => ({
-    key,
+  return Object.entries(FEATURE_FLAGS).map(([flagKey, value]) => ({
     ...value,
-    currentValue: isFeatureEnabled(key as FeatureFlagKey),
+    key: flagKey,
+    currentValue: isFeatureEnabled(flagKey as FeatureFlagKey),
   }));
 }
 

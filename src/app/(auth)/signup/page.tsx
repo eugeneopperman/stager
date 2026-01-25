@@ -103,6 +103,12 @@ function SignupContent() {
       return;
     }
 
+    // Trigger post-signup tasks (onboarding campaign, etc.)
+    // Do this in the background, don't block the redirect
+    fetch("/api/auth/post-signup", { method: "POST" }).catch((err) => {
+      console.error("Error triggering post-signup tasks:", err);
+    });
+
     // If there's an invitation token, accept it
     if (invitationToken) {
       try {

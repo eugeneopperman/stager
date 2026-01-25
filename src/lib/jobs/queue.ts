@@ -22,6 +22,10 @@ export type JobType =
   | "staging.failed"
   | "email.send"
   | "email.invitation"
+  | "email.campaign.enroll"
+  | "email.campaign.process"
+  | "email.digest.send"
+  | "email.reengagement.check"
   | "billing.sync"
   | "cleanup.expired_invitations"
   | "cleanup.old_jobs";
@@ -116,11 +120,13 @@ export async function publishJob(
       url: webhookUrl,
       body: payload,
       retries: options?.retries ?? 3,
-      delay: options?.delay ? `${options.delay}s` : undefined,
+      delay: options?.delay ? (options.delay as number) : undefined,
       deduplicationId: options?.deduplicationId,
     });
 
-    return { messageId: response.messageId };
+    // Handle different response types from QStash
+    const messageId = "messageId" in response ? response.messageId : "unknown";
+    return { messageId };
   } catch (error) {
     console.error(`[Queue] Failed to publish job ${type}:`, error);
     throw error;
@@ -288,11 +294,75 @@ export async function queueBillingSync(userId: string, stripeCustomerId: string)
 }
 
 // ============================================
+// Email Campaign Jobs
+// ============================================
+
+/**
+ * Queue user enrollment in a campaign
+ */
+export async function queueCampaignEnrollment(
+  userId: string,
+  campaignSlug: string
+) {
+  return publishJob(
+    "email.campaign.enroll",
+    { userId, campaignSlug },
+    {
+      retries: 3,
+      deduplicationId: `campaign-enroll:${userId}:${campaignSlug}`,
+    }
+  );
+}
+
+/**
+ * Queue processing of a campaign step
+ */
+export async function queueCampaignStepProcess(
+  enrollmentId: string,
+  delaySeconds?: number
+) {
+  return publishJob(
+    "email.campaign.process",
+    { enrollmentId },
+    {
+      retries: 3,
+      delay: delaySeconds,
+      deduplicationId: `campaign-step:${enrollmentId}:${Date.now()}`,
+    }
+  );
+}
+
+/**
+ * Queue weekly digest for a user
+ */
+export async function queueWeeklyDigest(userId: string) {
+  return publishJob(
+    "email.digest.send",
+    { userId },
+    {
+      retries: 2,
+      deduplicationId: `digest:${userId}:${new Date().toISOString().slice(0, 10)}`,
+    }
+  );
+}
+
+/**
+ * Queue re-engagement check (usually scheduled)
+ */
+export async function queueReengagementCheck() {
+  return publishJob(
+    "email.reengagement.check",
+    {},
+    { retries: 2 }
+  );
+}
+
+// ============================================
 // Scheduled Jobs Setup
 // ============================================
 
 /**
- * Initialize scheduled cleanup jobs
+ * Initialize scheduled jobs
  * Call this once during app initialization
  */
 export async function initializeScheduledJobs(): Promise<void> {
@@ -310,5 +380,29 @@ export async function initializeScheduledJobs(): Promise<void> {
     { daysOld: 90 },
     "0 3 * * 0",
     "cleanup-old-jobs"
+  );
+
+  // Process pending campaign emails every hour
+  await scheduleJob(
+    "email.campaign.process",
+    { processAll: true },
+    "0 * * * *",
+    "email-campaign-process"
+  );
+
+  // Send weekly digests every Monday at 9 AM UTC
+  await scheduleJob(
+    "email.digest.send",
+    { sendAll: true },
+    "0 9 * * 1",
+    "email-weekly-digest"
+  );
+
+  // Check for users needing re-engagement daily at 10 AM UTC
+  await scheduleJob(
+    "email.reengagement.check",
+    {},
+    "0 10 * * *",
+    "email-reengagement-check"
   );
 }

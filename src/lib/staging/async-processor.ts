@@ -10,6 +10,7 @@ import { trackStagingOperation, trackStagingMetrics, captureProviderError } from
 import { queueStagingComplete, queueStagingFailed } from "@/lib/jobs/queue";
 import { invalidateUserCredits } from "@/lib/cache";
 import { deductCredits, logCreditTransaction } from "@/lib/billing/subscription";
+import type { RoomType, FurnitureStyle } from "@/lib/constants";
 
 /**
  * Process a staging job asynchronously
@@ -103,7 +104,15 @@ export async function processAsyncStagingJob(
     // Deduct credits
     const creditDeducted = await deductCredits(userId, 1);
     if (creditDeducted) {
-      await logCreditTransaction(userId, jobId, 1, "staging");
+      // Log transaction - balance will be fetched inside logCreditTransaction
+      await logCreditTransaction({
+        userId,
+        type: "staging_deduction",
+        amount: -1,
+        balanceAfter: 0, // Will be calculated by the function
+        referenceId: jobId,
+        description: "Staging job completed",
+      });
       await invalidateUserCredits(userId);
     }
 
@@ -161,6 +170,7 @@ export async function processAsyncStagingJob(
  */
 async function processWithProvider(
   job: {
+    id: string;
     original_image_url: string;
     room_type: string;
     style: string;
@@ -193,13 +203,13 @@ async function processWithProvider(
       const { provider: selectedProvider } = await router.selectProvider();
 
       if (selectedProvider.supportsSync && "stageImageSync" in selectedProvider) {
-        return await selectedProvider.stageImageSync(
-          base64Image,
+        return await selectedProvider.stageImageSync({
+          imageBase64: base64Image,
           mimeType,
-          job.room_type,
-          job.style,
-          job.custom_prompt
-        );
+          roomType: job.room_type as RoomType,
+          furnitureStyle: job.style as FurnitureStyle,
+          jobId: job.id,
+        });
       }
 
       throw new Error(`Provider ${provider} does not support sync processing`);

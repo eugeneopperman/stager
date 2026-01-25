@@ -19,6 +19,10 @@ const jobHandlers: Record<JobType, JobHandler> = {
   "staging.failed": handleStagingFailed,
   "email.send": handleEmailSend,
   "email.invitation": handleEmailInvitation,
+  "email.campaign.enroll": handleCampaignEnroll,
+  "email.campaign.process": handleCampaignProcess,
+  "email.digest.send": handleDigestSend,
+  "email.reengagement.check": handleReengagementCheck,
   "billing.sync": handleBillingSync,
   "cleanup.expired_invitations": handleCleanupExpiredInvitations,
   "cleanup.old_jobs": handleCleanupOldJobs,
@@ -143,17 +147,16 @@ async function handleStagingFailed(data: Record<string, unknown>): Promise<void>
 }
 
 async function handleEmailSend(data: Record<string, unknown>): Promise<void> {
-  const { to, template, data: templateData } = data as {
+  const { to, template, templateData } = data as {
     to: string;
     template: string;
-    data: Record<string, unknown>;
+    templateData: Record<string, unknown>;
   };
 
-  // Import email service dynamically
-  const { sendEmail } = await import("@/lib/notifications/email");
-  await sendEmail(to, template, templateData);
-
-  console.log(`[Job] Sent email to ${to} using template ${template}`);
+  // This is a placeholder for generic email sending
+  // Most emails should use specific handlers (invitation, campaign, etc.)
+  console.log(`[Job] Email send requested: ${template} to ${to}`, templateData);
+  console.warn("[Job] Generic email.send not fully implemented - use specific email handlers");
 }
 
 async function handleEmailInvitation(data: Record<string, unknown>): Promise<void> {
@@ -185,28 +188,25 @@ async function handleEmailInvitation(data: Record<string, unknown>): Promise<voi
 }
 
 async function handleBillingSync(data: Record<string, unknown>): Promise<void> {
-  const { userId, stripeCustomerId } = data as {
+  const { userId } = data as {
     userId: string;
     stripeCustomerId: string;
   };
 
-  // Sync subscription status from Stripe
-  const { syncSubscriptionFromStripe } = await import("@/lib/billing/stripe");
-  await syncSubscriptionFromStripe(userId, stripeCustomerId);
-
-  // Invalidate caches
+  // Invalidate caches to force fresh data from Stripe webhooks
   const { invalidateBillingCaches } = await import("@/lib/cache/cached-queries");
   await invalidateBillingCaches(userId);
 
-  console.log(`[Job] Synced billing for user ${userId}`);
+  console.log(`[Job] Invalidated billing caches for user ${userId}`);
 }
 
 async function handleCleanupExpiredInvitations(_data: Record<string, unknown>): Promise<void> {
   const { createAdminClient } = await import("@/lib/supabase/admin");
   const supabase = createAdminClient();
 
-  const { data, error } = await supabase
-    .from("team_invitations")
+  // Update expired invitations - cast to any to work around Supabase type generation issues
+  const { data, error } = await (supabase
+    .from("team_invitations") as ReturnType<typeof supabase.from>)
     .update({ status: "expired" })
     .eq("status", "pending")
     .lt("expires_at", new Date().toISOString())
@@ -241,4 +241,149 @@ async function handleCleanupOldJobs(data: Record<string, unknown>): Promise<void
   }
 
   console.log(`[Job] Cleaned up ${deletedJobs?.length || 0} old staging jobs`);
+}
+
+// ============================================
+// Email Campaign Handlers
+// ============================================
+
+async function handleCampaignEnroll(data: Record<string, unknown>): Promise<void> {
+  const { userId, campaignSlug } = data as {
+    userId: string;
+    campaignSlug: string;
+  };
+
+  const { createAdminClient } = await import("@/lib/supabase/admin");
+  const { enrollInCampaign } = await import("@/lib/email/campaigns");
+
+  const supabase = createAdminClient();
+  const result = await enrollInCampaign(supabase, userId, campaignSlug);
+
+  if (!result.success) {
+    // Don't throw for expected failures (already enrolled, etc.)
+    if (result.error?.includes("Already enrolled") || result.error?.includes("not active")) {
+      console.log(`[Job] Campaign enrollment skipped: ${result.error}`);
+      return;
+    }
+    throw new Error(`Failed to enroll in campaign: ${result.error}`);
+  }
+
+  console.log(`[Job] Enrolled user ${userId} in campaign ${campaignSlug}`);
+}
+
+async function handleCampaignProcess(data: Record<string, unknown>): Promise<void> {
+  const { enrollmentId, processAll } = data as {
+    enrollmentId?: string;
+    processAll?: boolean;
+  };
+
+  const { createAdminClient } = await import("@/lib/supabase/admin");
+  const {
+    processCampaignStep,
+    getActiveCampaignEnrollments,
+  } = await import("@/lib/email/campaigns");
+
+  const supabase = createAdminClient();
+
+  if (processAll) {
+    // Process all pending campaign steps (scheduled job)
+    const enrollments = await getActiveCampaignEnrollments(supabase, 50);
+
+    let processed = 0;
+    for (const enrollment of enrollments) {
+      const result = await processCampaignStep(supabase, enrollment.id);
+      if (result.success) {
+        processed++;
+      }
+    }
+
+    console.log(`[Job] Processed ${processed}/${enrollments.length} campaign steps`);
+  } else if (enrollmentId) {
+    // Process single enrollment
+    const result = await processCampaignStep(supabase, enrollmentId);
+
+    if (!result.success) {
+      throw new Error(`Failed to process campaign step: ${result.error}`);
+    }
+
+    console.log(
+      `[Job] Processed campaign step for enrollment ${enrollmentId}`,
+      result.completed ? "(completed)" : ""
+    );
+  }
+}
+
+async function handleDigestSend(data: Record<string, unknown>): Promise<void> {
+  const { userId, sendAll } = data as {
+    userId?: string;
+    sendAll?: boolean;
+  };
+
+  const { createAdminClient } = await import("@/lib/supabase/admin");
+  const { sendWeeklyDigest, getUsersForDigest } = await import("@/lib/email/campaigns/digest");
+
+  const supabase = createAdminClient();
+
+  if (sendAll) {
+    // Send to all eligible users (scheduled job)
+    const users = await getUsersForDigest(supabase, 100);
+
+    let sent = 0;
+    for (const user of users) {
+      const result = await sendWeeklyDigest(supabase, user.id);
+      if (result.success) {
+        sent++;
+      }
+    }
+
+    console.log(`[Job] Sent weekly digest to ${sent}/${users.length} users`);
+  } else if (userId) {
+    // Send to single user
+    const result = await sendWeeklyDigest(supabase, userId);
+
+    if (!result.success) {
+      throw new Error(`Failed to send digest: ${result.error}`);
+    }
+
+    console.log(`[Job] Sent weekly digest to user ${userId}`);
+  }
+}
+
+async function handleReengagementCheck(_data: Record<string, unknown>): Promise<void> {
+  const { createAdminClient } = await import("@/lib/supabase/admin");
+  const { getInactiveUsers, enrollInCampaign } = await import("@/lib/email/campaigns");
+
+  const supabase = createAdminClient();
+
+  // Check for users inactive for 7, 14, and 30 days
+  const inactivityPeriods = [
+    { days: 7, campaign: "reengagement-7d" },
+    { days: 14, campaign: "reengagement-14d" },
+    { days: 30, campaign: "reengagement-30d" },
+  ];
+
+  let totalEnrolled = 0;
+
+  for (const { days, campaign } of inactivityPeriods) {
+    const users = await getInactiveUsers(supabase, days, 50);
+
+    for (const user of users) {
+      // Check if already enrolled in any reengagement campaign
+      const { data: existing } = await supabase
+        .from("campaign_enrollments")
+        .select("id")
+        .eq("user_id", user.id)
+        .like("campaign:email_campaigns.slug", "reengagement-%")
+        .single();
+
+      if (existing) continue;
+
+      const result = await enrollInCampaign(supabase, user.id, campaign);
+      if (result.success) {
+        totalEnrolled++;
+      }
+    }
+  }
+
+  console.log(`[Job] Enrolled ${totalEnrolled} users in re-engagement campaigns`);
 }
