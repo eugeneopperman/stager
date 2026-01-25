@@ -20,8 +20,10 @@ Stager is a web application designed for real estate agents to virtually stage p
   - Storage (image uploads)
 
 ### AI Integration
-- **Google Gemini 3 Pro Image** (Nano Banana Pro) - Image generation and editing
-- SDK: `@google/generative-ai`
+- **Decor8 AI** (Default) - Professional virtual staging API (~$0.20/image)
+- **Google Gemini** (Fallback) - Image generation backup
+- **Replicate** (Async) - Background processing option
+- Multi-provider architecture with automatic failover
 
 ### Deployment
 - **Vercel** - Hosting and CI/CD
@@ -155,8 +157,10 @@ NEXT_PUBLIC_SUPABASE_URL=your_supabase_url
 NEXT_PUBLIC_SUPABASE_ANON_KEY=your_anon_key
 SUPABASE_SERVICE_ROLE_KEY=your_service_role_key
 
-# Gemini AI
+# AI Providers
+DECOR8_API_KEY=your_decor8_api_key
 GOOGLE_GEMINI_API_KEY=your_gemini_api_key
+AI_DEFAULT_PROVIDER=decor8  # Options: decor8, gemini, stable-diffusion
 
 # Resend (Email)
 RESEND_API_KEY=re_xxxxx
@@ -195,7 +199,10 @@ NEXT_PUBLIC_APP_URL=http://localhost:3000
 | `src/lib/supabase/client.ts` | Browser Supabase client |
 | `src/lib/supabase/server.ts` | Server Supabase client |
 | `src/lib/supabase/middleware.ts` | Middleware Supabase client |
-| `src/lib/gemini.ts` | Gemini API integration with inpainting-focused prompt |
+| `src/lib/providers/index.ts` | Provider router with Decor8 (default), Gemini (fallback), Replicate |
+| `src/lib/providers/decor8-provider.ts` | Decor8 AI integration with declutter support |
+| `src/lib/providers/gemini-provider.ts` | Gemini API integration (fallback provider) |
+| `src/lib/providers/replicate-provider.ts` | Replicate/Stable Diffusion for async staging |
 | `src/lib/constants.ts` | Room types, styles (with image paths), credit thresholds |
 | `src/lib/version.ts` | App version number displayed in UI |
 | `src/lib/database.types.ts` | TypeScript types for Supabase tables |

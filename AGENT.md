@@ -20,24 +20,50 @@ When pushing to GitHub, Vercel auto-deploy sometimes doesn't reflect changes imm
 
 ---
 
-## AI Staging (Gemini Integration)
+## AI Staging (Multi-Provider Architecture)
 
-### Model Configuration
-- **Model**: `gemini-2.0-flash-exp` (not 2.5 - the experimental model supports image generation)
-- **Key setting**: `responseModalities: ["image", "text"]` enables image output
-- Located in `/src/lib/gemini.ts`
+### Provider System
+The app uses a multi-provider architecture with automatic failover:
 
-### Prompt Engineering
-The staging prompt was refined to be **inpainting-focused**:
-- Emphasizes "LOCAL IMAGE EDIT using INPAINTING ONLY"
-- Explicitly states what CANNOT change (camera, walls, floors, etc.)
-- Includes room-specific furniture lists via `getRoomSpecificItems()`
-- Has explicit failure conditions to guide the model
-- Reference prompt stored in `/prompt-structure.txt`
+| Provider | Role | Cost | Mode |
+|----------|------|------|------|
+| **Decor8 AI** | Default | ~$0.20/image | Sync |
+| **Gemini** | Fallback | API-based | Sync |
+| **Replicate** | Async option | Variable | Async |
+
+**Key files:**
+- `/src/lib/providers/index.ts` - Provider router and selection logic
+- `/src/lib/providers/decor8-provider.ts` - Decor8 AI integration
+- `/src/lib/providers/gemini-provider.ts` - Gemini fallback
+- `/src/lib/providers/replicate-provider.ts` - Async processing
+
+### Provider Selection
+```typescript
+// Default provider from env var, falls back to Decor8
+const defaultProvider = process.env.AI_DEFAULT_PROVIDER || "decor8";
+```
+
+The `ProviderRouter` class handles:
+- Health checks with 1-minute cache
+- Automatic fallback when primary is unavailable/rate-limited
+- Provider selection based on availability
+
+### Decor8 AI Features
+- **Virtual staging**: `generate_designs_for_room` endpoint
+- **Declutter**: `remove_objects_from_room` endpoint (removes furniture first)
+- **Declutter + Stage pipeline**: For already-furnished rooms
+- Room type and design style mapping to Decor8's API values
+- Custom prompts with negative prompts to preserve windows/structure
+
+### Gemini (Fallback)
+- Model: `gemini-2.0-flash-exp` with `responseModalities: ["image", "text"]`
+- Inpainting-focused prompt emphasizing structure preservation
+- Reference prompt in `/prompt-structure.txt`
 
 ### Rate Limits
-- Sequential processing is used for batch staging to avoid Gemini rate limits
+- Sequential processing for batch staging to avoid rate limits
 - Error handling includes specific messaging for 429 errors
+- Health cache prevents excessive API calls during outages
 
 ### Original Image Storage
 - Original images are uploaded to Supabase Storage alongside staged images
@@ -874,6 +900,51 @@ await Promise.all([
   supabase.from("subscriptions").update({ ... }).eq("user_id", userId),
   supabase.from("profiles").update({ ... }).eq("id", userId),
 ]);
+```
+
+---
+
+## Email Automation System
+
+### Architecture
+Email automation uses React Email for template rendering and Resend for delivery.
+
+**Key Files:**
+- `/src/lib/email/client.ts` - Resend client, EMAIL_CONFIG constants
+- `/src/lib/email/sender.ts` - Email sending with tracking
+- `/src/lib/email/preferences/` - User email preferences
+- `/src/lib/email/campaigns/` - Drip campaigns, digest logic
+- `/src/lib/email/templates/` - React Email components
+
+### Design System (`/src/lib/email/templates/components/`)
+| File | Purpose |
+|------|---------|
+| `styles.ts` | Color palette, typography, spacing, shadows |
+| `Layout.tsx` | Base email layout with soft blue-gray background |
+| `Header.tsx` | White card with centered logo |
+| `Footer.tsx` | Social icons, unsubscribe links |
+| `Button.tsx` | Blue accent with arrow icons |
+| `Card.tsx` | White cards with shadows, variants (success, warning, feature) |
+| `GradientAccent.tsx` | Pink-to-blue gradient accent bar |
+| `ThumbnailGrid.tsx` | Image grid for staged photos |
+
+### Color Palette
+- **Background**: `#f0f4f8` (soft blue-gray)
+- **Primary**: `#2563eb` (bright blue)
+- **Text**: `#1e293b` (primary), `#64748b` (secondary), `#94a3b8` (muted)
+- **Accent**: `#fce7f3` (soft pink), `#dbeafe` (soft blue)
+
+### Preview Server
+```bash
+npm run email:dev  # Opens on localhost:3001 (or next available port)
+```
+
+### Test Endpoint
+```bash
+# Send test email
+curl -X POST http://localhost:3000/api/email/test \
+  -H "Content-Type: application/json" \
+  -d '{"template": "welcome", "to": "your@email.com"}'
 ```
 
 ---

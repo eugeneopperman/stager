@@ -119,7 +119,7 @@ Full monetization with Stripe.
 | Database | Supabase (PostgreSQL) |
 | Auth | Supabase Auth |
 | Storage | Supabase Storage |
-| AI Model | Google Gemini 2.5 Flash |
+| AI Model | Decor8 AI (default), Gemini (fallback), Replicate (async) |
 | Deployment | Vercel |
 | Repository | GitHub |
 
@@ -162,15 +162,19 @@ Full monetization with Stripe.
 | Payment integration | Low | Planned |
 | Team accounts | Medium | ✅ Complete |
 | Email-based team invitations | Medium | ✅ Complete |
+| Email automation (drip campaigns, digests) | Medium | ✅ Complete |
+| Email design system (React Email) | Low | ✅ Complete |
 
 ---
 
 ## AI Staging Configuration
 
-### Model
-- **Gemini 2.5 Flash** (`gemini-2.5-flash`)
-- Image generation enabled via `responseModalities: ["image", "text"]`
-- Requires Google Cloud billing enabled
+### Provider Architecture
+- **Decor8 AI** (default) - Professional virtual staging API, ~$0.20/image
+- **Gemini** (fallback) - `gemini-2.0-flash-exp` with image generation
+- **Replicate** (async) - Background processing with webhooks
+- Automatic failover via `ProviderRouter` class
+- Environment variable: `AI_DEFAULT_PROVIDER` (defaults to "decor8")
 
 ### Room Types
 - Living Room
@@ -251,7 +255,9 @@ npm run dev
 | `NEXT_PUBLIC_SUPABASE_URL` | Supabase project URL |
 | `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Supabase anonymous key |
 | `SUPABASE_SERVICE_ROLE_KEY` | Supabase service role key (for server-side operations) |
-| `GOOGLE_GEMINI_API_KEY` | Google AI API key |
+| `DECOR8_API_KEY` | Decor8 AI API key (default provider) |
+| `GOOGLE_GEMINI_API_KEY` | Google AI API key (fallback provider) |
+| `AI_DEFAULT_PROVIDER` | Provider selection: decor8, gemini, or stable-diffusion |
 | `NEXT_PUBLIC_APP_URL` | Application URL |
 | `RESEND_API_KEY` | Resend email service API key |
 | `RESEND_FROM_EMAIL` | Email sender address (requires verified domain for production) |
@@ -419,6 +425,9 @@ version_groups:
 | 1.109 | 2025-01-23 | Email-Based Team Invitations: Resend integration, invitation tokens, accept flow |
 | 1.136 | 2025-01-23 | API tests, dead code removal, service extraction: 46 new tests, modular staging/team services |
 | 1.137 | 2025-01-24 | Codebase improvements: OpenAPI docs, E2E tests, Sentry, audit logging, query optimization, component tests (277 total tests) |
+| 1.142 | 2025-01-24 | Database indexes, background job queue (QStash), observability, caching, feature flags |
+| 1.143 | 2025-01-24 | Email automation system: React Email templates, Resend integration, drip campaigns |
+| 1.144 | 2025-01-24 | Email design refresh: modern card-based aesthetic, design system, gradient accents |
 | 1.0.0 | TBD | MVP release |
 
 ---
