@@ -949,6 +949,53 @@ curl -X POST http://localhost:3000/api/email/test \
 
 ---
 
+## Hydration Timing Pattern
+
+When using `useSearchParams()` in Next.js App Router, the params may not be available during SSR/static generation. Use a mounted state to wait for client-side hydration:
+
+```typescript
+const [isMounted, setIsMounted] = useState(false);
+
+useEffect(() => {
+  setIsMounted(true);
+}, []);
+
+useEffect(() => {
+  if (!isMounted) return;
+  // Now safe to check searchParams
+  const token = searchParams.get("token");
+  // ...
+}, [isMounted, searchParams]);
+```
+
+This prevents false negatives when checking for query parameters on initial render.
+
+---
+
+## Database Trigger Robustness
+
+When creating database triggers that run on user signup (e.g., `handle_new_user`), make them robust with exception handling:
+
+```sql
+CREATE OR REPLACE FUNCTION public.handle_new_user()
+RETURNS trigger AS $$
+BEGIN
+  INSERT INTO public.profiles (id, full_name)
+  VALUES (new.id, new.raw_user_meta_data->>'full_name');
+  RETURN new;
+EXCEPTION
+  WHEN others THEN
+    RAISE WARNING 'Error in handle_new_user: %', SQLERRM;
+    -- Fallback logic or re-raise
+    RAISE;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+```
+
+This prevents signup failures from cryptic "Database error saving new user" messages.
+
+---
+
 ## Session Continuity Tips
 
 1. Read `CLAUDE.md` for project overview and conventions

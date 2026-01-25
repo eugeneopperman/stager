@@ -249,6 +249,7 @@ NEXT_PUBLIC_APP_URL=http://localhost:3000
 | `AGENT.md` | Agent notes and lessons learned |
 | `supabase/migrations/006_create_notifications.sql` | Notifications table with RLS policies |
 | `supabase/migrations/007_add_remix_support.sql` | Version groups table and remix fields |
+| `supabase/migrations/013_fix_signup_trigger.sql` | Robust signup trigger with error handling |
 | `src/app/api/staging/[jobId]/remix/route.ts` | Create remix of existing staging job |
 | `src/app/api/staging/[jobId]/primary/route.ts` | Set version as primary |
 | `src/app/api/staging/versions/route.ts` | Fetch all versions for a job |

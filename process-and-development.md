@@ -428,6 +428,7 @@ version_groups:
 | 1.142 | 2025-01-24 | Database indexes, background job queue (QStash), observability, caching, feature flags |
 | 1.143 | 2025-01-24 | Email automation system: React Email templates, Resend integration, drip campaigns |
 | 1.144 | 2025-01-24 | Email design refresh: modern card-based aesthetic, design system, gradient accents |
+| 1.145 | 2025-01-24 | Team invitations enhancements: full history, status filters, toast notifications, signup trigger fix |
 | 1.0.0 | TBD | MVP release |
 
 ---
