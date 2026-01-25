@@ -2,45 +2,52 @@ export { Layout } from "./Layout";
 export { Header } from "./Header";
 export { Footer } from "./Footer";
 export { Button } from "./Button";
-export { Card, StatCard } from "./Card";
+export { Card, StatCard, StatsRow } from "./Card";
 export { ImagePreview, BeforeAfterPreview } from "./ImagePreview";
+export { GradientAccent } from "./GradientAccent";
+export { ThumbnailGrid, Thumbnail, ImageShowcase } from "./ThumbnailGrid";
 
-// Shared styles for use in templates
+// Re-export colors and typography for direct access
+export { colors, typography, gradients, radius, spacing, shadows } from "./styles";
+
+// Shared styles for use in templates (using new design system)
+import { colors, radius, spacing } from "./styles";
+
 export const styles = {
   heading: {
-    fontSize: "24px",
+    fontSize: "28px",
     fontWeight: "700",
-    color: "#18181b",
+    color: colors.textPrimary,
     margin: "0 0 16px 0",
-    lineHeight: "1.3",
+    lineHeight: "1.2",
   } as React.CSSProperties,
 
   subheading: {
-    fontSize: "18px",
+    fontSize: "20px",
     fontWeight: "600",
-    color: "#27272a",
+    color: colors.textPrimary,
     margin: "24px 0 12px 0",
-    lineHeight: "1.4",
+    lineHeight: "1.3",
   } as React.CSSProperties,
 
   paragraph: {
     fontSize: "16px",
     lineHeight: "1.6",
-    color: "#3f3f46",
+    color: colors.textSecondary,
     margin: "0 0 16px 0",
   } as React.CSSProperties,
 
   smallText: {
     fontSize: "14px",
     lineHeight: "1.5",
-    color: "#71717a",
+    color: colors.textMuted,
     margin: "0 0 12px 0",
   } as React.CSSProperties,
 
   list: {
     fontSize: "16px",
     lineHeight: "1.8",
-    color: "#3f3f46",
+    color: colors.textSecondary,
     paddingLeft: "20px",
     margin: "0 0 16px 0",
   } as React.CSSProperties,
@@ -50,27 +57,27 @@ export const styles = {
   } as React.CSSProperties,
 
   link: {
-    color: "#7c3aed",
-    textDecoration: "underline",
+    color: colors.primaryBlue,
+    textDecoration: "none",
   } as React.CSSProperties,
 
   bold: {
     fontWeight: "600",
-    color: "#18181b",
+    color: colors.textPrimary,
   } as React.CSSProperties,
 
   highlight: {
-    backgroundColor: "#faf5ff",
+    backgroundColor: colors.softBlue,
     padding: "2px 6px",
-    borderRadius: "4px",
-    color: "#7c3aed",
+    borderRadius: radius.sm,
+    color: colors.primaryBlue,
     fontWeight: "500",
   } as React.CSSProperties,
 
   divider: {
-    borderColor: "#e4e4e7",
+    borderColor: colors.divider,
     borderWidth: "1px",
-    margin: "24px 0",
+    margin: `${spacing.lg} 0`,
   } as React.CSSProperties,
 
   center: {
@@ -78,7 +85,7 @@ export const styles = {
   } as React.CSSProperties,
 
   buttonContainer: {
-    margin: "24px 0",
+    margin: `${spacing.lg} 0`,
     textAlign: "center" as const,
   } as React.CSSProperties,
 };

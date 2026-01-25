@@ -1,33 +1,38 @@
-import { Section, Img, Text, Link } from "@react-email/components";
+import { Section, Text, Link } from "@react-email/components";
 import * as React from "react";
+import { colors, radius, shadows, spacing } from "./styles";
 
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL || "https://stager.app";
 
-interface HeaderProps {
-  showTagline?: boolean;
-}
-
-export function Header({ showTagline = true }: HeaderProps) {
+export function Header() {
   return (
     <Section style={header}>
       <Link href={APP_URL} style={logoLink}>
-        <div style={logoContainer}>
-          <div style={logoIcon}>
-            <Text style={logoLetter}>S</Text>
-          </div>
-          <Text style={logoText}>Stager</Text>
-        </div>
+        <table cellPadding="0" cellSpacing="0" style={{ margin: "0 auto" }}>
+          <tbody>
+            <tr>
+              <td style={logoIconCell}>
+                <div style={logoIcon}>
+                  <Text style={logoLetter}>S</Text>
+                </div>
+              </td>
+              <td>
+                <Text style={logoText}>Stager</Text>
+              </td>
+            </tr>
+          </tbody>
+        </table>
       </Link>
-      {showTagline && (
-        <Text style={tagline}>AI-Powered Virtual Staging</Text>
-      )}
     </Section>
   );
 }
 
 const header: React.CSSProperties = {
-  background: "linear-gradient(135deg, #7c3aed 0%, #a855f7 100%)",
-  padding: "24px",
+  backgroundColor: colors.cardWhite,
+  borderRadius: radius.xl,
+  boxShadow: shadows.card,
+  padding: spacing.lg,
+  marginBottom: spacing.md,
   textAlign: "center" as const,
 };
 
@@ -35,21 +40,19 @@ const logoLink: React.CSSProperties = {
   textDecoration: "none",
 };
 
-const logoContainer: React.CSSProperties = {
-  display: "inline-flex",
-  alignItems: "center",
-  justifyContent: "center",
-  gap: "8px",
+const logoIconCell: React.CSSProperties = {
+  paddingRight: "10px",
+  verticalAlign: "middle",
 };
 
 const logoIcon: React.CSSProperties = {
   width: "36px",
   height: "36px",
-  backgroundColor: "rgba(255, 255, 255, 0.2)",
-  borderRadius: "8px",
-  display: "inline-flex",
-  alignItems: "center",
-  justifyContent: "center",
+  backgroundColor: colors.primaryBlue,
+  borderRadius: radius.md,
+  display: "inline-block",
+  textAlign: "center" as const,
+  lineHeight: "36px",
 };
 
 const logoLetter: React.CSSProperties = {
@@ -61,17 +64,12 @@ const logoLetter: React.CSSProperties = {
 };
 
 const logoText: React.CSSProperties = {
-  color: "#ffffff",
+  color: colors.textPrimary,
   fontSize: "24px",
   fontWeight: "700",
   margin: 0,
   letterSpacing: "-0.5px",
-};
-
-const tagline: React.CSSProperties = {
-  color: "rgba(255, 255, 255, 0.9)",
-  fontSize: "14px",
-  margin: "8px 0 0 0",
+  verticalAlign: "middle",
 };
 
 export default Header;

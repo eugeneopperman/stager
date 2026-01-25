@@ -1,5 +1,6 @@
 import { Section, Img, Text, Row, Column } from "@react-email/components";
 import * as React from "react";
+import { colors, radius, shadows, spacing, typography } from "./styles";
 
 interface ImagePreviewProps {
   imageUrl: string;
@@ -67,25 +68,25 @@ export function BeforeAfterPreview({
 }
 
 const imageContainer: React.CSSProperties = {
-  margin: "24px 0",
+  margin: `${spacing.lg} 0`,
   textAlign: "center" as const,
 };
 
 const image: React.CSSProperties = {
-  borderRadius: "8px",
+  borderRadius: radius.lg,
   maxWidth: "100%",
   height: "auto",
+  boxShadow: shadows.card,
 };
 
 const captionText: React.CSSProperties = {
-  color: "#71717a",
-  fontSize: "13px",
-  margin: "8px 0 0 0",
+  ...typography.smallText,
   fontStyle: "italic",
+  margin: "12px 0 0 0",
 };
 
 const comparisonContainer: React.CSSProperties = {
-  margin: "24px 0",
+  margin: `${spacing.lg} 0`,
 };
 
 const comparisonColumn: React.CSSProperties = {
@@ -95,19 +96,15 @@ const comparisonColumn: React.CSSProperties = {
 };
 
 const comparisonLabel: React.CSSProperties = {
-  color: "#71717a",
-  fontSize: "12px",
-  fontWeight: "600",
-  margin: "0 0 8px 0",
-  textTransform: "uppercase" as const,
-  letterSpacing: "0.5px",
+  ...typography.label,
+  marginBottom: spacing.sm,
 };
 
 const comparisonImage: React.CSSProperties = {
-  borderRadius: "8px",
+  borderRadius: radius.lg,
   maxWidth: "100%",
   height: "auto",
-  border: "1px solid #e4e4e7",
+  border: `1px solid ${colors.border}`,
 };
 
 export default ImagePreview;

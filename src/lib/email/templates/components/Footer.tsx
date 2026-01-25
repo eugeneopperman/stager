@@ -1,5 +1,6 @@
 import { Section, Text, Link, Hr } from "@react-email/components";
 import * as React from "react";
+import { colors, radius, shadows, spacing } from "./styles";
 
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL || "https://stager.app";
 
@@ -14,77 +15,157 @@ export function Footer({ unsubscribeUrl, preferencesUrl }: FooterProps) {
 
   return (
     <Section style={footer}>
+      {/* Social Icons */}
+      <table cellPadding="0" cellSpacing="0" style={socialTable}>
+        <tbody>
+          <tr>
+            <td style={socialIconCell}>
+              <Link href="https://twitter.com/stagerapp" style={socialLink}>
+                <div style={socialIcon}>
+                  <Text style={socialIconText}>X</Text>
+                </div>
+              </Link>
+            </td>
+            <td style={socialIconCell}>
+              <Link href="https://facebook.com/stagerapp" style={socialLink}>
+                <div style={socialIcon}>
+                  <Text style={socialIconText}>f</Text>
+                </div>
+              </Link>
+            </td>
+            <td style={socialIconCell}>
+              <Link href="https://linkedin.com/company/stagerapp" style={socialLink}>
+                <div style={socialIcon}>
+                  <Text style={socialIconText}>in</Text>
+                </div>
+              </Link>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+
       <Hr style={divider} />
+
+      {/* Company Info */}
       <Text style={companyText}>
-        <Link href={APP_URL} style={footerLink}>
-          Stager
-        </Link>{" "}
-        - AI-Powered Virtual Staging for Real Estate
-      </Text>
-      <Text style={linksText}>
-        <Link href={preferencesUrl || defaultPreferencesUrl} style={footerLink}>
-          Email Preferences
-        </Link>
-        {" | "}
-        <Link href={unsubscribeUrl || defaultUnsubscribeUrl} style={footerLink}>
-          Unsubscribe
-        </Link>
-        {" | "}
-        <Link href={`${APP_URL}/help`} style={footerLink}>
-          Help Center
-        </Link>
-      </Text>
-      <Text style={addressText}>
-        Stager Inc.
-        <br />
-        123 Real Estate Lane, San Francisco, CA 94105
-      </Text>
-      <Text style={copyrightText}>
         &copy; {new Date().getFullYear()} Stager. All rights reserved.
       </Text>
+
+      <Text style={addressText}>
+        Stager Inc. &middot; 123 Real Estate Lane, San Francisco, CA 94105
+      </Text>
+
+      {/* Links */}
+      <table cellPadding="0" cellSpacing="0" style={linksTable}>
+        <tbody>
+          <tr>
+            <td style={linkCell}>
+              <Link href={preferencesUrl || defaultPreferencesUrl} style={footerLink}>
+                Preferences
+              </Link>
+            </td>
+            <td style={linkDividerCell}>
+              <Text style={linkDivider}>&middot;</Text>
+            </td>
+            <td style={linkCell}>
+              <Link href={unsubscribeUrl || defaultUnsubscribeUrl} style={footerLink}>
+                Unsubscribe
+              </Link>
+            </td>
+            <td style={linkDividerCell}>
+              <Text style={linkDivider}>&middot;</Text>
+            </td>
+            <td style={linkCell}>
+              <Link href={`${APP_URL}/help`} style={footerLink}>
+                Help
+              </Link>
+            </td>
+          </tr>
+        </tbody>
+      </table>
     </Section>
   );
 }
 
 const footer: React.CSSProperties = {
-  padding: "0 24px 24px",
+  backgroundColor: colors.cardWhite,
+  borderRadius: radius.xl,
+  boxShadow: shadows.card,
+  padding: spacing.xl,
+  marginTop: spacing.md,
   textAlign: "center" as const,
 };
 
-const divider: React.CSSProperties = {
-  borderColor: "#e4e4e7",
-  borderWidth: "1px",
-  margin: "0 0 24px 0",
+const socialTable: React.CSSProperties = {
+  margin: "0 auto 16px auto",
 };
 
-const companyText: React.CSSProperties = {
-  color: "#71717a",
-  fontSize: "14px",
-  margin: "0 0 12px 0",
+const socialIconCell: React.CSSProperties = {
+  padding: "0 6px",
 };
 
-const linksText: React.CSSProperties = {
-  color: "#71717a",
-  fontSize: "12px",
-  margin: "0 0 12px 0",
-};
-
-const footerLink: React.CSSProperties = {
-  color: "#7c3aed",
+const socialLink: React.CSSProperties = {
   textDecoration: "none",
 };
 
-const addressText: React.CSSProperties = {
-  color: "#a1a1aa",
-  fontSize: "11px",
-  margin: "0 0 8px 0",
-  lineHeight: "1.5",
+const socialIcon: React.CSSProperties = {
+  width: "36px",
+  height: "36px",
+  backgroundColor: colors.background,
+  borderRadius: radius.full,
+  display: "inline-block",
+  textAlign: "center" as const,
+  lineHeight: "36px",
 };
 
-const copyrightText: React.CSSProperties = {
-  color: "#a1a1aa",
-  fontSize: "11px",
+const socialIconText: React.CSSProperties = {
+  color: colors.textMuted,
+  fontSize: "14px",
+  fontWeight: "600",
   margin: 0,
+  lineHeight: "36px",
+};
+
+const divider: React.CSSProperties = {
+  borderColor: colors.divider,
+  borderWidth: "1px",
+  margin: "16px 0",
+};
+
+const companyText: React.CSSProperties = {
+  color: colors.textMuted,
+  fontSize: "13px",
+  margin: "0 0 4px 0",
+};
+
+const addressText: React.CSSProperties = {
+  color: colors.textMuted,
+  fontSize: "12px",
+  margin: "0 0 16px 0",
+};
+
+const linksTable: React.CSSProperties = {
+  margin: "0 auto",
+};
+
+const linkCell: React.CSSProperties = {
+  padding: "0",
+};
+
+const linkDividerCell: React.CSSProperties = {
+  padding: "0 8px",
+};
+
+const linkDivider: React.CSSProperties = {
+  color: colors.textMuted,
+  fontSize: "12px",
+  margin: 0,
+};
+
+const footerLink: React.CSSProperties = {
+  color: colors.primaryBlue,
+  fontSize: "12px",
+  textDecoration: "none",
 };
 
 export default Footer;

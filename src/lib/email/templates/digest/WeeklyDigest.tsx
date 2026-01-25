@@ -1,6 +1,6 @@
-import { Text, Hr, Section, Row, Column, Img, Link } from "@react-email/components";
+import { Text, Link, Section, Img } from "@react-email/components";
 import * as React from "react";
-import { Layout, Button, Card, StatCard, styles } from "../components";
+import { Layout, Button, Card, StatsRow, StatCard, GradientAccent, ThumbnailGrid, styles, colors, radius, spacing } from "../components";
 
 export interface WeeklyDigestProps {
   firstName: string;
@@ -13,23 +13,29 @@ export interface WeeklyDigestProps {
     room_type: string;
     style: string;
   }>;
+  // Support both single feature and array for backwards compatibility
+  newFeature?: {
+    title: string;
+    description: string;
+  };
   newFeatures?: Array<{
     title: string;
     description: string;
   }>;
-  appUrl: string;
-  unsubscribeUrl: string;
-  preferencesUrl: string;
+  appUrl?: string;
+  unsubscribeUrl?: string;
+  preferencesUrl?: string;
 }
 
 export function WeeklyDigestEmail({
-  firstName,
-  stagingsThisWeek,
-  stagingsLastWeek,
-  creditsRemaining,
+  firstName = "there",
+  stagingsThisWeek = 5,
+  stagingsLastWeek = 3,
+  creditsRemaining = 15,
   topStagings = [],
-  newFeatures = [],
-  appUrl,
+  newFeature,
+  newFeatures,
+  appUrl = "https://stager.app",
   unsubscribeUrl,
   preferencesUrl,
 }: WeeklyDigestProps) {
@@ -38,6 +44,10 @@ export function WeeklyDigestEmail({
     : stagingsThisWeek > 0 ? 100 : 0;
 
   const isPositive = stagingsThisWeek >= stagingsLastWeek;
+  const weekRange = getWeekRange();
+
+  // Support both single feature and array
+  const feature = newFeature || (newFeatures && newFeatures.length > 0 ? newFeatures[0] : undefined);
 
   return (
     <Layout
@@ -45,186 +55,196 @@ export function WeeklyDigestEmail({
       unsubscribeUrl={unsubscribeUrl}
       preferencesUrl={preferencesUrl}
     >
-      <Text style={styles.heading}>Your Week in Stager</Text>
+      {/* Header Card */}
+      <Card>
+        <GradientAccent />
+        <Text style={styles.heading}>Your week in review</Text>
+        <Text style={dateRange}>{weekRange}</Text>
+      </Card>
 
-      <Text style={styles.paragraph}>
-        Hi {firstName}, here's your weekly staging summary:
-      </Text>
-
-      {/* Stats Row */}
-      <Section style={statsContainer}>
-        <Row>
-          <Column style={{ width: "33%", padding: "0 4px" }}>
-            <Section style={statBox}>
-              <Text style={statValue}>{stagingsThisWeek}</Text>
-              <Text style={statLabel}>Stagings</Text>
-              {changePercent !== 0 && (
-                <Text
-                  style={{
-                    ...changeText,
-                    color: isPositive ? "#16a34a" : "#dc2626",
-                  }}
-                >
-                  {isPositive ? "+" : ""}
-                  {changePercent}%
-                </Text>
-              )}
-            </Section>
-          </Column>
-          <Column style={{ width: "33%", padding: "0 4px" }}>
-            <Section style={statBox}>
-              <Text style={statValue}>{creditsRemaining}</Text>
-              <Text style={statLabel}>Credits Left</Text>
-            </Section>
-          </Column>
-          <Column style={{ width: "33%", padding: "0 4px" }}>
-            <Section style={statBox}>
-              <Text style={statValue}>{stagingsLastWeek}</Text>
-              <Text style={statLabel}>Last Week</Text>
-            </Section>
-          </Column>
-        </Row>
-      </Section>
+      {/* Stats Card */}
+      <StatsRow>
+        <StatCard
+          label="Stagings"
+          value={stagingsThisWeek}
+          trend={changePercent !== 0 ? `${Math.abs(changePercent)}%` : undefined}
+          isPositive={isPositive}
+        />
+        <StatCard
+          label="Credits left"
+          value={creditsRemaining}
+        />
+      </StatsRow>
 
       {/* Recent Stagings */}
       {topStagings.length > 0 && (
-        <>
-          <Text style={styles.subheading}>Recent Stagings</Text>
-          <Section style={stagingsGrid}>
-            <Row>
-              {topStagings.slice(0, 3).map((staging) => (
-                <Column key={staging.id} style={stagingColumn}>
-                  <Link href={`${appUrl}/history?job=${staging.id}`}>
-                    <Img
-                      src={staging.thumbnail_url}
-                      alt={`${staging.room_type} - ${staging.style}`}
-                      width={170}
-                      style={stagingImage}
-                    />
-                  </Link>
-                  <Text style={stagingCaption}>
-                    {staging.room_type} - {staging.style}
-                  </Text>
-                </Column>
-              ))}
-            </Row>
+        <Card>
+          <Text style={styles.subheading}>Your staged photos</Text>
+          <ThumbnailGrid
+            images={topStagings.map((s) => ({
+              src: s.thumbnail_url,
+              alt: `${s.room_type} - ${s.style}`,
+              href: `${appUrl}/history?job=${s.id}`,
+            }))}
+            columns={4}
+            size={100}
+          />
+          <Section style={{ textAlign: "center" as const, marginTop: spacing.md }}>
+            <Button href={`${appUrl}/history`} variant="outline">
+              View All in History
+            </Button>
           </Section>
-        </>
+        </Card>
       )}
 
-      {/* New Features */}
-      {newFeatures.length > 0 && (
-        <>
-          <Hr style={styles.divider} />
-          <Text style={styles.subheading}>What's New</Text>
-          {newFeatures.map((feature, index) => (
-            <Card key={index} variant="info">
-              <Text style={featureTitle}>{feature.title}</Text>
-              <Text style={{ ...styles.smallText, margin: 0 }}>
-                {feature.description}
-              </Text>
-            </Card>
-          ))}
-        </>
+      {/* New Feature Card */}
+      {feature && (
+        <Card variant="feature">
+          <table cellPadding="0" cellSpacing="0" style={{ width: "100%" }}>
+            <tbody>
+              <tr>
+                <td style={featureIconCell}>
+                  <div style={featureIcon}>
+                    <Text style={featureIconText}>✨</Text>
+                  </div>
+                </td>
+                <td>
+                  <Text style={featureLabel}>New Feature</Text>
+                  <Text style={featureTitle}>{feature.title}</Text>
+                  <Text style={featureDesc}>{feature.description}</Text>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </Card>
       )}
 
-      {/* CTA */}
-      <Section style={styles.buttonContainer}>
-        <Button href={`${appUrl}/stage`}>
-          {stagingsThisWeek === 0 ? "Stage Your First Photo" : "Stage More Photos"}
-        </Button>
-      </Section>
+      {/* CTA Card */}
+      <Card>
+        <Section style={styles.buttonContainer}>
+          <Button href={`${appUrl}/stage`}>
+            {stagingsThisWeek === 0 ? "Stage Your First Photo" : "Stage More Photos"}
+          </Button>
+        </Section>
+      </Card>
 
       {/* Credits Warning */}
       {creditsRemaining <= 5 && creditsRemaining > 0 && (
         <Card variant="warning">
-          <Text style={{ ...styles.paragraph, margin: "0 0 8px 0" }}>
-            <strong>Running low on credits!</strong>
-          </Text>
-          <Text style={{ ...styles.smallText, margin: 0 }}>
-            You have {creditsRemaining} credit{creditsRemaining !== 1 ? "s" : ""}{" "}
-            remaining.{" "}
-            <Link href={`${appUrl}/billing`} style={styles.link}>
-              Add more credits
-            </Link>
-          </Text>
+          <table cellPadding="0" cellSpacing="0" style={{ width: "100%" }}>
+            <tbody>
+              <tr>
+                <td style={warningIconCell}>
+                  <Text style={warningIcon}>⚠️</Text>
+                </td>
+                <td>
+                  <Text style={warningTitle}>Running low on credits</Text>
+                  <Text style={warningText}>
+                    You have {creditsRemaining} credit{creditsRemaining !== 1 ? "s" : ""} remaining.{" "}
+                    <Link href={`${appUrl}/billing`} style={styles.link}>
+                      Add more credits →
+                    </Link>
+                  </Text>
+                </td>
+              </tr>
+            </tbody>
+          </table>
         </Card>
       )}
 
-      <Hr style={styles.divider} />
-
-      <Text style={styles.smallText}>
-        Want to adjust what emails you receive?{" "}
-        <Link href={preferencesUrl} style={styles.link}>
-          Manage your preferences
-        </Link>
-      </Text>
+      {/* Preferences Card */}
+      <Card>
+        <Text style={{ ...styles.smallText, margin: 0, textAlign: "center" as const }}>
+          Want to adjust what emails you receive?{" "}
+          <Link href={preferencesUrl || `${appUrl}/settings?tab=notifications`} style={styles.link}>
+            Manage preferences →
+          </Link>
+        </Text>
+      </Card>
     </Layout>
   );
 }
 
-const statsContainer: React.CSSProperties = {
-  margin: "24px 0",
-};
+function getWeekRange(): string {
+  const now = new Date();
+  const weekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+  const options: Intl.DateTimeFormatOptions = { month: "short", day: "numeric" };
+  return `${weekAgo.toLocaleDateString("en-US", options)} - ${now.toLocaleDateString("en-US", options)}, ${now.getFullYear()}`;
+}
 
-const statBox: React.CSSProperties = {
-  backgroundColor: "#f4f4f5",
-  borderRadius: "8px",
-  padding: "16px 8px",
-  textAlign: "center" as const,
-};
-
-const statValue: React.CSSProperties = {
-  fontSize: "32px",
-  fontWeight: "700",
-  color: "#18181b",
+const dateRange: React.CSSProperties = {
+  fontSize: "14px",
+  color: colors.textMuted,
   margin: 0,
-  lineHeight: "1.2",
 };
 
-const statLabel: React.CSSProperties = {
-  fontSize: "12px",
-  color: "#71717a",
-  margin: "4px 0 0 0",
+const featureIconCell: React.CSSProperties = {
+  width: "48px",
+  verticalAlign: "top",
+  paddingRight: "12px",
+};
+
+const featureIcon: React.CSSProperties = {
+  width: "40px",
+  height: "40px",
+  backgroundColor: "rgba(255, 255, 255, 0.6)",
+  borderRadius: "10px",
+  textAlign: "center" as const,
+  lineHeight: "40px",
+};
+
+const featureIconText: React.CSSProperties = {
+  fontSize: "20px",
+  margin: 0,
+  lineHeight: "40px",
+};
+
+const featureLabel: React.CSSProperties = {
+  fontSize: "11px",
+  fontWeight: "600",
+  color: colors.primaryBlue,
   textTransform: "uppercase" as const,
   letterSpacing: "0.5px",
-};
-
-const changeText: React.CSSProperties = {
-  fontSize: "12px",
-  fontWeight: "600",
-  margin: "4px 0 0 0",
-};
-
-const stagingsGrid: React.CSSProperties = {
-  margin: "16px 0",
-};
-
-const stagingColumn: React.CSSProperties = {
-  width: "33%",
-  padding: "0 4px",
-  textAlign: "center" as const,
-};
-
-const stagingImage: React.CSSProperties = {
-  borderRadius: "6px",
-  width: "100%",
-  height: "auto",
-  border: "1px solid #e4e4e7",
-};
-
-const stagingCaption: React.CSSProperties = {
-  fontSize: "11px",
-  color: "#71717a",
-  margin: "6px 0 0 0",
-  lineHeight: "1.3",
+  margin: "0 0 4px 0",
 };
 
 const featureTitle: React.CSSProperties = {
-  fontSize: "14px",
+  fontSize: "16px",
   fontWeight: "600",
-  color: "#18181b",
+  color: colors.textPrimary,
   margin: "0 0 4px 0",
+};
+
+const featureDesc: React.CSSProperties = {
+  fontSize: "14px",
+  color: colors.textSecondary,
+  margin: 0,
+  lineHeight: "1.5",
+};
+
+const warningIconCell: React.CSSProperties = {
+  width: "40px",
+  verticalAlign: "top",
+  paddingRight: "12px",
+};
+
+const warningIcon: React.CSSProperties = {
+  fontSize: "24px",
+  margin: 0,
+};
+
+const warningTitle: React.CSSProperties = {
+  fontSize: "15px",
+  fontWeight: "600",
+  color: colors.textPrimary,
+  margin: "0 0 4px 0",
+};
+
+const warningText: React.CSSProperties = {
+  fontSize: "14px",
+  color: colors.textSecondary,
+  margin: 0,
+  lineHeight: "1.5",
 };
 
 export default WeeklyDigestEmail;

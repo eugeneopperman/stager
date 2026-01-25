@@ -1,11 +1,13 @@
 import { Button as EmailButton } from "@react-email/components";
 import * as React from "react";
+import { colors, radius, shadows } from "./styles";
 
 interface ButtonProps {
   href: string;
   children: React.ReactNode;
   variant?: "primary" | "secondary" | "outline";
   fullWidth?: boolean;
+  showArrow?: boolean;
 }
 
 export function Button({
@@ -13,6 +15,7 @@ export function Button({
   children,
   variant = "primary",
   fullWidth = false,
+  showArrow = true,
 }: ButtonProps) {
   const styles = {
     primary: primaryButton,
@@ -29,50 +32,49 @@ export function Button({
       }}
     >
       {children}
+      {showArrow && " →"}
     </EmailButton>
   );
 }
 
 const primaryButton: React.CSSProperties = {
-  backgroundColor: "#7c3aed",
-  borderRadius: "8px",
+  backgroundColor: colors.primaryBlue,
+  borderRadius: radius.md,
   color: "#ffffff",
-  fontSize: "16px",
+  fontSize: "14px",
   fontWeight: "600",
-  padding: "14px 28px",
+  padding: "12px 24px",
   textDecoration: "none",
   textAlign: "center" as const,
   display: "inline-block",
   border: "none",
-  cursor: "pointer",
+  boxShadow: shadows.button,
 };
 
 const secondaryButton: React.CSSProperties = {
-  backgroundColor: "#f4f4f5",
-  borderRadius: "8px",
-  color: "#18181b",
-  fontSize: "16px",
+  backgroundColor: colors.background,
+  borderRadius: radius.md,
+  color: colors.textPrimary,
+  fontSize: "14px",
   fontWeight: "600",
-  padding: "14px 28px",
+  padding: "12px 24px",
   textDecoration: "none",
   textAlign: "center" as const,
   display: "inline-block",
-  border: "1px solid #e4e4e7",
-  cursor: "pointer",
+  border: `1px solid ${colors.border}`,
 };
 
 const outlineButton: React.CSSProperties = {
   backgroundColor: "transparent",
-  borderRadius: "8px",
-  color: "#7c3aed",
-  fontSize: "16px",
+  borderRadius: radius.md,
+  color: colors.primaryBlue,
+  fontSize: "14px",
   fontWeight: "600",
-  padding: "14px 28px",
+  padding: "12px 24px",
   textDecoration: "none",
   textAlign: "center" as const,
   display: "inline-block",
-  border: "2px solid #7c3aed",
-  cursor: "pointer",
+  border: `1px solid ${colors.border}`,
 };
 
 export default Button;
