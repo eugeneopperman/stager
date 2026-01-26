@@ -66,6 +66,14 @@ export function ProductTour({
     driverRef.current = driver({
       ...DRIVER_CONFIG,
       steps,
+      onPopoverRender: (popover) => {
+        // Add tooltip to close button
+        const closeBtn = popover.wrapper.querySelector('.driver-popover-close-btn');
+        if (closeBtn) {
+          closeBtn.setAttribute('title', 'End Tour');
+          closeBtn.setAttribute('aria-label', 'End Tour');
+        }
+      },
       onDestroyStarted: async () => {
         await markOnboardingComplete();
         onComplete?.();
@@ -119,6 +127,14 @@ export function startTour(credits: number = 0) {
   const tourDriver = driver({
     ...DRIVER_CONFIG,
     steps,
+    onPopoverRender: (popover) => {
+      // Add tooltip to close button
+      const closeBtn = popover.wrapper.querySelector('.driver-popover-close-btn');
+      if (closeBtn) {
+        closeBtn.setAttribute('title', 'End Tour');
+        closeBtn.setAttribute('aria-label', 'End Tour');
+      }
+    },
   });
 
   tourDriver.drive();

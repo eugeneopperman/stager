@@ -42,44 +42,55 @@
   text-shadow: none !important;
 }
 
+/* Next button - primary with stroke (prominent CTA) */
 .driver-popover-next-btn {
-  background: hsl(var(--primary)) !important;
-  color: hsl(var(--primary-foreground)) !important;
-  border: none !important;
+  background: transparent !important;
+  color: hsl(var(--primary)) !important;
+  border: 2px solid hsl(var(--primary)) !important;
   border-radius: 9999px !important;
-  padding: 0.5rem 1rem !important;
+  padding: 0.5rem 1.25rem !important;
   font-size: 0.875rem !important;
-  font-weight: 500 !important;
-  transition: opacity 0.2s ease !important;
+  font-weight: 600 !important;
+  transition: all 0.2s ease !important;
 }
 
 .driver-popover-next-btn:hover {
-  opacity: 0.9 !important;
+  background: hsl(var(--primary) / 0.1) !important;
 }
 
+/* Back button - secondary text-only (subtle) */
 .driver-popover-prev-btn {
   background: transparent !important;
-  color: hsl(220 10% 40%) !important;
-  border: 1px solid hsl(220 15% 85%) !important;
+  color: hsl(220 10% 50%) !important;
+  border: none !important;
   border-radius: 9999px !important;
-  padding: 0.5rem 1rem !important;
+  padding: 0.5rem 0.75rem !important;
   font-size: 0.875rem !important;
+  font-weight: 500 !important;
   transition: all 0.2s ease !important;
 }
 
 .driver-popover-prev-btn:hover {
-  background: hsl(220 15% 96%) !important;
-  color: hsl(220 15% 20%) !important;
+  color: hsl(220 10% 30%) !important;
+  background: transparent !important;
 }
 
+/* Close button - better positioning with padding */
 .driver-popover-close-btn {
+  position: absolute !important;
+  top: 0.75rem !important;
+  right: 0.75rem !important;
+  width: 1.75rem !important;
+  height: 1.75rem !important;
+  padding: 0.25rem !important;
   color: hsl(220 10% 50%) !important;
-  width: 1.5rem !important;
-  height: 1.5rem !important;
+  border-radius: 6px !important;
+  transition: all 0.2s ease !important;
 }
 
 .driver-popover-close-btn:hover {
   color: hsl(220 15% 20%) !important;
+  background: hsl(220 15% 96%) !important;
 }
 
 /* Overlay styling - solid semi-transparent without blur */
@@ -88,12 +99,14 @@
   /* No backdrop-filter - keeps highlighted content crisp */
 }
 
-/* Highlighted element with glow ring */
+/* Highlighted element with enhanced glow ring */
 .driver-active-element {
+  position: relative !important;
   z-index: 10001 !important;
   box-shadow:
-    0 0 0 4px hsl(var(--primary) / 0.3),
-    0 0 20px 8px hsl(var(--primary) / 0.15) !important;
+    0 0 0 4px hsl(var(--primary)),
+    0 0 0 8px hsl(var(--primary) / 0.25),
+    0 0 30px 12px hsl(var(--primary) / 0.2) !important;
   border-radius: 8px;
 }
 
@@ -139,22 +152,35 @@
   color: hsl(220 10% 60%) !important;
 }
 
+/* Dark mode - Next button (primary with stroke) */
+.dark .driver-popover-next-btn {
+  color: hsl(var(--primary)) !important;
+  border-color: hsl(var(--primary)) !important;
+}
+
+.dark .driver-popover-next-btn:hover {
+  background: hsl(var(--primary) / 0.15) !important;
+}
+
+/* Dark mode - Back button (subtle text-only) */
 .dark .driver-popover-prev-btn {
-  color: hsl(220 10% 70%) !important;
-  border-color: hsl(220 15% 30%) !important;
+  color: hsl(220 10% 60%) !important;
+  border: none !important;
 }
 
 .dark .driver-popover-prev-btn:hover {
-  background: hsl(220 15% 20%) !important;
-  color: hsl(220 15% 95%) !important;
+  background: transparent !important;
+  color: hsl(220 10% 80%) !important;
 }
 
+/* Dark mode - Close button */
 .dark .driver-popover-close-btn {
   color: hsl(220 10% 60%) !important;
 }
 
 .dark .driver-popover-close-btn:hover {
   color: hsl(220 15% 95%) !important;
+  background: hsl(220 15% 25%) !important;
 }
 
 .dark .driver-overlay {
