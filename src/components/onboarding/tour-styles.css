@@ -93,21 +93,49 @@
   background: hsl(220 15% 96%) !important;
 }
 
-/* Overlay styling - solid semi-transparent without blur */
+/* Overlay styling - SVG-based with clean cutout */
 .driver-overlay {
-  background: hsl(220 15% 20% / 0.75) !important;
+  /* Background is set via SVG fill, not CSS background */
+  background: transparent !important;
   /* No backdrop-filter - keeps highlighted content crisp */
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
 }
 
-/* Highlighted element with enhanced glow ring */
+/* Style the SVG overlay fill */
+.driver-overlay svg {
+  filter: none !important;
+}
+
+.driver-overlay svg path {
+  fill: hsl(220 15% 20% / 0.75) !important;
+}
+
+/* Highlighted element - must break through overlay stacking context */
 .driver-active-element {
   position: relative !important;
   z-index: 10001 !important;
+  /* Force new stacking context to break through overlay */
+  isolation: isolate !important;
+  transform: translateZ(0) !important;
+  /* Ensure element is fully visible */
+  opacity: 1 !important;
+  visibility: visible !important;
+  /* Enhanced glow ring */
   box-shadow:
     0 0 0 4px hsl(var(--primary)),
     0 0 0 8px hsl(var(--primary) / 0.25),
     0 0 30px 12px hsl(var(--primary) / 0.2) !important;
-  border-radius: 8px;
+  border-radius: 8px !important;
+}
+
+/* Ensure overlay SVG cutout is truly transparent */
+.driver-overlay svg {
+  overflow: visible !important;
+}
+
+.driver-overlay svg path {
+  pointer-events: none;
 }
 
 /* Arrow styling - solid white to match popover */
@@ -183,8 +211,8 @@
   background: hsl(220 15% 25%) !important;
 }
 
-.dark .driver-overlay {
-  background: hsl(220 15% 5% / 0.85) !important;
+.dark .driver-overlay svg path {
+  fill: hsl(220 15% 5% / 0.85) !important;
 }
 
 /* Dark mode arrow styling */
