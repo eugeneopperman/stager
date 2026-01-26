@@ -13,14 +13,14 @@ import {
 import { SidebarNavItem } from "./SidebarNavItem";
 
 const baseNavigation = [
-  { name: "Dashboard", href: "/dashboard", icon: Home },
-  { name: "Stage Photo", href: "/stage", icon: ImagePlus },
-  { name: "Batch Stage", href: "/stage/batch", icon: Images },
-  { name: "Properties", href: "/properties", icon: Building2 },
-  { name: "History", href: "/history", icon: History },
+  { name: "Dashboard", href: "/dashboard", icon: Home, tourId: "dashboard" },
+  { name: "Stage Photo", href: "/stage", icon: ImagePlus, tourId: "stage-photo" },
+  { name: "Batch Stage", href: "/stage/batch", icon: Images, tourId: "batch-stage" },
+  { name: "Properties", href: "/properties", icon: Building2, tourId: "properties" },
+  { name: "History", href: "/history", icon: History, tourId: "history" },
 ];
 
-const teamNavItem = { name: "Team", href: "/team", icon: Users };
+const teamNavItem = { name: "Team", href: "/team", icon: Users, tourId: "team" };
 
 interface SidebarNavigationProps {
   isCollapsed: boolean;
@@ -55,6 +55,7 @@ export function SidebarNavigation({
           isActive={pathname === item.href}
           isCollapsed={isCollapsed}
           onNavigate={onNavigate}
+          tourId={item.tourId}
         />
       ))}
     </nav>

@@ -100,6 +100,7 @@ export function NotificationDropdown() {
         <Button
           variant="ghost"
           size="icon"
+          data-tour="notifications"
           className={cn(
             "relative h-10 w-10 rounded-full",
             "bg-card/80 backdrop-blur-xl",

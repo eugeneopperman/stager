@@ -32,7 +32,7 @@ export const SearchBar = memo(
     ref
   ) {
     return (
-      <div ref={ref} className="relative">
+      <div ref={ref} className="relative" data-tour="search">
         <div
           className={cn(
             "flex items-center gap-2 overflow-hidden",

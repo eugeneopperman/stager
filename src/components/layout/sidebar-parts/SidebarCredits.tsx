@@ -24,6 +24,7 @@ export function SidebarCredits({ credits, isCollapsed }: SidebarCreditsProps) {
         <TooltipTrigger asChild>
           <Link
             href="/billing"
+            data-tour="credits"
             className={cn(
               "flex flex-col items-center justify-center rounded-2xl p-2 relative overflow-hidden",
               "transition-all duration-300 ease-out",
@@ -55,6 +56,7 @@ export function SidebarCredits({ credits, isCollapsed }: SidebarCreditsProps) {
 
   return (
     <div
+      data-tour="credits"
       className={cn(
         "rounded-2xl p-4 relative overflow-hidden",
         "transition-all duration-300 ease-out",

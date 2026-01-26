@@ -9,7 +9,7 @@ import { SidebarProvider, useSidebar } from "@/contexts/SidebarContext";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { useObservability } from "@/lib/observability/hooks";
-import { WelcomeOnboardingModal } from "@/components/onboarding";
+import { ProductTour } from "@/components/onboarding";
 
 interface DashboardShellProps {
   children: React.ReactNode;
@@ -36,12 +36,11 @@ function DashboardContent({ children, user, credits = 0, isEnterprise = false, s
 
   return (
     <>
-      {/* Welcome Onboarding Modal */}
+      {/* Interactive Product Tour */}
       {showOnboarding && (
-        <WelcomeOnboardingModal
-          isOpen={true}
+        <ProductTour
+          autoStart={true}
           credits={credits}
-          userName={user?.full_name?.split(" ")[0]}
         />
       )}
 

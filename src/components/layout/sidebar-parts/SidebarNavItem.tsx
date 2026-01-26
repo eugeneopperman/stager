@@ -16,6 +16,7 @@ interface SidebarNavItemProps {
   isActive: boolean;
   isCollapsed: boolean;
   onNavigate?: () => void;
+  tourId?: string;
 }
 
 export function SidebarNavItem({
@@ -25,11 +26,13 @@ export function SidebarNavItem({
   isActive,
   isCollapsed,
   onNavigate,
+  tourId,
 }: SidebarNavItemProps) {
   const navLink = (
     <Link
       href={href}
       onClick={onNavigate}
+      data-tour={tourId}
       className={cn(
         "group relative flex items-center rounded-full py-2.5 text-sm font-medium",
         "transition-all duration-200 ease-out",

@@ -1,42 +1,29 @@
 "use client";
 
-import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Play } from "lucide-react";
-import { WelcomeOnboardingModal } from "@/components/onboarding";
+import { startTour } from "@/components/onboarding";
 
 interface HelpSettingsProps {
   credits: number;
   userName?: string;
 }
 
-export function HelpSettings({ credits, userName }: HelpSettingsProps) {
-  const [showModal, setShowModal] = useState(false);
-
+export function HelpSettings({ credits }: HelpSettingsProps) {
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <div>
-          <p className="font-medium">Product Walkthrough</p>
+          <p className="font-medium">Product Tour</p>
           <p className="text-sm text-muted-foreground">
-            Re-watch the introduction to Stager
+            Take a guided tour of Stager&apos;s features
           </p>
         </div>
-        <Button variant="outline" onClick={() => setShowModal(true)}>
+        <Button variant="outline" onClick={() => startTour(credits)}>
           <Play className="mr-2 h-4 w-4" />
-          Restart
+          Start Tour
         </Button>
       </div>
-
-      {showModal && (
-        <WelcomeOnboardingModal
-          isOpen={true}
-          onClose={() => setShowModal(false)}
-          credits={credits}
-          userName={userName}
-          skipDbUpdate={true}
-        />
-      )}
     </div>
   );
 }
