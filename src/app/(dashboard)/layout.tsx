@@ -17,7 +17,7 @@ export default async function DashboardLayout({
     redirect("/login");
   }
 
-  // Fetch user profile with credits and plan info
+  // Fetch user profile with credits, plan info, and onboarding status
   const { data: profile } = await supabase
     .from("profiles")
     .select("*, plan:plans(slug)")
@@ -27,6 +27,9 @@ export default async function DashboardLayout({
   // Check if user has enterprise plan
   const planSlug = (profile?.plan as { slug?: string } | null)?.slug;
   const isEnterprise = planSlug === "enterprise";
+
+  // Show onboarding modal for users who haven't completed it
+  const showOnboarding = profile?.onboarding_completed_at === null;
 
   return (
     <DashboardShell
@@ -38,6 +41,7 @@ export default async function DashboardLayout({
       }}
       credits={profile?.credits_remaining || 0}
       isEnterprise={isEnterprise}
+      showOnboarding={showOnboarding}
     >
       {children}
     </DashboardShell>

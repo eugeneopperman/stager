@@ -362,6 +362,7 @@ export interface Database {
           plan_id: string | null;
           credits_reset_at: string | null;
           organization_id: string | null;
+          onboarding_completed_at: string | null;
           created_at: string;
           updated_at: string;
         };
@@ -374,6 +375,7 @@ export interface Database {
           plan_id?: string | null;
           credits_reset_at?: string | null;
           organization_id?: string | null;
+          onboarding_completed_at?: string | null;
           created_at?: string;
           updated_at?: string;
         };
@@ -386,6 +388,7 @@ export interface Database {
           plan_id?: string | null;
           credits_reset_at?: string | null;
           organization_id?: string | null;
+          onboarding_completed_at?: string | null;
           created_at?: string;
           updated_at?: string;
         };

@@ -9,6 +9,7 @@ import { SidebarProvider, useSidebar } from "@/contexts/SidebarContext";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { useObservability } from "@/lib/observability/hooks";
+import { WelcomeOnboardingModal } from "@/components/onboarding";
 
 interface DashboardShellProps {
   children: React.ReactNode;
@@ -20,9 +21,10 @@ interface DashboardShellProps {
   };
   credits?: number;
   isEnterprise?: boolean;
+  showOnboarding?: boolean;
 }
 
-function DashboardContent({ children, user, credits = 0, isEnterprise = false }: DashboardShellProps) {
+function DashboardContent({ children, user, credits = 0, isEnterprise = false, showOnboarding = false }: DashboardShellProps) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const { isCollapsed, isAutoHide, isHovered, setHovered } = useSidebar();
 
@@ -33,7 +35,17 @@ function DashboardContent({ children, user, credits = 0, isEnterprise = false }:
   const sidebarWidth = isCollapsed ? "w-16" : "w-64";
 
   return (
-    <div className={cn(
+    <>
+      {/* Welcome Onboarding Modal */}
+      {showOnboarding && (
+        <WelcomeOnboardingModal
+          isOpen={true}
+          credits={credits}
+          userName={user?.full_name?.split(" ")[0]}
+        />
+      )}
+
+      <div className={cn(
       "flex h-screen",
       // Base background
       "bg-background",
@@ -129,14 +141,15 @@ function DashboardContent({ children, user, credits = 0, isEnterprise = false }:
         </main>
       </div>
     </div>
+    </>
   );
 }
 
-export function DashboardShell({ children, user, credits = 0, isEnterprise = false }: DashboardShellProps) {
+export function DashboardShell({ children, user, credits = 0, isEnterprise = false, showOnboarding = false }: DashboardShellProps) {
   return (
     <DashboardProvider credits={credits} user={user}>
       <SidebarProvider>
-        <DashboardContent user={user} credits={credits} isEnterprise={isEnterprise}>
+        <DashboardContent user={user} credits={credits} isEnterprise={isEnterprise} showOnboarding={showOnboarding}>
           {children}
         </DashboardContent>
       </SidebarProvider>

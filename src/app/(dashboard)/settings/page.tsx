@@ -1,12 +1,13 @@
 import { createClient } from "@/lib/supabase/server";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { User, Mail, Calendar, Shield, Palette, PanelLeft } from "lucide-react";
+import { User, Mail, Calendar, Shield, Palette, PanelLeft, HelpCircle } from "lucide-react";
 import { ProfileForm } from "./_components/ProfileForm";
 import { PasswordSection } from "./_components/PasswordSection";
 import { DangerZone } from "./_components/DangerZone";
 import { ThemeSelector } from "./_components/ThemeSelector";
 import { SidebarSettings } from "./_components/SidebarSettings";
+import { HelpSettings } from "./_components/HelpSettings";
 
 export default async function SettingsPage() {
   const supabase = await createClient();
@@ -71,6 +72,25 @@ export default async function SettingsPage() {
         </CardHeader>
         <CardContent>
           <SidebarSettings />
+        </CardContent>
+      </Card>
+
+      {/* Help Section */}
+      <Card>
+        <CardHeader>
+          <div className="flex items-center gap-2">
+            <HelpCircle className="h-5 w-5 text-muted-foreground" />
+            <CardTitle>Help</CardTitle>
+          </div>
+          <CardDescription>
+            Get help with using Stager
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <HelpSettings
+            credits={profile?.credits_remaining || 0}
+            userName={profile?.full_name?.split(" ")[0]}
+          />
         </CardContent>
       </Card>
 
