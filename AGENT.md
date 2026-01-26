@@ -996,6 +996,52 @@ This prevents signup failures from cryptic "Database error saving new user" mess
 
 ---
 
+## Interactive Product Tour (Driver.js)
+
+### Architecture
+The app uses Driver.js for an interactive onboarding tour that highlights UI elements:
+
+**Key Files:**
+- `/src/components/onboarding/ProductTour.tsx` - Main tour component + `startTour()` helper
+- `/src/components/onboarding/tour-config.ts` - Step definitions and Driver.js config
+- `/src/components/onboarding/tour-styles.css` - Glassmorphic styling for popovers
+
+### data-tour Attributes Pattern
+Elements highlighted in the tour use `data-tour` attributes for targeting:
+
+```tsx
+// Add to any element you want to highlight
+<Button data-tour="notifications" ... />
+<Link data-tour="stage-photo" ... />
+```
+
+**Current tour targets:**
+- `stage-photo` - Stage Photo nav item
+- `batch-stage` - Batch Stage nav item
+- `properties` - Properties nav item
+- `history` - History nav item
+- `credits` - Credits display in sidebar
+- `search` - Search bar
+- `notifications` - Notification bell
+
+### Mobile Handling
+The tour detects screen width and filters steps on mobile (< 1024px) to only show search and notifications (since sidebar is hidden).
+
+### Dynamic Content
+The credits step uses a placeholder `{credits}` that gets replaced with the actual value:
+```typescript
+description: step.popover?.description?.replace("{credits}", String(credits))
+```
+
+### Starting the Tour
+- **Auto-start**: Set `autoStart={true}` on `<ProductTour />` (used for new users)
+- **Manual start**: Call `startTour(credits)` from anywhere (used in Settings)
+
+### Database Persistence
+Tour completion is stored in `profiles.onboarding_completed_at`. The tour only auto-starts when this field is NULL.
+
+---
+
 ## Session Continuity Tips
 
 1. Read `CLAUDE.md` for project overview and conventions

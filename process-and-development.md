@@ -429,6 +429,8 @@ version_groups:
 | 1.143 | 2025-01-24 | Email automation system: React Email templates, Resend integration, drip campaigns |
 | 1.144 | 2025-01-24 | Email design refresh: modern card-based aesthetic, design system, gradient accents |
 | 1.145 | 2025-01-24 | Team invitations enhancements: full history, status filters, toast notifications, signup trigger fix |
+| 1.146 | 2025-01-24 | User onboarding welcome modal |
+| 1.147 | 2025-01-25 | Interactive product tour: Driver.js integration, 7-step guided tour, glassmorphic styling |
 | 1.0.0 | TBD | MVP release |
 
 ---
@@ -451,7 +453,7 @@ version_groups:
 ### Medium Priority
 - [ ] Shareable links for properties/stagings
 - [ ] Email notifications for batch completion
-- [ ] User onboarding/tutorial
+- [x] User onboarding/tutorial (interactive product tour with Driver.js)
 - [ ] Image quality options (resolution selection)
 
 ### Low Priority
