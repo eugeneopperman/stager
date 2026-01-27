@@ -236,6 +236,58 @@
   border-bottom-color: hsl(220 15% 15%) !important;
 }
 
+/* Mobile-specific adjustments for better UX */
+@media (max-width: 640px) {
+  /* Smaller popover on mobile */
+  .driver-popover {
+    max-width: 280px !important;
+    padding: 1rem !important;
+    margin: 0.5rem !important;
+  }
+
+  .driver-popover-title {
+    font-size: 0.9375rem !important;
+    padding-right: 1.5rem !important; /* Make room for close button */
+  }
+
+  .driver-popover-description {
+    font-size: 0.8125rem !important;
+  }
+
+  /* Smaller close button on mobile */
+  .driver-popover-close-btn {
+    top: 0.5rem !important;
+    right: 0.5rem !important;
+    width: 1.5rem !important;
+    height: 1.5rem !important;
+  }
+
+  /* Stack buttons vertically on very small screens */
+  .driver-popover-footer {
+    flex-direction: column !important;
+    gap: 0.5rem !important;
+  }
+
+  .driver-popover-footer button {
+    width: 100% !important;
+    justify-content: center !important;
+  }
+
+  /* Reduce highlight glow on mobile to avoid visual clutter */
+  .driver-active-element {
+    box-shadow:
+      0 0 0 3px hsl(var(--primary)),
+      0 0 0 6px hsl(var(--primary) / 0.2) !important;
+  }
+}
+
+/* Ensure popover stays within viewport */
+.driver-popover {
+  /* Prevent popover from going off-screen */
+  max-height: calc(100vh - 2rem) !important;
+  overflow-y: auto !important;
+}
+
 /* Reduced motion support */
 @media (prefers-reduced-motion: reduce) {
   .driver-popover,

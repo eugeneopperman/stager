@@ -89,11 +89,19 @@ export const DRIVER_CONFIG: Config = {
   prevBtnText: "← Back",
   doneBtnText: "Get Started!",
   overlayOpacity: 0.6,
-  stagePadding: 4,
+  stagePadding: 8,
   stageRadius: 8,
+  popoverOffset: 12,
   allowClose: true,
   animate: true,
   smoothScroll: true,
+};
+
+// Mobile-optimized config with larger offset
+export const MOBILE_DRIVER_CONFIG: Config = {
+  ...DRIVER_CONFIG,
+  stagePadding: 6,
+  popoverOffset: 16,
 };
 
 // ===========================================
