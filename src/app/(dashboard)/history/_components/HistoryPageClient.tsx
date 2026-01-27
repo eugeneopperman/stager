@@ -95,7 +95,7 @@ export function HistoryPageClient({ jobs, properties }: HistoryPageClientProps) 
   return (
     <div className="space-y-6">
       {/* Stats Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4" data-tour="history-stats">
         {/* Completed */}
         <Card
           onClick={() => handleCardClick("completed")}
@@ -212,6 +212,7 @@ export function HistoryPageClient({ jobs, properties }: HistoryPageClientProps) 
               "gap-2",
               showFavoritesOnly && "bg-yellow-500/90 hover:bg-yellow-500 text-white"
             )}
+            data-tour="history-favorites"
           >
             <Star className={cn("h-4 w-4", showFavoritesOnly && "fill-current")} />
             Favorites
@@ -228,7 +229,7 @@ export function HistoryPageClient({ jobs, properties }: HistoryPageClientProps) 
             value={sortOrder}
             onValueChange={(value) => setSortOrder(value as SortOrder)}
           >
-            <SelectTrigger className="w-full sm:w-[165px] bg-card/60 backdrop-blur-sm">
+            <SelectTrigger className="w-full sm:w-[165px] bg-card/60 backdrop-blur-sm" data-tour="history-sort">
               <ArrowUpDown className="h-4 w-4 mr-2 text-muted-foreground" />
               <SelectValue placeholder="Sort" />
             </SelectTrigger>
@@ -239,7 +240,7 @@ export function HistoryPageClient({ jobs, properties }: HistoryPageClientProps) 
           </Select>
 
           {/* View Mode Toggle */}
-          <div className="flex items-center rounded-lg border bg-card/60 backdrop-blur-sm p-1">
+          <div className="flex items-center rounded-lg border bg-card/60 backdrop-blur-sm p-1" data-tour="history-view">
             <Button
               variant="ghost"
               size="sm"
@@ -279,8 +280,10 @@ export function HistoryPageClient({ jobs, properties }: HistoryPageClientProps) 
         {filteredJobs.length > 0 ? (
           viewMode === "grid" ? (
             <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
-              {filteredJobs.map((job) => (
-                <HistoryJobCard key={job.id} job={job} properties={properties} />
+              {filteredJobs.map((job, index) => (
+                <div key={job.id} data-tour={index === 0 ? "history-job" : undefined}>
+                  <HistoryJobCard job={job} properties={properties} />
+                </div>
               ))}
             </div>
           ) : (

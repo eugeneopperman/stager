@@ -26,6 +26,7 @@ export const CreditAlerts = memo(function CreditAlerts({
           "bg-destructive/5 dark:bg-destructive/10",
           "animate-in fade-in slide-in-from-bottom-4 duration-500"
         )}
+        data-tour="dashboard-credits"
       >
         <CardContent className="flex items-center gap-3 p-4">
           <CreditCard className="h-5 w-5 text-destructive shrink-0" />
@@ -55,6 +56,7 @@ export const CreditAlerts = memo(function CreditAlerts({
           "bg-amber-500/5 dark:bg-amber-500/10",
           "animate-in fade-in slide-in-from-bottom-4 duration-500"
         )}
+        data-tour="dashboard-credits"
       >
         <CardContent className="flex items-center gap-3 p-4">
           <AlertTriangle className="h-5 w-5 text-amber-600 dark:text-amber-400 shrink-0" />

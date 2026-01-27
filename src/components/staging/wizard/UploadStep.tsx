@@ -22,7 +22,7 @@ export function UploadStep({
   return (
     <div className="max-w-2xl mx-auto space-y-6">
       {/* Upload area */}
-      <Card className="overflow-hidden">
+      <Card className="overflow-hidden" data-tour="stage-upload">
         <CardContent className="p-6">
           <ImageUploader
             onImageSelect={onImageSelect}

@@ -60,7 +60,7 @@ export default function StagePage() {
         </div>
         <div className="flex items-center gap-2">
           {/* Mode toggle */}
-          <div className="flex items-center p-1 bg-muted rounded-lg">
+          <div className="flex items-center p-1 bg-muted rounded-lg" data-tour="stage-mode-toggle">
             <button
               onClick={() => handleModeChange("guided")}
               className={cn(
@@ -88,7 +88,7 @@ export default function StagePage() {
           </div>
 
           {/* Batch mode link */}
-          <Button variant="outline" size="sm" asChild>
+          <Button variant="outline" size="sm" asChild data-tour="stage-batch-link">
             <Link href="/stage/batch">
               <Layers className="mr-2 h-4 w-4" />
               Batch Mode

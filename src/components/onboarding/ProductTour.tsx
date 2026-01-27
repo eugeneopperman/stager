@@ -4,7 +4,7 @@ import { useEffect, useRef, useCallback } from "react";
 import { driver, type Driver } from "driver.js";
 import "driver.js/dist/driver.css";
 import "./tour-styles.css";
-import { TOUR_STEPS, MOBILE_TOUR_STEPS, DRIVER_CONFIG } from "./tour-config";
+import { TOUR_STEPS, MOBILE_TOUR_STEPS, DRIVER_CONFIG, getPageTourSteps } from "./tour-config";
 import { createClient } from "@/lib/supabase/client";
 
 interface ProductTourProps {
@@ -138,4 +138,45 @@ export function startTour(credits: number = 0) {
   });
 
   tourDriver.drive();
+}
+
+/**
+ * Start a page-specific contextual help tour
+ * @param pathname - The current page pathname (e.g., "/dashboard", "/stage")
+ * @returns boolean indicating if the tour was started
+ */
+export function startPageTour(pathname: string): boolean {
+  const steps = getPageTourSteps(pathname);
+
+  if (!steps || steps.length === 0) {
+    return false;
+  }
+
+  // Filter out steps for elements that don't exist on the page
+  const availableSteps = steps.filter((step) => {
+    if (!step.element) return true; // Keep steps without elements (intro steps)
+    const element = document.querySelector(step.element as string);
+    return element !== null;
+  });
+
+  if (availableSteps.length === 0) {
+    return false;
+  }
+
+  const tourDriver = driver({
+    ...DRIVER_CONFIG,
+    doneBtnText: "Got it!",
+    steps: availableSteps,
+    onPopoverRender: (popover) => {
+      // Add tooltip to close button
+      const closeBtn = popover.wrapper.querySelector('.driver-popover-close-btn');
+      if (closeBtn) {
+        closeBtn.setAttribute('title', 'End Tour');
+        closeBtn.setAttribute('aria-label', 'End Tour');
+      }
+    },
+  });
+
+  tourDriver.drive();
+  return true;
 }

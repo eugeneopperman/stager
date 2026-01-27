@@ -41,7 +41,7 @@ export const QuickStageImagePanel = memo(function QuickStageImagePanel({
   return (
     <div className="lg:col-span-2 space-y-4">
       <Card className="overflow-hidden">
-        <CardContent className="p-4">
+        <CardContent className="p-4" data-tour="stage-upload">
           {!preview ? (
             <ImageUploader
               onImageSelect={onImageSelect}

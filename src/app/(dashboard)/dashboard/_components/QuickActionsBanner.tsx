@@ -29,6 +29,7 @@ export const QuickActionsBanner = memo(function QuickActionsBanner() {
           asChild
           variant="secondary"
           className="shrink-0 relative shadow-lg"
+          data-tour="dashboard-stage-cta"
         >
           <Link href="/stage">
             <ImagePlus className="mr-2 h-4 w-4" />

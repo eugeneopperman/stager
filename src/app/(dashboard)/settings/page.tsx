@@ -44,7 +44,7 @@ export default async function SettingsPage() {
       </div>
 
       {/* Appearance Section */}
-      <Card>
+      <Card data-tour="settings-theme">
         <CardHeader>
           <div className="flex items-center gap-2">
             <Palette className="h-5 w-5 text-muted-foreground" />
@@ -60,7 +60,7 @@ export default async function SettingsPage() {
       </Card>
 
       {/* Navigation Section */}
-      <Card>
+      <Card data-tour="settings-sidebar">
         <CardHeader>
           <div className="flex items-center gap-2">
             <PanelLeft className="h-5 w-5 text-muted-foreground" />
@@ -76,7 +76,7 @@ export default async function SettingsPage() {
       </Card>
 
       {/* Help Section */}
-      <Card>
+      <Card data-tour="settings-tour">
         <CardHeader>
           <div className="flex items-center gap-2">
             <HelpCircle className="h-5 w-5 text-muted-foreground" />
@@ -95,7 +95,7 @@ export default async function SettingsPage() {
       </Card>
 
       {/* Profile Section */}
-      <Card>
+      <Card data-tour="settings-profile">
         <CardHeader>
           <div className="flex items-center gap-2">
             <User className="h-5 w-5 text-muted-foreground" />
@@ -157,7 +157,7 @@ export default async function SettingsPage() {
       </Card>
 
       {/* Danger Zone */}
-      <Card className="border-red-200 dark:border-red-900">
+      <Card className="border-red-200 dark:border-red-900" data-tour="settings-danger">
         <CardHeader>
           <div className="flex items-center gap-2">
             <Shield className="h-5 w-5 text-red-500" />

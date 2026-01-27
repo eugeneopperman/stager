@@ -19,7 +19,7 @@ export function BatchUploadSection({
 }: BatchUploadSectionProps) {
   return (
     <>
-      <Card>
+      <Card data-tour="batch-upload">
         <CardHeader>
           <CardTitle>Upload Room Photos</CardTitle>
           <CardDescription>

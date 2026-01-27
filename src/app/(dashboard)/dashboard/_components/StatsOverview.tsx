@@ -49,7 +49,7 @@ export const StatsOverview = memo(function StatsOverview({
   ];
 
   return (
-    <div className="grid gap-4 md:grid-cols-3">
+    <div className="grid gap-4 md:grid-cols-3" data-tour="dashboard-stats">
       {stats.map((stat, index) => (
         <Card
           key={stat.name}

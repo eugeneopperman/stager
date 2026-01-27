@@ -63,7 +63,9 @@ export default async function PropertiesPage() {
             Manage your real estate listings and staged photos
           </p>
         </div>
-        <CreatePropertyButton />
+        <div data-tour="properties-create">
+          <CreatePropertyButton />
+        </div>
       </div>
 
       {/* Stats */}

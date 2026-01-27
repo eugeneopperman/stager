@@ -105,22 +105,26 @@ export default async function BillingPage({ searchParams }: PageProps) {
       />
 
       {/* Credit Balance Card */}
-      <CreditBalanceCard
-        credits={credits}
-        isLowCredits={isLowCredits}
-        hasNoCredits={hasNoCredits}
-        currentPlanSlug={currentPlanSlug}
-      />
+      <div data-tour="billing-credits">
+        <CreditBalanceCard
+          credits={credits}
+          isLowCredits={isLowCredits}
+          hasNoCredits={hasNoCredits}
+          currentPlanSlug={currentPlanSlug}
+        />
+      </div>
 
       {/* Usage Stats */}
-      <UsageStatsGrid
-        creditsUsedThisMonth={creditsUsedThisMonth}
-        totalCreditsUsed={totalCreditsUsed}
-        totalStagings={jobs.length}
-      />
+      <div data-tour="billing-usage">
+        <UsageStatsGrid
+          creditsUsedThisMonth={creditsUsedThisMonth}
+          totalCreditsUsed={totalCreditsUsed}
+          totalStagings={jobs.length}
+        />
+      </div>
 
       {/* Credit Top-ups */}
-      <Card>
+      <Card data-tour="billing-topup">
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Coins className="h-5 w-5" />
@@ -136,7 +140,7 @@ export default async function BillingPage({ searchParams }: PageProps) {
       </Card>
 
       {/* Subscription Plans */}
-      <Card>
+      <Card data-tour="billing-plans">
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <CreditCard className="h-5 w-5" />
@@ -152,7 +156,9 @@ export default async function BillingPage({ searchParams }: PageProps) {
       </Card>
 
       {/* Usage History */}
-      <UsageHistoryList jobs={recentUsage} />
+      <div data-tour="billing-history">
+        <UsageHistoryList jobs={recentUsage} />
+      </div>
     </div>
   );
 }

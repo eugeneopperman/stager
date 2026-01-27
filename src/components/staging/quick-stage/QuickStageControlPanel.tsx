@@ -51,7 +51,7 @@ export const QuickStageControlPanel = memo(function QuickStageControlPanel({
   return (
     <div className="space-y-5">
       {/* Room Type */}
-      <div className="space-y-2">
+      <div className="space-y-2" data-tour="stage-room-type">
         <label className="text-sm font-medium text-foreground">Room Type</label>
         <RoomTypeDropdown
           value={roomType}
@@ -61,11 +61,13 @@ export const QuickStageControlPanel = memo(function QuickStageControlPanel({
       </div>
 
       {/* Style Gallery */}
-      <StyleGallery
-        value={styles}
-        onChange={onStylesChange}
-        disabled={isProcessing}
-      />
+      <div data-tour="stage-styles">
+        <StyleGallery
+          value={styles}
+          onChange={onStylesChange}
+          disabled={isProcessing}
+        />
+      </div>
 
       {/* Property Selector */}
       <div className="space-y-2">
@@ -84,7 +86,7 @@ export const QuickStageControlPanel = memo(function QuickStageControlPanel({
       <CreditDisplay credits={credits} creditsToUse={requiredCredits} />
 
       {/* Generate Button */}
-      <Button size="lg" className="w-full" onClick={onStage} disabled={!canStage}>
+      <Button size="lg" className="w-full" onClick={onStage} disabled={!canStage} data-tour="stage-generate">
         <Sparkles className="mr-2 h-5 w-5" />
         {getButtonText()}
       </Button>

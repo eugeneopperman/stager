@@ -30,7 +30,7 @@ export const RecentStagings = memo(function RecentStagings({
   jobs,
 }: RecentStagingsProps) {
   return (
-    <Card className="animate-in fade-in slide-in-from-bottom-4 duration-500 delay-300">
+    <Card className="animate-in fade-in slide-in-from-bottom-4 duration-500 delay-300" data-tour="dashboard-recent">
       <CardHeader className="flex flex-row items-center justify-between">
         <div>
           <CardTitle>Recent Stagings</CardTitle>

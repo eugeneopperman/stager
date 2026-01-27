@@ -3,6 +3,7 @@
 import { useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { NotificationDropdown } from "./NotificationDropdown";
+import { HelpButton } from "./HelpButton";
 import {
   useGlobalSearch,
   SearchBar,
@@ -62,6 +63,9 @@ export function FloatingControls() {
 
       {/* Notifications */}
       <NotificationDropdown />
+
+      {/* Contextual Help */}
+      <HelpButton />
     </nav>
   );
 }

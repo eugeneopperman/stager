@@ -140,6 +140,7 @@ export function GenerateStep({
             className="w-full gap-2"
             onClick={onGenerate}
             disabled={disabled || !hasEnoughCredits}
+            data-tour="stage-generate"
           >
             <Sparkles className="h-5 w-5" />
             {!hasEnoughCredits

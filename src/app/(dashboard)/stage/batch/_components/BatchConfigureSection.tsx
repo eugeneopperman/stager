@@ -68,7 +68,7 @@ export function BatchConfigureSection({
       </Card>
 
       {/* Room Types Configuration */}
-      <Card>
+      <Card data-tour="batch-room-types">
         <CardHeader>
           <CardTitle>Configure Room Types</CardTitle>
           <CardDescription>
@@ -90,7 +90,7 @@ export function BatchConfigureSection({
       </Card>
 
       {/* Style Selection */}
-      <Card>
+      <Card data-tour="batch-style">
         <CardHeader>
           <CardTitle>Choose Furniture Style</CardTitle>
           <CardDescription>
@@ -103,7 +103,7 @@ export function BatchConfigureSection({
       </Card>
 
       {/* Action Card */}
-      <Card className="bg-gradient-to-r from-blue-600 to-blue-700 border-0">
+      <Card className="bg-gradient-to-r from-blue-600 to-blue-700 border-0" data-tour="batch-credits">
         <CardContent className="p-6">
           <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
             <div className="text-white text-center sm:text-left">
@@ -121,6 +121,7 @@ export function BatchConfigureSection({
                 variant="secondary"
                 onClick={onStart}
                 disabled={!allConfigured || !hasEnoughCredits}
+                data-tour="batch-process"
               >
                 <Sparkles className="mr-2 h-5 w-5" />
                 Start Staging

@@ -54,7 +54,7 @@ export function StyleStep({
         {/* Right: Configuration */}
         <div className="space-y-5">
           {/* Room Type */}
-          <div className="space-y-2">
+          <div className="space-y-2" data-tour="stage-room-type">
             <label className="text-sm font-medium text-foreground">
               Room Type
             </label>
@@ -69,11 +69,13 @@ export function StyleStep({
           </div>
 
           {/* Style Gallery */}
-          <StyleGallery
-            value={styles}
-            onChange={onStylesChange}
-            disabled={disabled}
-          />
+          <div data-tour="stage-styles">
+            <StyleGallery
+              value={styles}
+              onChange={onStylesChange}
+              disabled={disabled}
+            />
+          </div>
 
           {/* Selection summary */}
           {roomType && styles.length > 0 && (

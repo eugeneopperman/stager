@@ -89,7 +89,7 @@ export function PropertiesListClient({ properties }: PropertiesListClientProps) 
       {properties.length > 0 && (
         <div className="flex flex-col sm:flex-row sm:flex-wrap sm:items-center gap-3">
           {/* Search */}
-          <div className="relative flex-1 min-w-0 sm:min-w-[200px]">
+          <div className="relative flex-1 min-w-0 sm:min-w-[200px]" data-tour="properties-search">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground z-10 pointer-events-none" />
             <Input
               placeholder="Search properties..."
@@ -121,7 +121,7 @@ export function PropertiesListClient({ properties }: PropertiesListClientProps) 
 
           {/* Sort */}
           <Select value={sortBy} onValueChange={(value) => setSortBy(value as SortOption)}>
-            <SelectTrigger className="w-full sm:w-[165px] bg-card/60 backdrop-blur-sm">
+            <SelectTrigger className="w-full sm:w-[165px] bg-card/60 backdrop-blur-sm" data-tour="properties-sort">
               <ArrowUpDown className="h-4 w-4 mr-2 text-muted-foreground" />
               <SelectValue placeholder="Sort by" />
             </SelectTrigger>
@@ -135,7 +135,7 @@ export function PropertiesListClient({ properties }: PropertiesListClientProps) 
           </Select>
 
           {/* View Mode Toggle */}
-          <div className="flex items-center rounded-lg border bg-card/60 backdrop-blur-sm p-1">
+          <div className="flex items-center rounded-lg border bg-card/60 backdrop-blur-sm p-1" data-tour="properties-view">
             <Button
               variant="ghost"
               size="sm"
@@ -175,8 +175,10 @@ export function PropertiesListClient({ properties }: PropertiesListClientProps) 
       {filteredAndSortedProperties.length > 0 ? (
         viewMode === "grid" ? (
           <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
-            {filteredAndSortedProperties.map((property) => (
-              <PropertyCard key={property.id} property={property} />
+            {filteredAndSortedProperties.map((property, index) => (
+              <div key={property.id} data-tour={index === 0 ? "properties-card" : undefined}>
+                <PropertyCard property={property} />
+              </div>
             ))}
           </div>
         ) : (

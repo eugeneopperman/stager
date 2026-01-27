@@ -1,2 +1,3 @@
 export { WelcomeOnboardingModal } from "./WelcomeOnboardingModal";
-export { ProductTour, startTour } from "./ProductTour";
+export { ProductTour, startTour, startPageTour } from "./ProductTour";
+export { hasPageTour } from "./tour-config";
