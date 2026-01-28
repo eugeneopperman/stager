@@ -105,15 +105,21 @@ export async function deductCredits(userId: string, amount: number): Promise<boo
   const supabase = await createClient();
 
   // Check if user is part of an organization
-  const { data: membership } = await supabase
+  const { data: membership, error: membershipError } = await supabase
     .from("organization_members")
     .select("*")
     .eq("user_id", userId)
     .single();
 
+  // PGRST116 = not found, which is expected for non-team members
+  if (membershipError && membershipError.code !== "PGRST116") {
+    console.error("[Credits] Error checking org membership:", membershipError);
+  }
+
   if (membership) {
     const available = membership.allocated_credits - membership.credits_used_this_period;
     if (available < amount) {
+      console.warn(`[Credits] Insufficient team credits for user ${userId}: need ${amount}, have ${available}`);
       return false;
     }
 
@@ -124,28 +130,52 @@ export async function deductCredits(userId: string, amount: number): Promise<boo
       })
       .eq("id", membership.id);
 
-    return !error;
+    if (error) {
+      console.error("[Credits] Failed to update team member credits:", error);
+      return false;
+    }
+
+    console.log(`[Credits] Deducted ${amount} credit(s) from team member ${userId}`);
+    return true;
   }
 
   // Deduct from personal credits
-  const { data: profile } = await supabase
+  const { data: profile, error: profileError } = await supabase
     .from("profiles")
     .select("credits_remaining")
     .eq("id", userId)
     .single();
 
-  if (!profile || profile.credits_remaining < amount) {
+  if (profileError) {
+    console.error("[Credits] Failed to fetch profile:", profileError);
     return false;
   }
 
-  const { error } = await supabase
+  if (!profile) {
+    console.error(`[Credits] Profile not found for user ${userId}`);
+    return false;
+  }
+
+  if (profile.credits_remaining < amount) {
+    console.warn(`[Credits] Insufficient credits for user ${userId}: need ${amount}, have ${profile.credits_remaining}`);
+    return false;
+  }
+
+  const newBalance = profile.credits_remaining - amount;
+  const { error: updateError } = await supabase
     .from("profiles")
     .update({
-      credits_remaining: profile.credits_remaining - amount,
+      credits_remaining: newBalance,
     })
     .eq("id", userId);
 
-  return !error;
+  if (updateError) {
+    console.error("[Credits] Failed to update credits:", updateError);
+    return false;
+  }
+
+  console.log(`[Credits] Deducted ${amount} credit(s) from user ${userId}. New balance: ${newBalance}`);
+  return true;
 }
 
 // Add credits to user
