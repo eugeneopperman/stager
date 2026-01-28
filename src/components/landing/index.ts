@@ -1,0 +1,13 @@
+export { LandingNav } from "./LandingNav";
+export { LandingFooter } from "./LandingFooter";
+export { HeroSection } from "./HeroSection";
+export { ComparisonSliderDemo } from "./ComparisonSliderDemo";
+export { FeatureCards } from "./FeatureCards";
+export { StyleGallery } from "./StyleGallery";
+export { HowItWorks } from "./HowItWorks";
+export { StatsSection } from "./StatsSection";
+export { RoomTypes } from "./RoomTypes";
+export { PricingPreview } from "./PricingPreview";
+export { FinalCTA } from "./FinalCTA";
+export { ScrollReveal, StaggerContainer, StaggerItem } from "./ScrollReveal";
+export { AnimatedCounter } from "./AnimatedCounter";
