@@ -164,6 +164,7 @@ Full monetization with Stripe.
 | Email-based team invitations | Medium | ✅ Complete |
 | Email automation (drip campaigns, digests) | Medium | ✅ Complete |
 | Email design system (React Email) | Low | ✅ Complete |
+| Landing page redesign (glassmorphism, animations) | Medium | ✅ Complete |
 
 ---
 
@@ -431,6 +432,7 @@ version_groups:
 | 1.145 | 2025-01-24 | Team invitations enhancements: full history, status filters, toast notifications, signup trigger fix |
 | 1.146 | 2025-01-24 | User onboarding welcome modal |
 | 1.147 | 2025-01-25 | Interactive product tour: Driver.js integration, 7-step guided tour, glassmorphic styling |
+| 1.148 | 2025-01-27 | Landing page redesign: Framer Motion animations, glassmorphism, comparison slider, 9 sections |
 | 1.0.0 | TBD | MVP release |
 
 ---

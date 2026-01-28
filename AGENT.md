@@ -1042,6 +1042,87 @@ Tour completion is stored in `profiles.onboarding_completed_at`. The tour only a
 
 ---
 
+## Landing Page Components (`/src/components/landing/`)
+
+### Component Architecture
+The landing page uses a modular component structure with Framer Motion animations:
+
+| Component | Purpose |
+|-----------|---------|
+| `LandingNav.tsx` | Glass navigation bar with blur effect |
+| `HeroSection.tsx` | Hero with animated headline, gradient text, CTAs |
+| `ComparisonSliderDemo.tsx` | Interactive before/after slider with auto-animation |
+| `FeatureCards.tsx` | 3 feature cards (Fast, 9 Styles, Batch) |
+| `StyleGallery.tsx` | Interactive 9-style showcase with expandable details |
+| `HowItWorks.tsx` | 3-step process with animated icons |
+| `StatsSection.tsx` | Animated counters + testimonial |
+| `RoomTypes.tsx` | Room type pills grid |
+| `PricingPreview.tsx` | 3 pricing tiers + credit packs |
+| `FinalCTA.tsx` | Final call-to-action with animated background |
+| `LandingFooter.tsx` | Footer with links |
+| `ScrollReveal.tsx` | Scroll-triggered animation wrapper |
+| `AnimatedCounter.tsx` | Count-up number animation |
+
+### Framer Motion Animation Patterns
+
+**Scroll-triggered reveal:**
+```tsx
+import { ScrollReveal } from "./ScrollReveal";
+
+<ScrollReveal delay={0.2} direction="up">
+  <h2>Content fades in when scrolled into view</h2>
+</ScrollReveal>
+```
+
+**Staggered children animation:**
+```tsx
+import { StaggerContainer, StaggerItem } from "./ScrollReveal";
+
+<StaggerContainer staggerDelay={0.1}>
+  {items.map((item) => (
+    <StaggerItem key={item.id}>
+      <Card>{item.content}</Card>
+    </StaggerItem>
+  ))}
+</StaggerContainer>
+```
+
+**Animated counter (count-up):**
+```tsx
+import { AnimatedCounter } from "./AnimatedCounter";
+
+<AnimatedCounter value={10000} suffix="+" duration={2} />
+```
+
+**Hover effects with motion:**
+```tsx
+<motion.div
+  whileHover={{ y: -4, scale: 1.02 }}
+  transition={{ type: "spring", stiffness: 400, damping: 20 }}
+>
+  {/* Card content */}
+</motion.div>
+```
+
+### Comparison Slider Pattern
+The `ComparisonSliderDemo` component features:
+- Auto-animation on load (slides from 0% to 50%)
+- User-controlled dragging after initial animation
+- Touch support for mobile
+- Clip-path technique for smooth reveal
+
+```tsx
+<ComparisonSliderDemo
+  beforeImage="/images/landing/hero-before.jpg"
+  afterImage="/images/landing/hero-after.jpg"
+  beforeLabel="Empty Room"
+  afterLabel="AI Staged"
+  autoAnimateOnLoad={true}
+/>
+```
+
+---
+
 ## Session Continuity Tips
 
 1. Read `CLAUDE.md` for project overview and conventions
