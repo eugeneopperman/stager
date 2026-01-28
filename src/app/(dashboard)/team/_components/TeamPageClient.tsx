@@ -40,6 +40,11 @@ export function TeamPageClient({ userId: _userId, initialOrganization, initialRo
   const ownerMember = members.find((m) => m.role === "owner");
   const regularMembers = members.filter((m) => m.role === "member");
 
+  // Calculate actual unallocated credits from members' allocations
+  // This is more accurate than the database value which may be stale
+  const totalAllocated = members.reduce((sum, m) => sum + (m.allocated_credits || 0), 0);
+  const actualUnallocated = Math.max(0, (organization?.total_credits || 0) - totalAllocated);
+
   const fetchOrganization = async () => {
     try {
       const response = await fetch("/api/team");
@@ -240,7 +245,7 @@ export function TeamPageClient({ userId: _userId, initialOrganization, initialRo
                 <Coins className="h-5 w-5 text-amber-600" />
               </div>
               <div>
-                <p className="text-2xl font-bold">{organization.unallocated_credits}</p>
+                <p className="text-2xl font-bold">{actualUnallocated}</p>
                 <p className="text-sm text-muted-foreground">Unallocated</p>
               </div>
             </div>
@@ -265,7 +270,7 @@ export function TeamPageClient({ userId: _userId, initialOrganization, initialRo
             </div>
             {isOwner && (
               <InviteMemberDialog
-                maxCredits={organization.unallocated_credits}
+                maxCredits={actualUnallocated}
                 onSuccess={fetchOrganization}
               />
             )}
@@ -290,7 +295,7 @@ export function TeamPageClient({ userId: _userId, initialOrganization, initialRo
               member={member}
               isOwner={false}
               canManage={isOwner}
-              maxCredits={organization.unallocated_credits}
+              maxCredits={actualUnallocated}
               onUpdate={fetchOrganization}
             />
           ))}
