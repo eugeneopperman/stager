@@ -24,6 +24,19 @@ export default async function DashboardLayout({
     .eq("id", user.id)
     .single();
 
+  // Check if user is a team member (organization member)
+  const { data: membership } = await supabase
+    .from("organization_members")
+    .select("allocated_credits, credits_used_this_period")
+    .eq("user_id", user.id)
+    .single();
+
+  // Calculate credits: team members use allocated - used, personal users use credits_remaining
+  let credits = profile?.credits_remaining || 0;
+  if (membership) {
+    credits = Math.max(0, membership.allocated_credits - membership.credits_used_this_period);
+  }
+
   // Check if user has enterprise plan
   const planSlug = (profile?.plan as { slug?: string } | null)?.slug;
   const isEnterprise = planSlug === "enterprise";
@@ -39,7 +52,7 @@ export default async function DashboardLayout({
         full_name: profile?.full_name || undefined,
         plan: planSlug || undefined,
       }}
-      credits={profile?.credits_remaining || 0}
+      credits={credits}
       isEnterprise={isEnterprise}
       showOnboarding={showOnboarding}
     >
