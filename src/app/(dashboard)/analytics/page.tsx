@@ -25,8 +25,12 @@ export default async function AnalyticsPage({ searchParams }: AnalyticsPageProps
   const periodDays: PeriodOption =
     periodParam === "30" ? 30 : 7;
 
-  // Fetch analytics data
-  const analyticsData = await fetchAnalyticsData(user.id, periodDays);
-
-  return <AnalyticsPageClient initialData={analyticsData} />;
+  try {
+    // Fetch analytics data
+    const analyticsData = await fetchAnalyticsData(user.id, periodDays);
+    return <AnalyticsPageClient initialData={analyticsData} />;
+  } catch (error) {
+    console.error("Analytics error:", error);
+    throw error;
+  }
 }

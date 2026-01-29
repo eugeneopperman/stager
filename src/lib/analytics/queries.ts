@@ -1,5 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
-import { ROOM_TYPES, FURNITURE_STYLES } from "@/lib/constants/ui";
+import { ROOM_TYPE_LABELS, FURNITURE_STYLE_LABELS } from "./constants";
 import type {
   AnalyticsData,
   DailyActivity,
@@ -113,10 +113,9 @@ function buildRoomTypeBreakdown(
   const sorted = Array.from(counts.entries()).sort((a, b) => b[1] - a[1]);
 
   return sorted.map(([roomType, count]) => {
-    const config = ROOM_TYPES.find((rt) => rt.id === roomType);
     return {
       roomType,
-      label: config?.label || roomType,
+      label: ROOM_TYPE_LABELS[roomType] || roomType,
       count,
       percentage: total > 0 ? Math.round((count / total) * 100) : 0,
     };
@@ -136,10 +135,9 @@ function buildStyleBreakdown(jobs: Array<{ style: string }>): StyleBreakdown[] {
   const sorted = Array.from(counts.entries()).sort((a, b) => b[1] - a[1]);
 
   return sorted.map(([style, count]) => {
-    const config = FURNITURE_STYLES.find((fs) => fs.id === style);
     return {
       style,
-      label: config?.label || style,
+      label: FURNITURE_STYLE_LABELS[style] || style,
       count,
       percentage: total > 0 ? Math.round((count / total) * 100) : 0,
     };

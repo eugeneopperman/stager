@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useTransition } from "react";
+import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import dynamic from "next/dynamic";
 import { AnalyticsHeader } from "./AnalyticsHeader";
@@ -9,18 +9,18 @@ import { PeriodComparison } from "./PeriodComparison";
 import type { AnalyticsData, PeriodOption } from "@/lib/analytics/types";
 
 // Dynamically import chart components with SSR disabled (Recharts uses browser APIs)
-const ActivityChart = dynamic(() => import("./ActivityChart").then((mod) => mod.ActivityChart), {
-  ssr: false,
-  loading: () => <ChartSkeleton />,
-});
-const RoomTypeChart = dynamic(() => import("./RoomTypeChart").then((mod) => mod.RoomTypeChart), {
-  ssr: false,
-  loading: () => <ChartSkeleton />,
-});
-const StyleChart = dynamic(() => import("./StyleChart").then((mod) => mod.StyleChart), {
-  ssr: false,
-  loading: () => <ChartSkeleton />,
-});
+const ActivityChart = dynamic(
+  () => import("./ActivityChart").then((mod) => mod.ActivityChart),
+  { ssr: false, loading: () => <ChartSkeleton /> }
+);
+const RoomTypeChart = dynamic(
+  () => import("./RoomTypeChart").then((mod) => mod.RoomTypeChart),
+  { ssr: false, loading: () => <ChartSkeleton /> }
+);
+const StyleChart = dynamic(
+  () => import("./StyleChart").then((mod) => mod.StyleChart),
+  { ssr: false, loading: () => <ChartSkeleton /> }
+);
 
 function ChartSkeleton() {
   return (
@@ -38,14 +38,6 @@ export function AnalyticsPageClient({ initialData }: AnalyticsPageClientProps) {
   const [selectedPeriod, setSelectedPeriod] = useState<PeriodOption>(
     initialData.periodDays as PeriodOption
   );
-  const [data, setData] = useState<AnalyticsData>(initialData);
-
-  // Update data when initialData changes (from server)
-  useEffect(() => {
-    if (initialData.periodDays !== data.periodDays) {
-      setData(initialData);
-    }
-  }, [initialData, data.periodDays]);
 
   const handlePeriodChange = (period: PeriodOption) => {
     setSelectedPeriod(period);
@@ -63,22 +55,22 @@ export function AnalyticsPageClient({ initialData }: AnalyticsPageClientProps) {
       />
 
       {/* Stats row */}
-      <AnalyticsStatsRow comparison={data.periodComparison} />
+      <AnalyticsStatsRow comparison={initialData.periodComparison} />
 
       {/* Charts grid */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 lg:gap-6">
-        {/* Activity Chart - full width on mobile, half on desktop */}
-        <ActivityChart data={data.dailyActivity} />
+        {/* Activity Chart */}
+        <ActivityChart data={initialData.dailyActivity} />
 
         {/* Room Types Donut */}
-        <RoomTypeChart data={data.roomTypes} />
+        <RoomTypeChart data={initialData.roomTypes} />
 
         {/* Style Bar Chart */}
-        <StyleChart data={data.styles} />
+        <StyleChart data={initialData.styles} />
 
         {/* Period Comparison */}
         <PeriodComparison
-          comparison={data.periodComparison}
+          comparison={initialData.periodComparison}
           periodDays={selectedPeriod}
         />
       </div>
