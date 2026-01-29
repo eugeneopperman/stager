@@ -1,16 +1,32 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useEffect, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import {
-  AnalyticsHeader,
-  AnalyticsStatsRow,
-  ActivityChart,
-  RoomTypeChart,
-  StyleChart,
-  PeriodComparison,
-} from ".";
+import dynamic from "next/dynamic";
+import { AnalyticsHeader } from "./AnalyticsHeader";
+import { AnalyticsStatsRow } from "./AnalyticsStatsRow";
+import { PeriodComparison } from "./PeriodComparison";
 import type { AnalyticsData, PeriodOption } from "@/lib/analytics/types";
+
+// Dynamically import chart components with SSR disabled (Recharts uses browser APIs)
+const ActivityChart = dynamic(() => import("./ActivityChart").then((mod) => mod.ActivityChart), {
+  ssr: false,
+  loading: () => <ChartSkeleton />,
+});
+const RoomTypeChart = dynamic(() => import("./RoomTypeChart").then((mod) => mod.RoomTypeChart), {
+  ssr: false,
+  loading: () => <ChartSkeleton />,
+});
+const StyleChart = dynamic(() => import("./StyleChart").then((mod) => mod.StyleChart), {
+  ssr: false,
+  loading: () => <ChartSkeleton />,
+});
+
+function ChartSkeleton() {
+  return (
+    <div className="h-[300px] rounded-lg bg-card/60 animate-pulse" />
+  );
+}
 
 interface AnalyticsPageClientProps {
   initialData: AnalyticsData;
@@ -24,17 +40,19 @@ export function AnalyticsPageClient({ initialData }: AnalyticsPageClientProps) {
   );
   const [data, setData] = useState<AnalyticsData>(initialData);
 
+  // Update data when initialData changes (from server)
+  useEffect(() => {
+    if (initialData.periodDays !== data.periodDays) {
+      setData(initialData);
+    }
+  }, [initialData, data.periodDays]);
+
   const handlePeriodChange = (period: PeriodOption) => {
     setSelectedPeriod(period);
     startTransition(() => {
       router.push(`/analytics?period=${period}`);
     });
   };
-
-  // Update data when initialData changes (from server)
-  if (initialData.periodDays !== data.periodDays) {
-    setData(initialData);
-  }
 
   return (
     <div className={`space-y-6 ${isPending ? "opacity-70 transition-opacity" : ""}`}>
