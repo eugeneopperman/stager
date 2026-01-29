@@ -11,6 +11,7 @@ Stager is a web application designed for real estate agents to virtually stage p
 - **Tailwind CSS v4** - Utility-first CSS framework
 - **shadcn/ui** - Modern React component library
 - **Lucide React** - Icon library
+- **Framer Motion** - Animation library for landing page
 
 ### Backend
 - **Next.js API Routes** - Serverless API endpoints
@@ -56,6 +57,7 @@ Stager is a web application designed for real estate agents to virtually stage p
 │   ├── components/
 │   │   ├── ui/                # shadcn/ui components
 │   │   ├── layout/            # FloatingControls, Sidebar (with user avatar)
+│   │   ├── landing/           # Landing page components (Framer Motion animations)
 │   │   ├── staging/           # Staging components (uploaders, selectors)
 │   │   │   └── wizard/        # 4-step wizard components
 │   │   ├── properties/        # Property management components
@@ -73,7 +75,8 @@ Stager is a web application designed for real estate agents to virtually stage p
 │       └── constants.ts       # Room types, styles, credit thresholds
 │
 ├── public/
-│   └── styles/               # Furniture style preview images (SVG)
+│   ├── styles/               # Furniture style preview images (SVG)
+│   └── images/landing/       # Landing page hero images
 ├── docs/
 │   └── PRD-*.md              # Product requirement documents
 ├── prompt-structure.txt       # Reference AI staging prompt
@@ -211,6 +214,9 @@ NEXT_PUBLIC_APP_URL=http://localhost:3000
 | `src/middleware.ts` | Auth protection middleware |
 | `src/contexts/SidebarContext.tsx` | Sidebar collapse/auto-hide state management |
 | `src/components/providers/ThemeProvider.tsx` | next-themes wrapper for dark/light mode |
+| `src/components/onboarding/ProductTour.tsx` | Interactive product tour with Driver.js |
+| `src/components/onboarding/tour-config.ts` | Tour step definitions and Driver.js config |
+| `src/components/onboarding/tour-styles.css` | Glassmorphic styling for tour popovers |
 | `src/components/layout/FloatingControls.tsx` | Floating search icon + notification dropdown with expandable search |
 | `src/components/layout/NotificationDropdown.tsx` | Bell icon with unread badge, notification popover dropdown |
 | `src/components/layout/Sidebar.tsx` | Collapsible navigation sidebar with tooltips and user avatar dropdown |
@@ -287,6 +293,22 @@ NEXT_PUBLIC_APP_URL=http://localhost:3000
 | `sentry.server.config.ts` | Sentry server-side error tracking |
 | `sentry.edge.config.ts` | Sentry edge runtime error tracking |
 | `e2e/*.spec.ts` | Playwright E2E tests (11 files) |
+| `src/components/landing/index.ts` | Landing page component exports |
+| `src/components/landing/LandingNav.tsx` | Glass navigation bar with blur effect |
+| `src/components/landing/HeroSection.tsx` | Hero with animated headline, gradient text, CTAs |
+| `src/components/landing/ComparisonSliderDemo.tsx` | Interactive before/after slider with auto-animation |
+| `src/components/landing/FeatureCards.tsx` | 3 feature cards (Fast, 9 Styles, Batch) |
+| `src/components/landing/StyleGallery.tsx` | Interactive 9-style showcase with expandable details |
+| `src/components/landing/HowItWorks.tsx` | 3-step process with animated icons |
+| `src/components/landing/StatsSection.tsx` | Animated counters + testimonial |
+| `src/components/landing/RoomTypes.tsx` | Room type pills grid |
+| `src/components/landing/PricingPreview.tsx` | 3 pricing tiers + credit packs |
+| `src/components/landing/FinalCTA.tsx` | Final call-to-action with animated background |
+| `src/components/landing/LandingFooter.tsx` | Footer with links |
+| `src/components/landing/ScrollReveal.tsx` | Scroll-triggered animation wrapper (Framer Motion) |
+| `src/components/landing/AnimatedCounter.tsx` | Count-up number animation |
+| `public/images/landing/hero-before.jpg` | Hero comparison slider before image |
+| `public/images/landing/hero-after.jpg` | Hero comparison slider after image |
 
 ## Commands
 

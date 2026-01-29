@@ -8,6 +8,7 @@ import {
   Images,
   Building2,
   History,
+  BarChart3,
   Users,
 } from "lucide-react";
 import { SidebarNavItem } from "./SidebarNavItem";
@@ -18,6 +19,7 @@ const baseNavigation = [
   { name: "Batch Stage", href: "/stage/batch", icon: Images, tourId: "batch-stage" },
   { name: "Properties", href: "/properties", icon: Building2, tourId: "properties" },
   { name: "History", href: "/history", icon: History, tourId: "history" },
+  { name: "Analytics", href: "/analytics", icon: BarChart3, tourId: "analytics" },
 ];
 
 const teamNavItem = { name: "Team", href: "/team", icon: Users, tourId: "team" };
