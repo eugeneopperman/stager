@@ -4,15 +4,15 @@ import { useEffect, useRef, useCallback } from "react";
 import { driver, type Driver } from "driver.js";
 import "driver.js/dist/driver.css";
 import "./tour-styles.css";
-import { TOUR_STEPS, MOBILE_TOUR_STEPS, DRIVER_CONFIG, MOBILE_DRIVER_CONFIG, getPageTourSteps } from "./tour-config";
+import { TOUR_STEPS, DRIVER_CONFIG, MOBILE_DRIVER_CONFIG, getPageTourSteps } from "./tour-config";
 import { createClient } from "@/lib/supabase/client";
 import type { DriveStep } from "driver.js";
 
 /**
- * Check if we're on a mobile viewport
+ * Check if we're on a mobile viewport (sidebar hidden at < lg = 1024px)
  */
 function isMobileViewport(): boolean {
-  return typeof window !== "undefined" && window.innerWidth < 640;
+  return typeof window !== "undefined" && window.innerWidth < 1024;
 }
 
 /**
@@ -20,6 +20,20 @@ function isMobileViewport(): boolean {
  */
 function getDriverConfig() {
   return isMobileViewport() ? MOBILE_DRIVER_CONFIG : DRIVER_CONFIG;
+}
+
+/**
+ * Custom event to request opening the mobile sidebar
+ */
+export const OPEN_MOBILE_SIDEBAR_EVENT = "stager:open-mobile-sidebar";
+
+/**
+ * Dispatch event to open mobile sidebar
+ */
+function requestOpenMobileSidebar(): void {
+  if (typeof window !== "undefined") {
+    window.dispatchEvent(new CustomEvent(OPEN_MOBILE_SIDEBAR_EVENT));
+  }
 }
 
 /**
@@ -84,9 +98,15 @@ export function ProductTour({
   }, [skipDbUpdate]);
 
   useEffect(() => {
-    // Detect mobile (sidebar not visible on < lg)
-    const isMobileSidebar = window.innerWidth < 1024;
-    const baseSteps = isMobileSidebar ? MOBILE_TOUR_STEPS : TOUR_STEPS;
+    const isMobile = isMobileViewport();
+
+    // On mobile, open sidebar first so all tour elements are visible
+    if (isMobile && autoStart) {
+      requestOpenMobileSidebar();
+    }
+
+    // Use full tour steps - on mobile, sidebar will be opened
+    const baseSteps = TOUR_STEPS;
 
     // Inject credits into the credits step
     let steps = baseSteps.map((step) => {
@@ -127,8 +147,9 @@ export function ProductTour({
     });
 
     if (autoStart) {
-      // Small delay to ensure DOM is ready
-      const timer = setTimeout(() => driverRef.current?.drive(), 150);
+      // Longer delay on mobile to wait for sidebar animation
+      const delay = isMobile ? 400 : 150;
+      const timer = setTimeout(() => driverRef.current?.drive(), delay);
       return () => {
         clearTimeout(timer);
         driverRef.current?.destroy();
@@ -148,9 +169,15 @@ export function ProductTour({
  * @param credits - Number of credits to display in the tour
  */
 export function startTour(credits: number = 0) {
-  // Detect mobile (sidebar not visible on < lg)
-  const isMobileSidebar = window.innerWidth < 1024;
-  const baseSteps = isMobileSidebar ? MOBILE_TOUR_STEPS : TOUR_STEPS;
+  const isMobile = isMobileViewport();
+
+  // On mobile, open sidebar first so all tour elements are visible
+  if (isMobile) {
+    requestOpenMobileSidebar();
+  }
+
+  // Use full tour steps - on mobile, sidebar will be opened
+  const baseSteps = TOUR_STEPS;
 
   // Inject credits into the credits step
   let steps = baseSteps.map((step) => {
@@ -185,7 +212,9 @@ export function startTour(credits: number = 0) {
     },
   });
 
-  tourDriver.drive();
+  // Longer delay on mobile to wait for sidebar animation
+  const delay = isMobile ? 400 : 0;
+  setTimeout(() => tourDriver.drive(), delay);
 }
 
 /**

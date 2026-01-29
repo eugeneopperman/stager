@@ -13,9 +13,10 @@ import { LOW_CREDITS_THRESHOLD } from "@/lib/constants";
 interface SidebarCreditsProps {
   credits: number;
   isCollapsed: boolean;
+  onNavigate?: () => void;
 }
 
-export function SidebarCredits({ credits, isCollapsed }: SidebarCreditsProps) {
+export function SidebarCredits({ credits, isCollapsed, onNavigate }: SidebarCreditsProps) {
   const isLow = credits <= LOW_CREDITS_THRESHOLD;
 
   if (isCollapsed) {
@@ -24,6 +25,7 @@ export function SidebarCredits({ credits, isCollapsed }: SidebarCreditsProps) {
         <TooltipTrigger asChild>
           <Link
             href="/billing"
+            onClick={onNavigate}
             data-tour="credits"
             className={cn(
               "flex flex-col items-center justify-center rounded-2xl p-2 relative overflow-hidden",
@@ -86,6 +88,7 @@ export function SidebarCredits({ credits, isCollapsed }: SidebarCreditsProps) {
         <p className="text-2xl font-bold text-white mt-1">{credits}</p>
         <Link
           href="/billing"
+          onClick={onNavigate}
           className={cn(
             "mt-2 inline-flex items-center gap-1 text-xs font-medium transition-all duration-200",
             "hover:gap-2",

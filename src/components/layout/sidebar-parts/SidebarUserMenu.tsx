@@ -27,9 +27,10 @@ interface SidebarUserMenuProps {
     full_name?: string;
   };
   isCollapsed: boolean;
+  onNavigate?: () => void;
 }
 
-export function SidebarUserMenu({ user, isCollapsed }: SidebarUserMenuProps) {
+export function SidebarUserMenu({ user, isCollapsed, onNavigate }: SidebarUserMenuProps) {
   const router = useRouter();
   const supabase = createClient();
 
@@ -108,13 +109,13 @@ export function SidebarUserMenu({ user, isCollapsed }: SidebarUserMenuProps) {
         </DropdownMenuLabel>
         <DropdownMenuSeparator />
         <DropdownMenuItem asChild>
-          <Link href="/settings">
+          <Link href="/settings" onClick={onNavigate}>
             <Settings className="mr-2 h-4 w-4" />
             Settings
           </Link>
         </DropdownMenuItem>
         <DropdownMenuItem asChild>
-          <Link href="/billing">
+          <Link href="/billing" onClick={onNavigate}>
             <CreditCard className="mr-2 h-4 w-4" />
             Billing
           </Link>

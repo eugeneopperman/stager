@@ -60,7 +60,7 @@ export function Sidebar({
         )}
       >
         {/* Credits Badge */}
-        <SidebarCredits credits={credits} isCollapsed={isCollapsed} />
+        <SidebarCredits credits={credits} isCollapsed={isCollapsed} onNavigate={onNavigate} />
 
         {/* Collapse toggle button */}
         <SidebarCollapseButton
@@ -69,7 +69,7 @@ export function Sidebar({
         />
 
         {/* User Avatar with Dropdown */}
-        <SidebarUserMenu user={user} isCollapsed={isCollapsed} />
+        <SidebarUserMenu user={user} isCollapsed={isCollapsed} onNavigate={onNavigate} />
       </div>
     </nav>
   );

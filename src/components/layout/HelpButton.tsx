@@ -1,7 +1,7 @@
 "use client";
 
 import { usePathname } from "next/navigation";
-import { HelpCircle } from "lucide-react";
+import { Lightbulb } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Tooltip,
@@ -38,7 +38,7 @@ export function HelpButton() {
             aria-label="Page help"
             data-tour="help"
           >
-            <HelpCircle className="h-[18px] w-[18px] text-muted-foreground" />
+            <Lightbulb className="h-[18px] w-[18px] text-muted-foreground" />
           </Button>
         </TooltipTrigger>
         <TooltipContent side="bottom" align="end">

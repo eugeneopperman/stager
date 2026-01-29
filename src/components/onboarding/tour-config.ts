@@ -74,7 +74,9 @@ export const TOUR_STEPS: DriveStep[] = [
   },
 ];
 
-// Filtered steps for mobile (sidebar items not visible)
+// Note: On mobile, the full TOUR_STEPS are used because the ProductTour
+// automatically opens the mobile sidebar before starting the tour.
+// This filtered constant is kept for reference but not currently used.
 export const MOBILE_TOUR_STEPS: DriveStep[] = TOUR_STEPS.filter(
   (step) =>
     step.element === '[data-tour="search"]' ||

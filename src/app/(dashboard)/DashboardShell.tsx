@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Menu } from "lucide-react";
 import { Sidebar } from "@/components/layout/Sidebar";
 import { FloatingControls } from "@/components/layout/FloatingControls";
@@ -9,7 +9,7 @@ import { SidebarProvider, useSidebar } from "@/contexts/SidebarContext";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { useObservability } from "@/lib/observability/hooks";
-import { ProductTour } from "@/components/onboarding";
+import { ProductTour, OPEN_MOBILE_SIDEBAR_EVENT } from "@/components/onboarding";
 
 interface DashboardShellProps {
   children: React.ReactNode;
@@ -30,6 +30,18 @@ function DashboardContent({ children, user, credits = 0, isEnterprise = false, s
 
   // Identify user for observability (Sentry)
   useObservability(user?.id ? { id: user.id, email: user.email, plan: user.plan } : null);
+
+  // Listen for event to open mobile sidebar (used by product tour)
+  useEffect(() => {
+    const handleOpenSidebar = () => {
+      setSidebarOpen(true);
+    };
+
+    window.addEventListener(OPEN_MOBILE_SIDEBAR_EVENT, handleOpenSidebar);
+    return () => {
+      window.removeEventListener(OPEN_MOBILE_SIDEBAR_EVENT, handleOpenSidebar);
+    };
+  }, []);
 
   // Calculate sidebar width for layout
   const sidebarWidth = isCollapsed ? "w-16" : "w-64";
