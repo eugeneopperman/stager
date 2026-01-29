@@ -1123,6 +1123,60 @@ The `ComparisonSliderDemo` component features:
 
 ---
 
+## Analytics Dashboard with Recharts
+
+### SSR Compatibility with Recharts
+Recharts uses browser-specific APIs (window, document) that aren't available during server-side rendering. To use Recharts in Next.js App Router:
+
+**Pattern: Dynamic imports with SSR disabled**
+```tsx
+import dynamic from "next/dynamic";
+
+const ActivityChart = dynamic(
+  () => import("./ActivityChart").then((mod) => mod.ActivityChart),
+  { ssr: false, loading: () => <ChartSkeleton /> }
+);
+```
+
+### Server-Side Constants Issue
+**Problem:** Importing from files that contain `lucide-react` imports in server components causes SSR errors.
+
+**Solution:** Create separate server-safe constant files without icon imports:
+```typescript
+// BAD - queries.ts importing from ui.ts which imports lucide-react
+import { ROOM_TYPES } from "@/lib/constants/ui";
+
+// GOOD - create server-safe constants
+// /src/lib/analytics/constants.ts
+export const ROOM_TYPE_LABELS: Record<string, string> = {
+  "living-room": "Living Room",
+  // ...
+};
+```
+
+### Analytics Components (`/src/app/(dashboard)/analytics/_components/`)
+| Component | Purpose |
+|-----------|---------|
+| `AnalyticsPageClient.tsx` | Main client wrapper with period selector state |
+| `AnalyticsHeader.tsx` | Title + 7/30 day period toggle buttons |
+| `AnalyticsStatsRow.tsx` | 4 summary stat cards (stagings, credits, avg time, trend) |
+| `ActivityChart.tsx` | Area chart - daily staging activity (Recharts) |
+| `RoomTypeChart.tsx` | Donut/pie chart - room type breakdown (Recharts) |
+| `StyleChart.tsx` | Horizontal bar chart - furniture style usage (Recharts) |
+| `PeriodComparison.tsx` | This period vs last period comparison |
+| `TrendIndicator.tsx` | Reusable +/-% badge with trend icons |
+| `ChartCard.tsx` | Glassmorphic wrapper for chart styling |
+
+### Analytics Library (`/src/lib/analytics/`)
+| File | Purpose |
+|------|---------|
+| `types.ts` | TypeScript interfaces for analytics data |
+| `utils.ts` | Date range helpers, trend calculation, formatting |
+| `queries.ts` | Database queries for fetching analytics data |
+| `constants.ts` | Server-safe room/style label mappings (no lucide-react) |
+
+---
+
 ## Session Continuity Tips
 
 1. Read `CLAUDE.md` for project overview and conventions

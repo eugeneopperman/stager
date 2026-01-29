@@ -433,6 +433,7 @@ version_groups:
 | 1.146 | 2025-01-24 | User onboarding welcome modal |
 | 1.147 | 2025-01-25 | Interactive product tour: Driver.js integration, 7-step guided tour, glassmorphic styling |
 | 1.148 | 2025-01-27 | Landing page redesign: Framer Motion animations, glassmorphism, comparison slider, 9 sections |
+| 1.149 | 2025-01-28 | Usage Analytics Dashboard: Recharts charts (activity, room types, styles, period comparison), 7/30 day toggle |
 | 1.0.0 | TBD | MVP release |
 
 ---

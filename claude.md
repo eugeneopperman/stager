@@ -12,6 +12,7 @@ Stager is a web application designed for real estate agents to virtually stage p
 - **shadcn/ui** - Modern React component library
 - **Lucide React** - Icon library
 - **Framer Motion** - Animation library for landing page
+- **Recharts** - Charting library for analytics dashboard
 
 ### Backend
 - **Next.js API Routes** - Serverless API endpoints
@@ -42,6 +43,7 @@ Stager is a web application designed for real estate agents to virtually stage p
 │   │   │   ├── stage/         # Single photo staging
 │   │   │   ├── stage/batch/   # Batch staging (up to 10)
 │   │   │   ├── history/       # Staging history
+│   │   │   ├── analytics/     # Usage analytics dashboard
 │   │   │   ├── properties/    # Property management
 │   │   │   ├── billing/       # Billing & usage
 │   │   │   └── settings/      # User settings
@@ -69,6 +71,7 @@ Stager is a web application designed for real estate agents to virtually stage p
 │   │
 │   └── lib/
 │       ├── supabase/          # Supabase client configuration
+│       ├── analytics/         # Analytics data queries and types
 │       ├── gemini.ts          # Gemini API service with staging prompt
 │       ├── database.types.ts  # TypeScript types for Supabase
 │       ├── utils.ts           # Utility functions
@@ -309,6 +312,17 @@ NEXT_PUBLIC_APP_URL=http://localhost:3000
 | `src/components/landing/AnimatedCounter.tsx` | Count-up number animation |
 | `public/images/landing/hero-before.jpg` | Hero comparison slider before image |
 | `public/images/landing/hero-after.jpg` | Hero comparison slider after image |
+| `src/app/(dashboard)/analytics/page.tsx` | Analytics dashboard page (server component) |
+| `src/app/(dashboard)/analytics/loading.tsx` | Analytics loading skeleton |
+| `src/app/(dashboard)/analytics/_components/AnalyticsPageClient.tsx` | Client wrapper with period state |
+| `src/app/(dashboard)/analytics/_components/ActivityChart.tsx` | Area chart - daily staging activity |
+| `src/app/(dashboard)/analytics/_components/RoomTypeChart.tsx` | Donut chart - room type breakdown |
+| `src/app/(dashboard)/analytics/_components/StyleChart.tsx` | Bar chart - furniture style usage |
+| `src/app/(dashboard)/analytics/_components/PeriodComparison.tsx` | This vs last period comparison |
+| `src/lib/analytics/types.ts` | Analytics TypeScript interfaces |
+| `src/lib/analytics/queries.ts` | Database queries for analytics data |
+| `src/lib/analytics/utils.ts` | Date range helpers, trend calculation |
+| `src/lib/analytics/constants.ts` | Server-safe room/style labels (no lucide-react) |
 
 ## Commands
 
